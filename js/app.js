@@ -36,21 +36,33 @@ const blockedDateRange = {
   end: "2026-04-15"
 };
 
+const cactusCollectionImages = [
+  "assets/images/cactus/Firepit%20Closeup.png",
+  "assets/images/cactus/Living%20Room%20Closeup.png",
+  "assets/images/cactus/Kitchen%20Vibrant.png",
+  "assets/images/cactus/Primary%20Bedroom.jpg",
+  "assets/images/cactus/Primary%20Bathroom%20Vibrant.png",
+  "assets/images/cactus/Firepit%20Seating.png"
+];
+
 const collectionData = {
   fan: {
-    image: "assets/images/placeholders/placeholder-800x600.svg",
+    images: cactusCollectionImages,
+    image: cactusCollectionImages[0],
     kicker: "Most booked this season",
     title: "Fan Favorites",
     text: "Guest-loved homes with standout layouts, elevated amenities, and signature LuxHouse hosting details."
   },
   new: {
-    image: "assets/images/placeholders/placeholder-800x600.svg",
+    images: cactusCollectionImages,
+    image: cactusCollectionImages[1],
     kicker: "Freshly launched",
     title: "New Homes",
     text: "Recently added stays with updated interiors, thoughtful extras, and destination-first design."
   },
   group: {
-    image: "assets/images/placeholders/placeholder-800x600.svg",
+    images: cactusCollectionImages,
+    image: cactusCollectionImages[2],
     kicker: "Built for gatherings",
     title: "Group Estates",
     text: "Large-format homes designed for reunions, retreats, and milestone weekends with room to spread out."
@@ -977,6 +989,38 @@ if (tabs.length) {
   const kickerEl = document.getElementById("collectionKicker");
   const titleEl = document.getElementById("collectionTitle");
   const textEl = document.getElementById("collectionText");
+  let collectionCarouselTimer = null;
+  let collectionCarouselIndex = 0;
+
+  function setCollectionImage(imageSrc) {
+    if (!imageEl) {
+      return;
+    }
+    imageEl.classList.add("is-swapping");
+    window.setTimeout(() => {
+      imageEl.src = imageSrc;
+      imageEl.classList.remove("is-swapping");
+    }, 140);
+  }
+
+  function startCollectionCarousel(images) {
+    if (!imageEl || !images || !images.length) {
+      return;
+    }
+
+    if (collectionCarouselTimer) {
+      window.clearInterval(collectionCarouselTimer);
+    }
+
+    collectionCarouselIndex = 0;
+    setCollectionImage(images[collectionCarouselIndex]);
+    imageEl.alt = "Cactus and Chill featured collection image";
+
+    collectionCarouselTimer = window.setInterval(() => {
+      collectionCarouselIndex = (collectionCarouselIndex + 1) % images.length;
+      setCollectionImage(images[collectionCarouselIndex]);
+    }, 3200);
+  }
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -990,12 +1034,21 @@ if (tabs.length) {
         return;
       }
 
-      imageEl.src = item.image;
       kickerEl.textContent = item.kicker;
       titleEl.textContent = item.title;
       textEl.textContent = item.text;
+      startCollectionCarousel(item.images || [item.image]);
     });
   });
+
+  const activeTab = document.querySelector(".tab.is-active");
+  if (activeTab) {
+    const key = activeTab.getAttribute("data-tab");
+    const item = key ? collectionData[key] : null;
+    if (item) {
+      startCollectionCarousel(item.images || [item.image]);
+    }
+  }
 }
 
 if (inquiryButton) {

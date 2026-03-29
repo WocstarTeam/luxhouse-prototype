@@ -339,7 +339,16 @@ main {
 }
 
 .collection-hero img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
   max-height: 470px;
+  transition: opacity 260ms ease;
+  animation: collection-pan 14s ease-in-out infinite alternate;
+}
+
+.collection-hero img.is-swapping {
+  opacity: 0.62;
 }
 
 .collection-copy {
@@ -362,6 +371,15 @@ main {
 .collection-copy p:last-child {
   margin-top: 0.45rem;
   color: var(--ink-soft);
+}
+
+@keyframes collection-pan {
+  0% {
+    transform: scale(1.02) translateX(0);
+  }
+  100% {
+    transform: scale(1.08) translateX(-1.6%);
+  }
 }
 
 .pillars {
