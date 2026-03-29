@@ -59,15 +59,15 @@ const collectionData = {
 
 const destinationLabels = {
   "cactus-and-chill": "Cactus and Chill - Mesa, Arizona",
-  "pine-and-peace": "Pine and Peace - Carnelian Bay, Lake Tahoe",
-  "sunstone-social": "Sunstone Social - Scottsdale, Arizona"
+  "pine-and-peace": "Pine and Peace - Carnelian Bay, Lake Tahoe"
 };
 
 const modalDestinationLabels = {
   cactus: "Cactus & Chill House",
-  pine: "Pine & Peace House",
-  third: "Third Property"
+  pine: "Pine & Peace House"
 };
+
+const supportedProperties = ["cactus", "pine"];
 
 let modalAvailabilityReady = false;
 
@@ -95,7 +95,7 @@ function makeImageLabel(fileName) {
 // Booking Modal API
 // =========================================================
 
-function openBookingModal() {
+function openBookingModal(preselectedDestination = "") {
   if (!bookingModal) {
     return;
   }
@@ -110,6 +110,9 @@ function openBookingModal() {
   }
   if (bookingMessage) {
     bookingMessage.value = "";
+  }
+  if (modalDestination && preselectedDestination) {
+    modalDestination.value = preselectedDestination;
   }
   if (bookingStatus) {
     bookingStatus.textContent = "";
@@ -173,6 +176,11 @@ function checkAvailability(event) {
     return;
   }
 
+  if (!supportedProperties.includes(destination)) {
+    setBookingStatus("Please choose a valid LuxHouse destination.", "error");
+    return;
+  }
+
   if (new Date(checkout) <= new Date(checkin)) {
     setBookingStatus("Check-out must be later than check-in.", "error");
     return;
@@ -193,6 +201,11 @@ function checkAvailability(event) {
 
 function handleBookingRedirect() {
   if (!modalAvailabilityReady || !modalDestination || !modalCheckin || !modalCheckout || !modalGuests) {
+    return;
+  }
+
+  if (!supportedProperties.includes(modalDestination.value)) {
+    setBookingStatus("Please choose a valid LuxHouse destination.", "error");
     return;
   }
 
@@ -221,7 +234,8 @@ function initBookingModalEvents() {
   document.querySelectorAll("[data-open-booking-modal]").forEach((trigger) => {
     trigger.addEventListener("click", (event) => {
       event.preventDefault();
-      openBookingModal();
+      const preselected = trigger.getAttribute("data-booking-destination") || "";
+      openBookingModal(preselected);
     });
   });
 
@@ -598,6 +612,300 @@ function initCactusPage() {
 }
 
 // =========================================================
+// Pine Gallery + Lightbox
+// =========================================================
+
+const pineGalleryState = {
+  images: [],
+  currentIndex: 0,
+  touchStartX: null,
+  touchEndX: null
+};
+
+function classifyPineImages(fileNames) {
+  const indoorKeywords = [
+    "living", "lounge", "fireplace", "bedroom", "bath", "bathroom",
+    "kitchen", "dining", "office", "library", "game", "interior", "room"
+  ];
+  const outdoorKeywords = [
+    "forest", "deck", "hottub", "hot-tub", "trail", "beach", "lake",
+    "exterior", "outdoor", "patio", "pine", "yard"
+  ];
+
+  const result = { indoor: [], outdoor: [] };
+
+  fileNames.forEach((file) => {
+    const lower = file.toLowerCase();
+    if (outdoorKeywords.some((keyword) => lower.includes(keyword))) {
+      result.outdoor.push(file);
+      return;
+    }
+    if (indoorKeywords.some((keyword) => lower.includes(keyword))) {
+      result.indoor.push(file);
+      return;
+    }
+    result.indoor.push(file);
+  });
+
+  return result;
+}
+
+function pineSourceForFile(file) {
+  const isOutdoor = /forest|deck|hottub|hot-tub|trail|beach|lake|exterior|outdoor|patio|pine|yard/i.test(file);
+  return isOutdoor ? "assets/images/placeholders/pine-outdoor.svg" : "assets/images/placeholders/pine-indoor.svg";
+}
+
+function openPineLightbox(index) {
+  const lightbox = document.getElementById("pineLightbox");
+  if (!lightbox || !pineGalleryState.images.length) {
+    return;
+  }
+  pineGalleryState.currentIndex = index;
+  lightbox.classList.add("is-open");
+  lightbox.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  updatePineLightboxView();
+}
+
+function closePineLightbox() {
+  const lightbox = document.getElementById("pineLightbox");
+  if (!lightbox) {
+    return;
+  }
+  lightbox.classList.remove("is-open");
+  lightbox.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
+function showNextPineImage() {
+  if (!pineGalleryState.images.length) {
+    return;
+  }
+  pineGalleryState.currentIndex = (pineGalleryState.currentIndex + 1) % pineGalleryState.images.length;
+  updatePineLightboxView();
+}
+
+function showPrevPineImage() {
+  if (!pineGalleryState.images.length) {
+    return;
+  }
+  pineGalleryState.currentIndex = (pineGalleryState.currentIndex - 1 + pineGalleryState.images.length) % pineGalleryState.images.length;
+  updatePineLightboxView();
+}
+
+function handlePineSwipe() {
+  if (pineGalleryState.touchStartX === null || pineGalleryState.touchEndX === null) {
+    return;
+  }
+  const deltaX = pineGalleryState.touchStartX - pineGalleryState.touchEndX;
+  if (deltaX > 50) {
+    showNextPineImage();
+  } else if (deltaX < -50) {
+    showPrevPineImage();
+  }
+  pineGalleryState.touchStartX = null;
+  pineGalleryState.touchEndX = null;
+}
+
+function createPineGalleryItem(fileName, index) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "lux-pine-gallery-item";
+  button.setAttribute("aria-label", `Open image ${index + 1}`);
+
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.src = pineSourceForFile(fileName);
+  img.alt = `${makeImageLabel(fileName)} at Pine & Peace House`;
+  img.onerror = function () {
+    this.onerror = null;
+    this.src = "assets/images/placeholders/placeholder-800x600.svg";
+  };
+
+  button.addEventListener("click", () => {
+    openPineLightbox(index);
+  });
+
+  button.appendChild(img);
+  return button;
+}
+
+function renderPineLightboxThumbs() {
+  const strip = document.getElementById("pineThumbStrip");
+  if (!strip) {
+    return;
+  }
+
+  strip.innerHTML = "";
+  pineGalleryState.images.forEach((file, index) => {
+    const thumb = document.createElement("button");
+    thumb.type = "button";
+    thumb.className = "lux-pine-thumb";
+    thumb.setAttribute("aria-label", `View image ${index + 1}`);
+
+    const img = document.createElement("img");
+    img.src = pineSourceForFile(file);
+    img.alt = makeImageLabel(file);
+    img.onerror = function () {
+      this.onerror = null;
+      this.src = "assets/images/placeholders/placeholder-600x400.svg";
+    };
+
+    thumb.addEventListener("click", () => {
+      pineGalleryState.currentIndex = index;
+      updatePineLightboxView();
+    });
+
+    thumb.appendChild(img);
+    strip.appendChild(thumb);
+  });
+}
+
+function updatePineLightboxView() {
+  const imageEl = document.getElementById("pineLightboxImage");
+  const thumbs = document.querySelectorAll(".lux-pine-thumb");
+
+  if (!imageEl || !pineGalleryState.images.length) {
+    return;
+  }
+
+  const file = pineGalleryState.images[pineGalleryState.currentIndex];
+  imageEl.src = pineSourceForFile(file);
+  imageEl.alt = `${makeImageLabel(file)} at Pine & Peace House`;
+  imageEl.onerror = function () {
+    this.onerror = null;
+    this.src = "assets/images/placeholders/placeholder-800x600.svg";
+  };
+
+  thumbs.forEach((thumb, idx) => {
+    thumb.classList.toggle("is-active", idx === pineGalleryState.currentIndex);
+  });
+}
+
+function initPinePage() {
+  const topGallery = document.getElementById("pineTopGallery");
+  if (!topGallery) {
+    return;
+  }
+
+  const pineFiles = [
+    "living-room-placeholder.jpg",
+    "fireplace-lounge-placeholder.jpg",
+    "kitchen-dining-placeholder.jpg",
+    "bedroom-suite-placeholder.jpg",
+    "office-library-placeholder.jpg",
+    "game-room-placeholder.jpg",
+    "forest-deck-placeholder.jpg",
+    "hot-tub-patio-placeholder.jpg",
+    "lake-beach-placeholder.jpg"
+  ];
+
+  const classified = classifyPineImages(pineFiles);
+  if (!classified.indoor.length) {
+    classified.indoor.push("indoor-placeholder.jpg");
+  }
+  if (!classified.outdoor.length) {
+    classified.outdoor.push("outdoor-placeholder.jpg");
+  }
+
+  pineGalleryState.images = [...classified.outdoor, ...classified.indoor];
+
+  const indoorTarget = document.getElementById("pineIndoorGallery");
+  const outdoorTarget = document.getElementById("pineOutdoorGallery");
+  if (!indoorTarget || !outdoorTarget) {
+    return;
+  }
+  topGallery.innerHTML = "";
+  indoorTarget.innerHTML = "";
+  outdoorTarget.innerHTML = "";
+
+  pineGalleryState.images.forEach((file, index) => {
+    if (index < 5) {
+      const topItem = createPineGalleryItem(file, index);
+      if (index === 0) {
+        topItem.classList.add("is-main");
+      }
+      topGallery.appendChild(topItem);
+    }
+  });
+
+  classified.indoor.forEach((file) => {
+    indoorTarget.appendChild(createPineGalleryItem(file, pineGalleryState.images.indexOf(file)));
+  });
+  classified.outdoor.forEach((file) => {
+    outdoorTarget.appendChild(createPineGalleryItem(file, pineGalleryState.images.indexOf(file)));
+  });
+
+  renderPineLightboxThumbs();
+
+  document.querySelectorAll("[data-pine-close-lightbox]").forEach((trigger) => {
+    trigger.addEventListener("click", closePineLightbox);
+  });
+
+  const nextBtn = document.getElementById("pineNextBtn");
+  const prevBtn = document.getElementById("pinePrevBtn");
+  if (nextBtn) {
+    nextBtn.addEventListener("click", showNextPineImage);
+  }
+  if (prevBtn) {
+    prevBtn.addEventListener("click", showPrevPineImage);
+  }
+
+  const panel = document.querySelector(".lux-pine-lightbox-panel");
+  if (panel) {
+    panel.addEventListener("touchstart", (event) => {
+      pineGalleryState.touchStartX = event.changedTouches[0].screenX;
+    }, { passive: true });
+
+    panel.addEventListener("touchend", (event) => {
+      pineGalleryState.touchEndX = event.changedTouches[0].screenX;
+      handlePineSwipe();
+    }, { passive: true });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const lightbox = document.getElementById("pineLightbox");
+    if (!lightbox || !lightbox.classList.contains("is-open")) {
+      return;
+    }
+    if (event.key === "Escape") {
+      closePineLightbox();
+    } else if (event.key === "ArrowRight") {
+      showNextPineImage();
+    } else if (event.key === "ArrowLeft") {
+      showPrevPineImage();
+    }
+  });
+
+  const pineForm = document.getElementById("pineBookingForm");
+  if (pineForm) {
+    pineForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const checkin = document.getElementById("luxPineCheckin");
+      const checkout = document.getElementById("luxPineCheckout");
+      const guests = document.getElementById("luxPineGuests");
+
+      if (!checkin || !checkout || !guests || !checkin.value || !checkout.value || !guests.value) {
+        window.alert("Please complete check-in, check-out, and guests.");
+        return;
+      }
+      if (new Date(checkout.value) <= new Date(checkin.value)) {
+        window.alert("Check-out must be later than check-in.");
+        return;
+      }
+
+      const params = new URLSearchParams({
+        destination: "pine",
+        checkin: checkin.value,
+        checkout: checkout.value,
+        guests: guests.value
+      });
+      window.location.href = `booking.html?${params.toString()}`;
+    });
+  }
+}
+
+// =========================================================
 // Homepage interactions
 // =========================================================
 
@@ -682,6 +990,7 @@ if (inquiryButton) {
 initBookingModalEvents();
 initBookingPageSummary();
 initCactusPage();
+initPinePage();
 
 // Expose required API surface
 window.openBookingModal = openBookingModal;

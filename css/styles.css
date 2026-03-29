@@ -1750,6 +1750,12 @@ body.modal-open {
   transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
+.lux-home-page .destination-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 860px;
+  margin-inline: auto;
+}
+
 .lux-home-page .destination-grid article:hover {
   transform: translateY(-4px);
   box-shadow: 0 16px 30px rgba(32, 21, 13, 0.16);
@@ -1757,6 +1763,13 @@ body.modal-open {
 
 .lux-home-page .destination-grid h3 {
   margin-top: 0.95rem;
+}
+
+@media (max-width: 860px) {
+  .lux-home-page .destination-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+  }
 }
 
 .lux-home-page .collection-hero {
@@ -1933,5 +1946,498 @@ body.modal-open {
   .lux-cactus-lightbox-nav {
     top: auto;
     bottom: 74px;
+  }
+}
+
+/* =========================================================
+   LUXHOUSE: Pine & Peace Property Page (Scoped)
+   ========================================================= */
+
+.lux-pine-page {
+  --lux-pine-bg: #e8ecec;
+  --lux-pine-surface: #f7f9f8;
+  --lux-pine-surface-alt: #edf1f0;
+  --lux-pine-line: #c6d0ce;
+  --lux-pine-text: #1f2628;
+  --lux-pine-soft: #4e5c60;
+  --lux-pine-shadow: 0 16px 36px rgba(16, 24, 26, 0.12);
+  background: var(--lux-pine-bg);
+  color: var(--lux-pine-text);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+.lux-pine-page h1,
+.lux-pine-page h2,
+.lux-pine-page h3 {
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  line-height: 1.1;
+}
+
+.lux-pine-hero {
+  position: relative;
+  min-height: 92svh;
+}
+
+.lux-pine-hero-image {
+  width: 100%;
+  height: 92svh;
+  object-fit: cover;
+}
+
+.lux-pine-hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: linear-gradient(to bottom, rgba(7, 12, 13, 0.35), rgba(7, 12, 13, 0.72));
+  padding: 1.4rem;
+}
+
+.lux-pine-back {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.2rem;
+  background: rgba(246, 249, 248, 0.94);
+  color: #1e2527;
+  border: 1px solid #c5cecc;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.46rem 0.86rem;
+}
+
+.lux-pine-hero-copy {
+  max-width: 820px;
+}
+
+.lux-pine-eyebrow {
+  margin: 0;
+  color: rgba(241, 246, 245, 0.92);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.lux-pine-hero-copy h1 {
+  margin-top: 0.58rem;
+  color: #f5f8f7;
+  font-size: clamp(2.7rem, 7vw, 5.2rem);
+  font-weight: 800;
+}
+
+.lux-pine-hero-copy > p {
+  margin: 0.85rem auto 0;
+  max-width: 46ch;
+  color: rgba(241, 246, 245, 0.93);
+  font-size: clamp(1rem, 2.2vw, 1.18rem);
+}
+
+.lux-pine-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.75rem 1.16rem;
+}
+
+.lux-pine-btn-primary {
+  margin-top: 1.2rem;
+  background: #f4f8f7;
+  color: #1f2628;
+}
+
+.lux-pine-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 1.4rem 4.6rem;
+}
+
+.lux-pine-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 1.3rem;
+  align-items: start;
+}
+
+.lux-pine-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.lux-pine-summary {
+  background: var(--lux-pine-surface);
+  border: 1px solid var(--lux-pine-line);
+  border-radius: 1rem;
+  box-shadow: var(--lux-pine-shadow);
+  padding: 0.95rem 1rem;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lux-pine-summary p {
+  margin: 0;
+  color: var(--lux-pine-soft);
+  font-size: 0.92rem;
+}
+
+.lux-pine-section {
+  background: var(--lux-pine-surface);
+  border: 1px solid var(--lux-pine-line);
+  border-radius: 1rem;
+  padding: 1.45rem;
+}
+
+.lux-pine-section h2 {
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  font-weight: 700;
+}
+
+.lux-pine-section p {
+  margin-top: 0.72rem;
+  color: var(--lux-pine-soft);
+  max-width: 64ch;
+}
+
+.lux-pine-perfect-grid,
+.lux-pine-addons-grid {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.82rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lux-pine-perfect-grid article,
+.lux-pine-addons-grid article {
+  background: var(--lux-pine-surface-alt);
+  border: 1px solid var(--lux-pine-line);
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.lux-pine-perfect-grid h3,
+.lux-pine-addons-grid h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.lux-pine-perfect-grid p,
+.lux-pine-addons-grid p {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.lux-pine-top-gallery {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 140px;
+}
+
+.lux-pine-top-gallery .lux-pine-gallery-item.is-main {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.lux-pine-gallery {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lux-pine-gallery-item {
+  border: 0;
+  padding: 0;
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  border: 1px solid var(--lux-pine-line);
+  background: #fff;
+}
+
+.lux-pine-gallery-item img {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+  transition: transform 280ms ease;
+}
+
+.lux-pine-gallery-item:hover img {
+  transform: scale(1.045);
+}
+
+.lux-pine-amenities-grid {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.68rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lux-pine-amenities-grid li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--lux-pine-line);
+  border-radius: 0.82rem;
+  background: var(--lux-pine-surface-alt);
+  color: #3c484c;
+  padding: 0.72rem 0.76rem;
+  font-size: 0.9rem;
+}
+
+.lux-pine-amenities-grid li span {
+  color: #6f8386;
+  font-size: 0.52rem;
+}
+
+.lux-pine-booking {
+  position: sticky;
+  top: 1rem;
+  background: var(--lux-pine-surface);
+  border: 1px solid var(--lux-pine-line);
+  border-radius: 1rem;
+  box-shadow: var(--lux-pine-shadow);
+  padding: 1.2rem;
+}
+
+.lux-pine-rate {
+  margin: 0;
+  color: #5f7174;
+  font-size: 0.87rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.lux-pine-booking h2 {
+  margin-top: 0.45rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.lux-pine-booking-form {
+  margin-top: 0.84rem;
+  display: grid;
+  gap: 0.56rem;
+}
+
+.lux-pine-booking-form label {
+  color: #5c6d70;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lux-pine-booking-form input,
+.lux-pine-booking-form select {
+  border: 1px solid #c5cfcc;
+  border-radius: 0.72rem;
+  background: #fcfefd;
+  color: #202729;
+  padding: 0.72rem 0.75rem;
+  font: inherit;
+}
+
+.lux-pine-booking-form button {
+  margin-top: 0.34rem;
+  border: 0;
+  border-radius: 999px;
+  background: #1f2628;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.lux-pine-booking-note {
+  margin-top: 0.7rem;
+  color: #617376;
+  font-size: 0.84rem;
+}
+
+.lux-pine-final-cta {
+  background: linear-gradient(135deg, #e5ecea 0%, #f3f7f6 100%);
+  border: 1px solid var(--lux-pine-line);
+  border-radius: 1rem;
+  box-shadow: var(--lux-pine-shadow);
+  padding: 1.5rem;
+}
+
+.lux-pine-final-cta h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+}
+
+.lux-pine-final-cta p {
+  margin-top: 0.56rem;
+  color: var(--lux-pine-soft);
+}
+
+.lux-pine-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.lux-pine-lightbox.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lux-pine-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 9, 10, 0.86);
+}
+
+.lux-pine-lightbox-panel {
+  position: absolute;
+  inset: 5vh 4vw;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  gap: 0.75rem;
+}
+
+.lux-pine-lightbox-panel > img {
+  width: min(92vw, 1180px);
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 0.7rem;
+}
+
+.lux-pine-lightbox-close,
+.lux-pine-lightbox-nav {
+  border: 1px solid rgba(241, 246, 245, 0.45);
+  border-radius: 999px;
+  background: rgba(241, 246, 245, 0.08);
+  color: #f1f6f5;
+  cursor: pointer;
+}
+
+.lux-pine-lightbox-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1.2rem;
+}
+
+.lux-pine-lightbox-nav {
+  position: absolute;
+  top: calc(50% - 22px);
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 1.15rem;
+}
+
+.lux-pine-lightbox-nav.prev {
+  left: 0;
+}
+
+.lux-pine-lightbox-nav.next {
+  right: 0;
+}
+
+.lux-pine-thumb-strip {
+  width: min(92vw, 1180px);
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.lux-pine-thumb {
+  border: 1px solid rgba(241, 246, 245, 0.4);
+  border-radius: 0.55rem;
+  background: rgba(241, 246, 245, 0.08);
+  padding: 0;
+  width: 76px;
+  min-width: 76px;
+  height: 58px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.72;
+}
+
+.lux-pine-thumb.is-active {
+  opacity: 1;
+  border-color: rgba(241, 246, 245, 0.95);
+}
+
+.lux-pine-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 1040px) {
+  .lux-pine-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-pine-booking {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  .lux-pine-main {
+    padding-top: 2.9rem;
+  }
+
+  .lux-pine-summary,
+  .lux-pine-perfect-grid,
+  .lux-pine-addons-grid,
+  .lux-pine-gallery,
+  .lux-pine-amenities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-pine-top-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 150px;
+  }
+
+  .lux-pine-top-gallery .lux-pine-gallery-item.is-main {
+    grid-column: 1 / -1;
+  }
+
+  .lux-pine-gallery-item img {
+    height: 240px;
+  }
+
+  .lux-pine-lightbox-panel {
+    inset: 4vh 3vw;
+  }
+
+  .lux-pine-lightbox-nav {
+    top: auto;
+    bottom: 74px;
+  }
+
+  .lux-pine-hero-image,
+  .lux-pine-hero {
+    min-height: 86svh;
+    height: 86svh;
   }
 }

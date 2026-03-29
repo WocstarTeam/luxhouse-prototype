@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Pine indoor placeholder">
+  <rect width="800" height="600" fill="#e9eceb"/>
+  <rect x="24" y="24" width="752" height="552" rx="16" fill="#f5f7f6" stroke="#ccd3d0"/>
+  <text x="400" y="292" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="34" fill="#4d5e63">Pine Indoor</text>
+  <text x="400" y="332" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="18" fill="#748286">Placeholder</text>
+</svg>

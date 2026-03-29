@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Pine hero placeholder">
+  <defs>
+    <linearGradient id="pineHero" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22343a"/>
+      <stop offset="100%" stop-color="#4d5d63"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#pineHero)"/>
+  <text x="800" y="438" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="52" fill="#f2efe8">Pine &amp; Peace House</text>
+  <text x="800" y="492" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="22" fill="#d7d2c7">Alpine Visual Placeholder</text>
+</svg>
