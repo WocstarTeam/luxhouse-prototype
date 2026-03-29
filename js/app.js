@@ -622,6 +622,18 @@ const pineGalleryState = {
   touchEndX: null
 };
 
+const pinePlaceholderByFile = {
+  "living-alpine-living.jpg": "https://via.placeholder.com/800x600?text=Alpine+Living",
+  "fireplace-lounge.jpg": "https://via.placeholder.com/800x600?text=Fireplace",
+  "kitchen-dining-social.jpg": "https://via.placeholder.com/800x600?text=Social+Kitchen",
+  "bedroom-suite-calm.jpg": "https://via.placeholder.com/800x600?text=Suite+Retreat",
+  "office-library.jpg": "https://via.placeholder.com/800x600?text=Library+%26+Workspace",
+  "game-room-gathering.jpg": "https://via.placeholder.com/800x600?text=Game+Room",
+  "forest-views-deck.jpg": "https://via.placeholder.com/800x600?text=Forest+Views",
+  "hot-tub-patio.jpg": "https://via.placeholder.com/800x600?text=Hot+Tub",
+  "lake-beach-trail.jpg": "https://via.placeholder.com/800x600?text=Lake+%26+Trail"
+};
+
 function classifyPineImages(fileNames) {
   const indoorKeywords = [
     "living", "lounge", "fireplace", "bedroom", "bath", "bathroom",
@@ -651,8 +663,13 @@ function classifyPineImages(fileNames) {
 }
 
 function pineSourceForFile(file) {
+  if (pinePlaceholderByFile[file]) {
+    return pinePlaceholderByFile[file];
+  }
   const isOutdoor = /forest|deck|hottub|hot-tub|trail|beach|lake|exterior|outdoor|patio|pine|yard/i.test(file);
-  return isOutdoor ? "assets/images/placeholders/pine-outdoor.svg" : "assets/images/placeholders/pine-indoor.svg";
+  return isOutdoor
+    ? "https://via.placeholder.com/800x600?text=Pine+Outdoor+Experience"
+    : "https://via.placeholder.com/800x600?text=Pine+Indoor+Spaces";
 }
 
 function openPineLightbox(index) {
@@ -789,15 +806,15 @@ function initPinePage() {
   }
 
   const pineFiles = [
-    "living-room-placeholder.jpg",
-    "fireplace-lounge-placeholder.jpg",
-    "kitchen-dining-placeholder.jpg",
-    "bedroom-suite-placeholder.jpg",
-    "office-library-placeholder.jpg",
-    "game-room-placeholder.jpg",
-    "forest-deck-placeholder.jpg",
-    "hot-tub-patio-placeholder.jpg",
-    "lake-beach-placeholder.jpg"
+    "living-alpine-living.jpg",
+    "fireplace-lounge.jpg",
+    "kitchen-dining-social.jpg",
+    "bedroom-suite-calm.jpg",
+    "office-library.jpg",
+    "game-room-gathering.jpg",
+    "forest-views-deck.jpg",
+    "hot-tub-patio.jpg",
+    "lake-beach-trail.jpg"
   ];
 
   const classified = classifyPineImages(pineFiles);
