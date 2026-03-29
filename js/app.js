@@ -623,15 +623,15 @@ const pineGalleryState = {
 };
 
 const pinePlaceholderByFile = {
-  "living-alpine-living.jpg": "https://via.placeholder.com/800x600?text=Alpine+Living",
-  "fireplace-lounge.jpg": "https://via.placeholder.com/800x600?text=Fireplace",
-  "kitchen-dining-social.jpg": "https://via.placeholder.com/800x600?text=Social+Kitchen",
-  "bedroom-suite-calm.jpg": "https://via.placeholder.com/800x600?text=Suite+Retreat",
-  "office-library.jpg": "https://via.placeholder.com/800x600?text=Library+%26+Workspace",
-  "game-room-gathering.jpg": "https://via.placeholder.com/800x600?text=Game+Room",
-  "forest-views-deck.jpg": "https://via.placeholder.com/800x600?text=Forest+Views",
-  "hot-tub-patio.jpg": "https://via.placeholder.com/800x600?text=Hot+Tub",
-  "lake-beach-trail.jpg": "https://via.placeholder.com/800x600?text=Lake+%26+Trail"
+  "living-alpine-living.jpg": "https://via.placeholder.com/800x600?text=Alpine+Great+Room",
+  "fireplace-lounge.jpg": "https://via.placeholder.com/800x600?text=Hearth+Lounge",
+  "kitchen-dining-social.jpg": "https://via.placeholder.com/800x600?text=Chefs+Kitchen",
+  "bedroom-suite-calm.jpg": "https://via.placeholder.com/800x600?text=Primary+Suite",
+  "office-library.jpg": "https://via.placeholder.com/800x600?text=Quiet+Library",
+  "game-room-gathering.jpg": "https://via.placeholder.com/800x600?text=Game+Salon",
+  "forest-views-deck.jpg": "https://via.placeholder.com/800x600?text=Forest+View+Deck",
+  "hot-tub-patio.jpg": "https://via.placeholder.com/800x600?text=Cedar+Hot+Tub",
+  "lake-beach-trail.jpg": "https://via.placeholder.com/800x600?text=Lakeside+Access"
 };
 
 function classifyPineImages(fileNames) {
@@ -668,8 +668,8 @@ function pineSourceForFile(file) {
   }
   const isOutdoor = /forest|deck|hottub|hot-tub|trail|beach|lake|exterior|outdoor|patio|pine|yard/i.test(file);
   return isOutdoor
-    ? "https://via.placeholder.com/800x600?text=Pine+Outdoor+Experience"
-    : "https://via.placeholder.com/800x600?text=Pine+Indoor+Spaces";
+    ? "https://via.placeholder.com/800x600?text=Alpine+Outdoor+Moments"
+    : "https://via.placeholder.com/800x600?text=Alpine+Interior+Spaces";
 }
 
 function openPineLightbox(index) {
