@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Summary | LuxHouse Collection</title>
+  <meta name="description" content="Review your LuxHouse stay details and continue to payment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="lux-booking-page">
+  <main class="lux-booking-page-main">
+    <a class="lux-booking-page-back" href="index.html">Back to Home</a>
+    <section class="lux-booking-page-card">
+      <p class="lux-booking-kicker">Booking Summary</p>
+      <h1>Review Your Stay</h1>
+
+      <div class="lux-booking-summary-grid">
+        <article>
+          <h2>Property</h2>
+          <p id="summaryDestination">-</p>
+        </article>
+        <article>
+          <h2>Check-in</h2>
+          <p id="summaryCheckin">-</p>
+        </article>
+        <article>
+          <h2>Check-out</h2>
+          <p id="summaryCheckout">-</p>
+        </article>
+        <article>
+          <h2>Guests</h2>
+          <p id="summaryGuests">-</p>
+        </article>
+      </div>
+
+      <button type="button" id="proceedToPaymentBtn" class="lux-booking-primary">Proceed to Payment</button>
+
+      <section id="paymentSection" class="lux-payment-section" hidden>
+        <h2>Payment</h2>
+        <p>You're one step away from confirming your reservation.</p>
+        <button type="button" id="payConfirmBtn" class="lux-booking-primary">Pay &amp; Confirm</button>
+      </section>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

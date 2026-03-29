@@ -19,7 +19,7 @@
         <a href="#destinations">Guesthouses</a>
         <a href="#collections">Collections</a>
         <a href="#homes">Why LuxHouse</a>
-        <a href="#inquire">Book</a>
+        <a href="#" data-open-booking-modal>Book</a>
       </div>
     </nav>
 
@@ -144,13 +144,56 @@
     <section class="inquire" id="inquire">
       <h2>Plan your next stay</h2>
       <p>Tell us your dates, destination, and group size. We will match you with the right guesthouse and add-on plan.</p>
-      <button type="button" id="inquiryButton">Get In Touch</button>
+      <button type="button" id="inquiryButton" data-open-booking-modal>Book Now</button>
     </section>
   </main>
 
   <footer class="site-footer">
     <p>LuxHouse - A Collection of Happy Places.</p>
   </footer>
+
+  <!-- Booking Modal -->
+  <div class="lux-booking-modal" id="bookingModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+    <div class="lux-booking-backdrop" data-close-booking-modal></div>
+    <section class="lux-booking-panel">
+      <button type="button" class="lux-booking-close" aria-label="Close booking" data-close-booking-modal>&times;</button>
+
+      <div class="lux-booking-header">
+        <p class="lux-booking-kicker">The LuxHouse Collection</p>
+        <h2 id="bookingModalTitle">Start Your Booking</h2>
+        <p>Choose your destination and dates to check live-style availability.</p>
+      </div>
+
+      <form id="bookingModalForm" class="lux-booking-form" action="#" method="get">
+        <label for="modalDestination">Destination</label>
+        <select id="modalDestination" name="destination" required>
+          <option value="">Select destination</option>
+          <option value="cactus">Cactus &amp; Chill House</option>
+          <option value="pine">Pine &amp; Peace House</option>
+          <option value="third">Third Property</option>
+        </select>
+
+        <label for="modalCheckin">Check-in</label>
+        <input id="modalCheckin" name="checkin" type="date" required>
+
+        <label for="modalCheckout">Check-out</label>
+        <input id="modalCheckout" name="checkout" type="date" required>
+
+        <label for="modalGuests">Guests</label>
+        <input id="modalGuests" name="guests" type="number" min="1" max="20" value="6" required>
+
+        <button type="submit" class="lux-booking-primary">Check Availability</button>
+      </form>
+
+      <p class="lux-booking-status" id="bookingStatus" aria-live="polite"></p>
+
+      <section class="lux-booking-step-two" id="bookingStepTwo" hidden>
+        <label for="bookingMessage">Tell us more about your stay (optional)</label>
+        <textarea id="bookingMessage" rows="4" placeholder="Tell us more about your stay (optional)"></textarea>
+        <button type="button" id="continueBookingBtn" class="lux-booking-primary" disabled>Continue to Booking</button>
+      </section>
+    </section>
+  </div>
 
   <script src="js/app.js"></script>
 </body>
