@@ -434,6 +434,146 @@ main {
   font-size: 0.9rem;
 }
 
+.property-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.property-page {
+  background: #f7f3ed;
+  color: #201a16;
+}
+
+.cactus-hero {
+  position: relative;
+}
+
+.cactus-hero img {
+  width: 100%;
+  height: min(72vh, 760px);
+  object-fit: cover;
+}
+
+.cactus-backlink {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.2rem;
+  z-index: 2;
+  background: rgba(245, 239, 232, 0.94);
+  color: #201a16;
+  border: 1px solid #d9cdbd;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 0.83rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+}
+
+.cactus-main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 3rem 1.4rem 4rem;
+}
+
+.cactus-intro h1 {
+  font-size: clamp(2.2rem, 5vw, 3.9rem);
+  margin-top: 0.35rem;
+}
+
+.cactus-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7a5f49;
+}
+
+.cactus-location {
+  margin-top: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #5f4b3a;
+}
+
+.cactus-description {
+  margin-top: 1.1rem;
+  max-width: 68ch;
+  color: #5f5044;
+}
+
+.cactus-block {
+  margin-top: 2.4rem;
+  background: #fffdf9;
+  border: 1px solid #dfd2c3;
+  border-radius: 1rem;
+  padding: 1.35rem;
+}
+
+.cactus-block h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+}
+
+.cactus-amenities {
+  margin: 1rem 0 0;
+  padding-left: 1.1rem;
+  color: #4f4339;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cactus-gallery {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.cactus-gallery img {
+  border-radius: 0.8rem;
+  min-height: 220px;
+  border: 1px solid #dfd2c3;
+}
+
+.cactus-booking-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 620px;
+}
+
+.cactus-booking-form label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b5544;
+  font-weight: 700;
+}
+
+.cactus-booking-form input,
+.cactus-booking-form select {
+  border: 1px solid #d7c9ba;
+  background: #fffcf7;
+  border-radius: 0.7rem;
+  padding: 0.72rem 0.78rem;
+  font: inherit;
+  color: #201a16;
+}
+
+.cactus-booking-form button {
+  margin-top: 0.45rem;
+  border: 0;
+  border-radius: 999px;
+  background: #201a16;
+  color: #fff;
+  padding: 0.8rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 @media (max-width: 980px) {
   .destination-grid,
   .pillars {
@@ -447,6 +587,11 @@ main {
   .booking-submit {
     min-height: 2.7rem;
     grid-column: 1 / -1;
+  }
+
+  .cactus-amenities,
+  .cactus-gallery {
+    grid-template-columns: 1fr;
   }
 }
 
