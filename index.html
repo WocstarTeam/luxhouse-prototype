@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxHouse Collection | A Collection of Happy Places</title>
+  <meta name="description" content="The LuxHouse Collection brings together design-led guesthouses for groups. Check dates, guests, and destination in one flow.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="hero-shell" id="top">
+    <nav class="top-nav">
+      <a class="brand" href="#top">LuxHouse Collection</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <div class="nav-links" id="site-nav">
+        <a href="#destinations">Guesthouses</a>
+        <a href="#collections">Collections</a>
+        <a href="#homes">Why LuxHouse</a>
+        <a href="#inquire">Book</a>
+      </div>
+    </nav>
+
+    <section class="hero-content" aria-label="Hero content">
+      <p class="hero-kicker">Design philosophy: Luxury Familiarity</p>
+      <h1>Three guesthouses. One signature LuxHouse vibe.</h1>
+      <p>Where the desert meets a deep breath, alpine mornings meet social luxury, and every stay feels like home with elevated edges.</p>
+
+      <form class="booking-bar" id="bookingForm" action="#" method="get">
+        <label class="booking-field destination-field" for="destinationSelect">
+          <span class="field-label">Destination</span>
+          <select id="destinationSelect" name="destination" required>
+            <option value="">Choose one</option>
+            <option value="cactus-and-chill">Cactus and Chill - Mesa, Arizona</option>
+            <option value="pine-and-peace">Pine and Peace - Carnelian Bay, Lake Tahoe</option>
+            <option value="sunstone-social">Sunstone Social - Scottsdale, Arizona</option>
+          </select>
+        </label>
+
+        <label class="booking-field" for="checkInDate">
+          <span class="field-label">Check-in</span>
+          <input id="checkInDate" name="checkin" type="date" required>
+        </label>
+
+        <label class="booking-field" for="checkOutDate">
+          <span class="field-label">Check-out</span>
+          <input id="checkOutDate" name="checkout" type="date" required>
+        </label>
+
+        <div class="booking-field guest-field" role="group" aria-label="Guest count">
+          <span class="field-label">Guests</span>
+          <div class="guest-controls">
+            <button type="button" id="decreaseGuests" aria-label="Decrease guests">-</button>
+            <input id="guestCount" name="guests" type="number" value="6" min="1" max="20" readonly>
+            <button type="button" id="increaseGuests" aria-label="Increase guests">+</button>
+          </div>
+        </div>
+
+        <button class="booking-submit" type="submit">Check Availability</button>
+      </form>
+      <p class="booking-feedback" id="bookingFeedback" aria-live="polite"></p>
+    </section>
+  </header>
+
+  <main>
+    <section class="intro" id="destinations">
+      <h2>The LuxHouse Collection</h2>
+      <p>Our story is a collection of happy places, each built for shared memory-making, quiet reset, and celebration under one roof.</p>
+
+      <div class="destination-grid">
+        <article>
+          <img src="Firepit%20Closeup.png" alt="Cactus and Chill firepit view">
+          <h3>The Cactus and Chill House</h3>
+          <p class="location">Mesa, Arizona</p>
+          <p>Desert textures, warm evenings, and outdoor living made for reconnection.</p>
+        </article>
+        <article>
+          <img src="Primary%20Bedroom.jpg" alt="Pine and Peace bedroom suite">
+          <h3>The Pine and Peace House</h3>
+          <p class="location">Carnelian Bay, Lake Tahoe</p>
+          <p>Elevated alpine living in the heart of the Sierras, with room for every season.</p>
+        </article>
+        <article>
+          <img src="Living%20Room%20Closeup.png" alt="Sunstone Social living room">
+          <h3>The Sunstone Social House</h3>
+          <p class="location">Scottsdale, Arizona</p>
+          <p>A social-first guesthouse with breezy flow, lounge moments, and long-table energy.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="collections" id="collections">
+      <div class="section-head">
+        <h2>Exactly what your trip needs</h2>
+        <p>From celebration weekends to restorative escapes, choose the collection that fits your people.</p>
+      </div>
+
+      <div class="collection-tabs" role="tablist" aria-label="Collections">
+        <button class="tab is-active" type="button" data-tab="fan">Fan Favorites</button>
+        <button class="tab" type="button" data-tab="new">New Homes</button>
+        <button class="tab" type="button" data-tab="group">Group Estates</button>
+      </div>
+
+      <article class="collection-hero" id="collectionHero">
+        <img id="collectionImage" src="Firepit%20Solo.png" alt="Featured collection home">
+        <div class="collection-copy">
+          <p id="collectionKicker">Most booked this season</p>
+          <h3 id="collectionTitle">Fan Favorites</h3>
+          <p id="collectionText">Guest-loved homes with standout layouts, elevated amenities, and signature LuxHouse hosting details.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="homes" id="homes">
+      <h2>The LuxHouse Standard</h2>
+      <div class="pillars">
+        <article>
+          <h3>Homes for groups</h3>
+          <p>Open gathering zones, restful private rooms, and layouts that hold both fun and calm.</p>
+        </article>
+        <article>
+          <h3>Add-ons that matter</h3>
+          <p>Welcome kits, chill essentials, and extra experiences that make each stay yours.</p>
+        </article>
+        <article>
+          <h3>Support with intention</h3>
+          <p>Fast communication before and during your stay, with thoughtful local guidance.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="social-proof">
+      <h2>What guests are saying</h2>
+      <blockquote>
+        "The home felt luxurious but still familiar. Every room had personality and the flow was perfect for our group."
+      </blockquote>
+      <p class="quote-by">Guest Review - Cactus and Chill</p>
+    </section>
+
+    <section class="inquire" id="inquire">
+      <h2>Plan your next stay</h2>
+      <p>Tell us your dates, destination, and group size. We will match you with the right guesthouse and add-on plan.</p>
+      <button type="button" id="inquiryButton">Get In Touch</button>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>LuxHouse - A Collection of Happy Places.</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

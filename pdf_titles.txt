@@ -1,0 +1,161 @@
+Website Project Plan
+STEP 2: FORM SUBMISSION
+STEP 3: YOU RESPOND
+STEP 4: AFTER PAYMENT
+WEEK 1:
+WEEK 2:
+1. The Design Philosophy: "Luxury Familiarity"
+Page 1: Landing Page (The LuxHouse Collection\
+Page 2 & 3: Individual Property Pages (Mesa & Tahoe\
+Page 4: Merchandise & "The Chill Shop"
+Page 5: Our Story
+2. Page-by-Page Layout & Components
+3. The "Airbnb" Booking Experience (UX Elements\
+Integrating with Hospitable (PMS\
+Payments & QuickBooks Integration
+4. Technical Integration (The "Brains" of the Site\
+Your Next Step:
+5. Contact & Emergency Page
+Gemini Plan
+Chap GPT Plan
+SECTION 1: SHOP BY CATEGORY
+1. Search Bar
+2. Property Selection
+3. Booking Flow (Airbnb-style\
+HOW IT WORKS:
+OPTION B (ADVANCED\
+IMPLEMENTATION OPTIONS:
+PAYMENT PROCESSOR
+ACCOUNTING INTEGRATION
+HOW:
+General / Founders
+Operations
+Cleaning Requests
+Maintenance
+WEBSITE BUILD REQUIREMENTS
+CORE INTEGRATIONS
+GLOBAL:
+EACH PROPERTY PAGE:
+BOOKING SYSTEM:
+E-COMMERCE:
+KEY COMPONENTS
+1. The Joshua Tree House (thejoshuatreehouse.com\
+2. Wander (wander.com\
+3. AutoCamp (autocamp.com\
+4. The June Motel (thejunemotel.com\
+5. AvantStay (avantstay.com\
+6. The Vintage Round Top (thevintageroundtop.com\
+7. Dunton Destinations (duntondestinations.com\
+8. Stay Duvet (stayduvet.com\
+9. Inness (inness.co\
+10. The Graham Residence (thegrahamresidence.com\
+What to show your designer:
+Good Website Examples
+PART 1: WEBSITE WIREFRAMES (DESIGN BLUEPRINT\
+HERO
+BRAND SECTION
+FEATURED PROPERTIES
+TRUST SECTION
+EXPERIENCES SECTION
+EMAIL CAPTURE
+TITLE
+DESCRIPTION
+ADD-ONS COPY
+WHY WE CREATED THIS
+HEADER
+INTRO
+WELCOME KITS
+EXPERIENCES
+CHILL COLLECTION
+BODY
+TEAM
+SUBTEXT
+MICROCOPY
+PAYMENT TEXT
+TEXT
+EMERGENCY
+Cactus and Chill Sample Copy
+Where the desert meets a deep breath.
+The Vision
+The Great Room: A Canvas for Connection
+The Master Suite & Private Spa
+The Space
+The Curated Reading Nook
+The Midnight "Beachmas" Kit
+Signature "Chill" Amenities
+The Desert Oasis (Outdoor Living\
+[Check Availability & Book Your Stay]
+Elevate Your Stay: The LuxHouse Add-ons
+The Cactus and Chill House | Mesa, Arizona
+Pine and Peace Sample copy
+Elevated Alpine Living in the Heart of the Sierras.
+The Hearth & Great Room
+The Library & Executive Suite
+The Residence
+The Game Room: Social Luxury
+The Midnight Soak
+Alpine Amenities & Play
+The North Shore Lifestyle
+The LuxHouse Alpine Collection: Add-ons
+The Pine and Peace House | Carnelian Bay, Lake Tahoe
+Welcome Guides Section
+Hospitable + Stripe + QuickBooks integration
+Goal:
+Option A: API Integration (BEST\
+Option B: iCal Sync (BACKUP OPTION\
+Option A: DIRECT INTEGRATION (EASIEST\
+Option B: USE MIDDLEWARE (MORE CONTROL\
+Option A: EMBED BOOKING WIDGET (EASIEST\
+Option B: CUSTOM UI + API (ADVANCED\
+RULES:
+Need Lodgify + Hospitable
+Recommended Options:
+Stack:
+OPTION A: PROFESSIONAL (RECOMMENDED\
+Use:
+FLOW:
+Build:
+Step 1:
+Step 2:
+Our Story Copy
+Our Story: A Collection of Happy Places
+Founded by Dave & Gayle
+The Tahoe Legacy: Pine and Peace
+The Desert Discovery: Cactus and Chill
+The LuxHouse Standard
+Meet the Team
+LODGIFY SETUP
+In Lodgify:
+BASIC INFO
+DETAILS
+AMENITIES
+PHOTOS
+DESCRIPTION (paste from earlier copy\
+For EACH property:
+Go to:
+Create categories:
+IMPORTANT SETTINGS:
+Configure:
+In Hospitable:
+Option A (Best\
+Option B
+Then:
+Give this to your web designer:
+AIRBNB-STYLE BOOKING UX
+STEP 1: LANDING PAGE
+STEP 2: PROPERTY PAGE
+TOP SECTION:
+RIGHT SIDE (STICKY BOX\
+SCREEN 1: Confirm Dates
+SCREEN 2: Add-ons (THIS IS YOUR DIFFERENTIATOR\
+SCREEN 3: Guest Info
+SCREEN 4: Payment
+SCREEN 5: CONFIRMATION
+AIRBNB-STYLE BOOKING UX (EXACT DESIGN\
+Visual mockups
+Design:
+UX DETAILS:
+COLORS
+FONTS
+BUTTON STYLE
+SPACING
