@@ -57,7 +57,7 @@ a {
   min-height: 100svh;
   background:
     linear-gradient(160deg, rgba(18, 28, 25, 0.66) 8%, rgba(39, 20, 11, 0.65) 68%),
-    url("../Firepit%20Seating.png") center / cover no-repeat;
+    url("../assets/images/placeholders/placeholder-hero.svg") center / cover no-repeat;
   color: #fff;
   padding: 1.2rem 1.4rem 3rem;
   position: relative;

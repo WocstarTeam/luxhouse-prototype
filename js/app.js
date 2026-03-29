@@ -30,19 +30,19 @@ const blockedDateRange = {
 
 const collectionData = {
   fan: {
-    image: "Firepit%20Solo.png",
+    image: "assets/images/placeholders/placeholder-800x600.svg",
     kicker: "Most booked this season",
     title: "Fan Favorites",
     text: "Guest-loved homes with standout layouts, elevated amenities, and signature LuxHouse hosting details."
   },
   new: {
-    image: "Primary%20closeup.png",
+    image: "assets/images/placeholders/placeholder-800x600.svg",
     kicker: "Freshly launched",
     title: "New Homes",
     text: "Recently added stays with updated interiors, thoughtful extras, and destination-first design."
   },
   group: {
-    image: "Firepit%20Seating.png",
+    image: "assets/images/placeholders/placeholder-800x600.svg",
     kicker: "Built for gatherings",
     title: "Group Estates",
     text: "Large-format homes designed for reunions, retreats, and milestone weekends with room to spread out."

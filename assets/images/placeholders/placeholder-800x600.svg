@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Placeholder image">
+  <rect width="800" height="600" fill="#ede2d3"/>
+  <rect x="24" y="24" width="752" height="552" rx="18" fill="#f9f2e8" stroke="#d8c7b2"/>
+  <text x="400" y="290" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="30" fill="#6f5d4c">Image Coming Soon</text>
+  <text x="400" y="328" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="16" fill="#8a7764">Property Visual Placeholder</text>
+</svg>

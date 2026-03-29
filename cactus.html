@@ -15,7 +15,8 @@
   <header class="lux-cactus-hero" id="top">
     <img
       class="lux-cactus-hero-image"
-      src="Firepit%20Seating.png"
+      src="assets/images/cactus/Firepit%20Seating.png"
+      onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-800x600.svg';"
       alt="Cactus and Chill House at sunset"
     >
     <div class="lux-cactus-hero-overlay">
@@ -198,19 +199,8 @@
         "Primary desk.png",
         "Firepit Closeup.png",
         "Firepit Seating.png",
-        "Firepit Solo.png",
-        "backyard-pool-placeholder.jpg"
+        "Firepit Solo.png"
       ];
-
-      function makeFallbackDataUri(label) {
-        const text = encodeURIComponent(label);
-        return "data:image/svg+xml;charset=UTF-8," +
-          "<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>" +
-          "<rect width='1200' height='800' fill='%23ece2d5'/>" +
-          "<text x='50%' y='50%' text-anchor='middle' dominant-baseline='middle' font-family='Manrope,Arial,sans-serif' font-size='34' fill='%23615043'>" +
-          text +
-          "</text></svg>";
-      }
 
       function classify(file) {
         const name = file.toLowerCase();
@@ -224,7 +214,7 @@
       }
 
       function srcFromFile(file) {
-        return file.replace(/ /g, "%20");
+        return "assets/images/cactus/" + file.replace(/ /g, "%20");
       }
 
       function cleanLabel(file) {
@@ -244,7 +234,7 @@
         img.alt = cleanLabel(file) + " at Cactus and Chill House";
         img.onerror = function () {
           this.onerror = null;
-          this.src = makeFallbackDataUri(cleanLabel(file));
+          this.src = "assets/images/placeholders/placeholder-800x600.svg";
         };
 
         figure.appendChild(img);
