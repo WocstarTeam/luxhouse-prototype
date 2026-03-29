@@ -1,4 +1,8 @@
-﻿const menuToggle = document.querySelector(".menu-toggle");
+﻿// =========================================================
+// LuxHouse Prototype - Core Interactions
+// =========================================================
+
+const menuToggle = document.querySelector(".menu-toggle");
 const navLinks = document.querySelector(".nav-links");
 const inquiryButton = document.getElementById("inquiryButton");
 const tabs = document.querySelectorAll(".tab");
@@ -11,6 +15,10 @@ const guestCount = document.getElementById("guestCount");
 const increaseGuests = document.getElementById("increaseGuests");
 const decreaseGuests = document.getElementById("decreaseGuests");
 const bookingFeedback = document.getElementById("bookingFeedback");
+
+// =========================================================
+// Booking Modal Elements
+// =========================================================
 
 const bookingModal = document.getElementById("bookingModal");
 const bookingModalForm = document.getElementById("bookingModalForm");
@@ -63,6 +71,10 @@ const modalDestinationLabels = {
 
 let modalAvailabilityReady = false;
 
+// =========================================================
+// Utility
+// =========================================================
+
 function datesOverlap(startA, endA, startB, endB) {
   const aStart = new Date(startA);
   const aEnd = new Date(endA);
@@ -71,12 +83,25 @@ function datesOverlap(startA, endA, startB, endB) {
   return aStart <= bEnd && bStart <= aEnd;
 }
 
+function imageSourceFromCactus(fileName) {
+  return `assets/images/cactus/${fileName.replace(/ /g, "%20")}`;
+}
+
+function makeImageLabel(fileName) {
+  return fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim();
+}
+
+// =========================================================
+// Booking Modal API
+// =========================================================
+
 function openBookingModal() {
   if (!bookingModal) {
     return;
   }
 
   modalAvailabilityReady = false;
+
   if (bookingModalForm) {
     bookingModalForm.reset();
   }
@@ -106,7 +131,6 @@ function closeBookingModal() {
   if (!bookingModal) {
     return;
   }
-
   bookingModal.classList.remove("is-open");
   bookingModal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-open");
@@ -116,14 +140,11 @@ function setBookingStatus(message, type) {
   if (!bookingStatus) {
     return;
   }
-
   bookingStatus.textContent = message;
   bookingStatus.classList.remove("is-error", "is-success");
-
   if (type === "error") {
     bookingStatus.classList.add("is-error");
   }
-
   if (type === "success") {
     bookingStatus.classList.add("is-success");
   }
@@ -134,7 +155,7 @@ function checkAvailability(event) {
     event.preventDefault();
   }
 
-  if (!bookingModalForm || !modalDestination || !modalCheckin || !modalCheckout || !modalGuests || !continueBookingBtn || !bookingStepTwo) {
+  if (!modalDestination || !modalCheckin || !modalCheckout || !modalGuests || !continueBookingBtn || !bookingStepTwo) {
     return;
   }
 
@@ -188,7 +209,7 @@ function handleBookingRedirect() {
 
 function handlePayment() {
   // Integrate Stripe Checkout or PaymentIntent here.
-  // Use booking details and amount data from the backend when available.
+  // Wire this button to your backend endpoint for secure payment session creation.
   window.alert("Stripe integration placeholder: Integrate Stripe Checkout or PaymentIntent here.");
 }
 
@@ -205,9 +226,7 @@ function initBookingModalEvents() {
   });
 
   document.querySelectorAll("[data-close-booking-modal]").forEach((trigger) => {
-    trigger.addEventListener("click", () => {
-      closeBookingModal();
-    });
+    trigger.addEventListener("click", closeBookingModal);
   });
 
   if (bookingModalForm) {
@@ -224,6 +243,10 @@ function initBookingModalEvents() {
     }
   });
 }
+
+// =========================================================
+// Booking Summary Page
+// =========================================================
 
 function initBookingPageSummary() {
   const summaryDestination = document.getElementById("summaryDestination");
@@ -259,6 +282,324 @@ function initBookingPageSummary() {
     payConfirmBtn.addEventListener("click", handlePayment);
   }
 }
+
+// =========================================================
+// Cactus Gallery + Lightbox
+// =========================================================
+
+const cactusGalleryState = {
+  images: [],
+  currentIndex: 0,
+  touchStartX: null,
+  touchEndX: null
+};
+
+function classifyImages(fileNames) {
+  const indoorKeywords = [
+    "living", "kitchen", "dining", "bedroom", "bath", "bathroom", "lounge", "suite", "interior", "room"
+  ];
+  const outdoorKeywords = [
+    "pool", "garden", "backyard", "bbq", "grill", "firepit", "exterior", "outdoor", "patio", "yard"
+  ];
+
+  const result = { indoor: [], outdoor: [] };
+
+  fileNames.forEach((file) => {
+    const lower = file.toLowerCase();
+    if (outdoorKeywords.some((keyword) => lower.includes(keyword))) {
+      result.outdoor.push(file);
+      return;
+    }
+    if (indoorKeywords.some((keyword) => lower.includes(keyword))) {
+      result.indoor.push(file);
+      return;
+    }
+    result.indoor.push(file);
+  });
+
+  return result;
+}
+
+function openLightbox(index) {
+  const lightbox = document.getElementById("cactusLightbox");
+  if (!lightbox || !cactusGalleryState.images.length) {
+    return;
+  }
+
+  cactusGalleryState.currentIndex = index;
+  lightbox.classList.add("is-open");
+  lightbox.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  updateLightboxView();
+}
+
+function closeLightbox() {
+  const lightbox = document.getElementById("cactusLightbox");
+  if (!lightbox) {
+    return;
+  }
+
+  lightbox.classList.remove("is-open");
+  lightbox.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
+function showNextImage() {
+  if (!cactusGalleryState.images.length) {
+    return;
+  }
+  cactusGalleryState.currentIndex = (cactusGalleryState.currentIndex + 1) % cactusGalleryState.images.length;
+  updateLightboxView();
+}
+
+function showPrevImage() {
+  if (!cactusGalleryState.images.length) {
+    return;
+  }
+  cactusGalleryState.currentIndex = (cactusGalleryState.currentIndex - 1 + cactusGalleryState.images.length) % cactusGalleryState.images.length;
+  updateLightboxView();
+}
+
+function handleSwipe() {
+  if (cactusGalleryState.touchStartX === null || cactusGalleryState.touchEndX === null) {
+    return;
+  }
+
+  const deltaX = cactusGalleryState.touchStartX - cactusGalleryState.touchEndX;
+  const threshold = 50;
+
+  if (deltaX > threshold) {
+    showNextImage();
+  } else if (deltaX < -threshold) {
+    showPrevImage();
+  }
+
+  cactusGalleryState.touchStartX = null;
+  cactusGalleryState.touchEndX = null;
+}
+
+function createCactusGalleryItem(fileName, index) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "lux-cactus-gallery-item";
+  button.setAttribute("aria-label", `Open image ${index + 1}`);
+
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.src = imageSourceFromCactus(fileName);
+  img.alt = `${makeImageLabel(fileName)} at Cactus & Chill House`;
+  img.onerror = function () {
+    this.onerror = null;
+    this.src = "assets/images/placeholders/placeholder-800x600.svg";
+  };
+
+  button.addEventListener("click", () => {
+    openLightbox(index);
+  });
+
+  button.appendChild(img);
+  return button;
+}
+
+function createCactusTopItem(fileName, index, isMain) {
+  const item = createCactusGalleryItem(fileName, index);
+  if (isMain) {
+    item.classList.add("is-main");
+  }
+  return item;
+}
+
+function renderCactusSections(classified) {
+  const indoorTarget = document.getElementById("luxCactusIndoorGallery");
+  const outdoorTarget = document.getElementById("luxCactusOutdoorGallery");
+  const topTarget = document.getElementById("cactusTopGallery");
+
+  if (!indoorTarget || !outdoorTarget || !topTarget) {
+    return;
+  }
+
+  indoorTarget.innerHTML = "";
+  outdoorTarget.innerHTML = "";
+  topTarget.innerHTML = "";
+
+  if (!classified.indoor.length) {
+    classified.indoor.push("indoor-placeholder.jpg");
+  }
+
+  if (!classified.outdoor.length) {
+    classified.outdoor.push("outdoor-placeholder.jpg");
+  }
+
+  const ordered = [...classified.outdoor, ...classified.indoor];
+  cactusGalleryState.images = ordered;
+
+  ordered.forEach((file, index) => {
+    if (index < 5) {
+      topTarget.appendChild(createCactusTopItem(file, index, index === 0));
+    }
+  });
+
+  classified.indoor.forEach((file) => {
+    const index = cactusGalleryState.images.indexOf(file);
+    indoorTarget.appendChild(createCactusGalleryItem(file, index));
+  });
+
+  classified.outdoor.forEach((file) => {
+    const index = cactusGalleryState.images.indexOf(file);
+    outdoorTarget.appendChild(createCactusGalleryItem(file, index));
+  });
+
+  renderLightboxThumbs();
+}
+
+function renderLightboxThumbs() {
+  const thumbStrip = document.getElementById("cactusThumbStrip");
+  if (!thumbStrip) {
+    return;
+  }
+
+  thumbStrip.innerHTML = "";
+
+  cactusGalleryState.images.forEach((file, index) => {
+    const thumb = document.createElement("button");
+    thumb.type = "button";
+    thumb.className = "lux-cactus-thumb";
+    thumb.setAttribute("aria-label", `View image ${index + 1}`);
+
+    const img = document.createElement("img");
+    img.src = imageSourceFromCactus(file);
+    img.alt = makeImageLabel(file);
+    img.onerror = function () {
+      this.onerror = null;
+      this.src = "assets/images/placeholders/placeholder-600x400.svg";
+    };
+
+    thumb.addEventListener("click", () => {
+      cactusGalleryState.currentIndex = index;
+      updateLightboxView();
+    });
+
+    thumb.appendChild(img);
+    thumbStrip.appendChild(thumb);
+  });
+}
+
+function updateLightboxView() {
+  const imageEl = document.getElementById("cactusLightboxImage");
+  const thumbs = document.querySelectorAll(".lux-cactus-thumb");
+
+  if (!imageEl || !cactusGalleryState.images.length) {
+    return;
+  }
+
+  const fileName = cactusGalleryState.images[cactusGalleryState.currentIndex];
+  imageEl.src = imageSourceFromCactus(fileName);
+  imageEl.alt = `${makeImageLabel(fileName)} at Cactus & Chill House`;
+  imageEl.onerror = function () {
+    this.onerror = null;
+    this.src = "assets/images/placeholders/placeholder-800x600.svg";
+  };
+
+  thumbs.forEach((thumb, index) => {
+    thumb.classList.toggle("is-active", index === cactusGalleryState.currentIndex);
+  });
+}
+
+function initCactusPage() {
+  const topGallery = document.getElementById("cactusTopGallery");
+  if (!topGallery) {
+    return;
+  }
+
+  const cactusFiles = [
+    "Living Room Closeup.png",
+    "Kitchen Vibrant.png",
+    "Primary Bedroom.jpg",
+    "Primary Bathroom Vibrant.png",
+    "Primary closeup.png",
+    "Primary desk.png",
+    "Firepit Closeup.png",
+    "Firepit Seating.png",
+    "Firepit Solo.png"
+  ];
+
+  const classified = classifyImages(cactusFiles);
+  renderCactusSections(classified);
+
+  const closeTriggers = document.querySelectorAll("[data-cactus-close-lightbox]");
+  closeTriggers.forEach((trigger) => trigger.addEventListener("click", closeLightbox));
+
+  const nextBtn = document.getElementById("cactusNextBtn");
+  const prevBtn = document.getElementById("cactusPrevBtn");
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", showNextImage);
+  }
+  if (prevBtn) {
+    prevBtn.addEventListener("click", showPrevImage);
+  }
+
+  const lightboxPanel = document.querySelector(".lux-cactus-lightbox-panel");
+  if (lightboxPanel) {
+    lightboxPanel.addEventListener("touchstart", (event) => {
+      cactusGalleryState.touchStartX = event.changedTouches[0].screenX;
+    }, { passive: true });
+
+    lightboxPanel.addEventListener("touchend", (event) => {
+      cactusGalleryState.touchEndX = event.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const lightbox = document.getElementById("cactusLightbox");
+    if (!lightbox || !lightbox.classList.contains("is-open")) {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      closeLightbox();
+    } else if (event.key === "ArrowRight") {
+      showNextImage();
+    } else if (event.key === "ArrowLeft") {
+      showPrevImage();
+    }
+  });
+
+  const cactusForm = document.getElementById("cactusBookingForm");
+  if (cactusForm) {
+    cactusForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const checkin = document.getElementById("luxCactusCheckin");
+      const checkout = document.getElementById("luxCactusCheckout");
+      const guests = document.getElementById("luxCactusGuests");
+
+      if (!checkin || !checkout || !guests || !checkin.value || !checkout.value || !guests.value) {
+        window.alert("Please complete check-in, check-out, and guests.");
+        return;
+      }
+
+      if (new Date(checkout.value) <= new Date(checkin.value)) {
+        window.alert("Check-out must be later than check-in.");
+        return;
+      }
+
+      const params = new URLSearchParams({
+        destination: "cactus",
+        checkin: checkin.value,
+        checkout: checkout.value,
+        guests: guests.value
+      });
+
+      window.location.href = `booking.html?${params.toString()}`;
+    });
+  }
+}
+
+// =========================================================
+// Homepage interactions
+// =========================================================
 
 if (menuToggle && navLinks) {
   menuToggle.addEventListener("click", () => {
@@ -340,9 +681,17 @@ if (inquiryButton) {
 
 initBookingModalEvents();
 initBookingPageSummary();
+initCactusPage();
 
+// Expose required API surface
 window.openBookingModal = openBookingModal;
 window.closeBookingModal = closeBookingModal;
 window.checkAvailability = checkAvailability;
 window.handleBookingRedirect = handleBookingRedirect;
 window.handlePayment = handlePayment;
+window.classifyImages = classifyImages;
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+window.showNextImage = showNextImage;
+window.showPrevImage = showPrevImage;
+window.handleSwipe = handleSwipe;
