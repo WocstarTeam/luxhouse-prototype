@@ -338,6 +338,10 @@ main {
   overflow: hidden;
 }
 
+.collection-media {
+  position: relative;
+}
+
 .collection-hero img {
   width: 100%;
   display: block;
@@ -349,6 +353,38 @@ main {
 
 .collection-hero img.is-swapping {
   opacity: 0.62;
+}
+
+.collection-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 250, 243, 0.5);
+  background: rgba(24, 18, 13, 0.5);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.collection-nav:hover {
+  background: rgba(24, 18, 13, 0.72);
+  transform: translateY(-50%) scale(1.03);
+}
+
+.collection-nav.prev {
+  left: 0.8rem;
+}
+
+.collection-nav.next {
+  right: 0.8rem;
 }
 
 .collection-copy {
@@ -1787,6 +1823,11 @@ body.modal-open {
   .lux-home-page .destination-grid {
     grid-template-columns: 1fr;
     max-width: 520px;
+  }
+
+  .collection-nav {
+    width: 2.15rem;
+    height: 2.15rem;
   }
 }
 

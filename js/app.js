@@ -36,14 +36,14 @@ const blockedDateRange = {
   end: "2026-04-15"
 };
 
-const cactusCollectionImages = [
+const cactusCollectionImages = [...new Set([
   "assets/images/cactus/Firepit%20Closeup.png",
   "assets/images/cactus/Living%20Room%20Closeup.png",
   "assets/images/cactus/Kitchen%20Vibrant.png",
   "assets/images/cactus/Primary%20Bedroom.jpg",
   "assets/images/cactus/Primary%20Bathroom%20Vibrant.png",
   "assets/images/cactus/Firepit%20Seating.png"
-];
+])];
 
 const collectionData = {
   fan: {
@@ -634,54 +634,46 @@ const pineGalleryState = {
   touchEndX: null
 };
 
-const pinePlaceholderByFile = {
-  "living-alpine-living.jpg": "https://via.placeholder.com/800x600?text=Alpine+Great+Room",
-  "fireplace-lounge.jpg": "https://via.placeholder.com/800x600?text=Hearth+Lounge",
-  "kitchen-dining-social.jpg": "https://via.placeholder.com/800x600?text=Chefs+Kitchen",
-  "bedroom-suite-calm.jpg": "https://via.placeholder.com/800x600?text=Primary+Suite",
-  "office-library.jpg": "https://via.placeholder.com/800x600?text=Quiet+Library",
-  "game-room-gathering.jpg": "https://via.placeholder.com/800x600?text=Game+Salon",
-  "forest-views-deck.jpg": "https://via.placeholder.com/800x600?text=Forest+View+Deck",
-  "hot-tub-patio.jpg": "https://via.placeholder.com/800x600?text=Cedar+Hot+Tub",
-  "lake-beach-trail.jpg": "https://via.placeholder.com/800x600?text=Lakeside+Access"
+const pineImages = [
+  "assets/images/pine/pnc1.jpg",
+  "assets/images/pine/pnc2.jpg",
+  "assets/images/pine/pnc3.jpg",
+  "assets/images/pine/pnc4.jpg",
+  "assets/images/pine/pnc5.jpg"
+];
+
+const pineImageLabels = {
+  "assets/images/pine/pnc1.jpg": "Pine and Peace outdoor hero",
+  "assets/images/pine/pnc2.jpg": "Pine and Peace indoor lounge",
+  "assets/images/pine/pnc3.jpg": "Pine and Peace living area",
+  "assets/images/pine/pnc4.jpg": "Pine and Peace bedroom suite",
+  "assets/images/pine/pnc5.jpg": "Pine and Peace outdoor experience"
 };
 
-function classifyPineImages(fileNames) {
-  const indoorKeywords = [
-    "living", "lounge", "fireplace", "bedroom", "bath", "bathroom",
-    "kitchen", "dining", "office", "library", "game", "interior", "room"
-  ];
-  const outdoorKeywords = [
-    "forest", "deck", "hottub", "hot-tub", "trail", "beach", "lake",
-    "exterior", "outdoor", "patio", "pine", "yard"
-  ];
+const pineIndoorImageSet = new Set([
+  "assets/images/pine/pnc2.jpg",
+  "assets/images/pine/pnc3.jpg",
+  "assets/images/pine/pnc4.jpg"
+]);
 
-  const result = { indoor: [], outdoor: [] };
+const pineOutdoorImageSet = new Set([
+  "assets/images/pine/pnc1.jpg",
+  "assets/images/pine/pnc5.jpg"
+]);
 
-  fileNames.forEach((file) => {
-    const lower = file.toLowerCase();
-    if (outdoorKeywords.some((keyword) => lower.includes(keyword))) {
-      result.outdoor.push(file);
-      return;
-    }
-    if (indoorKeywords.some((keyword) => lower.includes(keyword))) {
-      result.indoor.push(file);
-      return;
-    }
-    result.indoor.push(file);
-  });
-
-  return result;
+function classifyPineImages(filePaths) {
+  return {
+    indoor: filePaths.filter((imagePath) => pineIndoorImageSet.has(imagePath)),
+    outdoor: filePaths.filter((imagePath) => pineOutdoorImageSet.has(imagePath))
+  };
 }
 
-function pineSourceForFile(file) {
-  if (pinePlaceholderByFile[file]) {
-    return pinePlaceholderByFile[file];
-  }
-  const isOutdoor = /forest|deck|hottub|hot-tub|trail|beach|lake|exterior|outdoor|patio|pine|yard/i.test(file);
-  return isOutdoor
-    ? "https://via.placeholder.com/800x600?text=Alpine+Outdoor+Moments"
-    : "https://via.placeholder.com/800x600?text=Alpine+Interior+Spaces";
+function pineSourceForFile(imageSrc) {
+  return imageSrc;
+}
+
+function pineLabelForImage(imageSrc) {
+  return pineImageLabels[imageSrc] || "Pine and Peace image";
 }
 
 function openPineLightbox(index) {
@@ -736,7 +728,7 @@ function handlePineSwipe() {
   pineGalleryState.touchEndX = null;
 }
 
-function createPineGalleryItem(fileName, index) {
+function createPineGalleryItem(imageSrc, index) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "lux-pine-gallery-item";
@@ -744,8 +736,8 @@ function createPineGalleryItem(fileName, index) {
 
   const img = document.createElement("img");
   img.loading = "lazy";
-  img.src = pineSourceForFile(fileName);
-  img.alt = `${makeImageLabel(fileName)} at Pine & Peace House`;
+  img.src = pineSourceForFile(imageSrc);
+  img.alt = pineLabelForImage(imageSrc);
   img.onerror = function () {
     this.onerror = null;
     this.src = "assets/images/placeholders/placeholder-800x600.svg";
@@ -766,15 +758,15 @@ function renderPineLightboxThumbs() {
   }
 
   strip.innerHTML = "";
-  pineGalleryState.images.forEach((file, index) => {
+  pineGalleryState.images.forEach((imageSrc, index) => {
     const thumb = document.createElement("button");
     thumb.type = "button";
     thumb.className = "lux-pine-thumb";
     thumb.setAttribute("aria-label", `View image ${index + 1}`);
 
     const img = document.createElement("img");
-    img.src = pineSourceForFile(file);
-    img.alt = makeImageLabel(file);
+    img.src = pineSourceForFile(imageSrc);
+    img.alt = pineLabelForImage(imageSrc);
     img.onerror = function () {
       this.onerror = null;
       this.src = "assets/images/placeholders/placeholder-600x400.svg";
@@ -798,9 +790,9 @@ function updatePineLightboxView() {
     return;
   }
 
-  const file = pineGalleryState.images[pineGalleryState.currentIndex];
-  imageEl.src = pineSourceForFile(file);
-  imageEl.alt = `${makeImageLabel(file)} at Pine & Peace House`;
+  const imageSrc = pineGalleryState.images[pineGalleryState.currentIndex];
+  imageEl.src = pineSourceForFile(imageSrc);
+  imageEl.alt = pineLabelForImage(imageSrc);
   imageEl.onerror = function () {
     this.onerror = null;
     this.src = "assets/images/placeholders/placeholder-800x600.svg";
@@ -817,27 +809,15 @@ function initPinePage() {
     return;
   }
 
-  const pineFiles = [
-    "living-alpine-living.jpg",
-    "fireplace-lounge.jpg",
-    "kitchen-dining-social.jpg",
-    "bedroom-suite-calm.jpg",
-    "office-library.jpg",
-    "game-room-gathering.jpg",
-    "forest-views-deck.jpg",
-    "hot-tub-patio.jpg",
-    "lake-beach-trail.jpg"
-  ];
-
-  const classified = classifyPineImages(pineFiles);
+  const classified = classifyPineImages(pineImages);
   if (!classified.indoor.length) {
-    classified.indoor.push("indoor-placeholder.jpg");
+    classified.indoor.push("assets/images/placeholders/placeholder-800x600.svg");
   }
   if (!classified.outdoor.length) {
-    classified.outdoor.push("outdoor-placeholder.jpg");
+    classified.outdoor.push("assets/images/placeholders/placeholder-800x600.svg");
   }
 
-  pineGalleryState.images = [...classified.outdoor, ...classified.indoor];
+  pineGalleryState.images = [...pineImages];
 
   const indoorTarget = document.getElementById("pineIndoorGallery");
   const outdoorTarget = document.getElementById("pineOutdoorGallery");
@@ -848,9 +828,9 @@ function initPinePage() {
   indoorTarget.innerHTML = "";
   outdoorTarget.innerHTML = "";
 
-  pineGalleryState.images.forEach((file, index) => {
+  pineGalleryState.images.forEach((imageSrc, index) => {
     if (index < 5) {
-      const topItem = createPineGalleryItem(file, index);
+      const topItem = createPineGalleryItem(imageSrc, index);
       if (index === 0) {
         topItem.classList.add("is-main");
       }
@@ -858,11 +838,11 @@ function initPinePage() {
     }
   });
 
-  classified.indoor.forEach((file) => {
-    indoorTarget.appendChild(createPineGalleryItem(file, pineGalleryState.images.indexOf(file)));
+  classified.indoor.forEach((imageSrc) => {
+    indoorTarget.appendChild(createPineGalleryItem(imageSrc, pineGalleryState.images.indexOf(imageSrc)));
   });
-  classified.outdoor.forEach((file) => {
-    outdoorTarget.appendChild(createPineGalleryItem(file, pineGalleryState.images.indexOf(file)));
+  classified.outdoor.forEach((imageSrc) => {
+    outdoorTarget.appendChild(createPineGalleryItem(imageSrc, pineGalleryState.images.indexOf(imageSrc)));
   });
 
   renderPineLightboxThumbs();
@@ -985,12 +965,16 @@ if (bookingForm && destinationSelect && checkInDate && checkOutDate && bookingFe
 }
 
 if (tabs.length) {
+  const collectionHero = document.getElementById("collectionHero");
   const imageEl = document.getElementById("collectionImage");
   const kickerEl = document.getElementById("collectionKicker");
   const titleEl = document.getElementById("collectionTitle");
   const textEl = document.getElementById("collectionText");
+  const prevBtn = document.getElementById("collectionPrevBtn");
+  const nextBtn = document.getElementById("collectionNextBtn");
   let collectionCarouselTimer = null;
   let collectionCarouselIndex = 0;
+  let activeImages = [];
 
   function setCollectionImage(imageSrc) {
     if (!imageEl) {
@@ -1003,22 +987,43 @@ if (tabs.length) {
     }, 140);
   }
 
+  function stopCollectionCarousel() {
+    if (collectionCarouselTimer) {
+      window.clearInterval(collectionCarouselTimer);
+      collectionCarouselTimer = null;
+    }
+  }
+
+  function showCollectionImageAt(index) {
+    if (!activeImages.length) {
+      return;
+    }
+    collectionCarouselIndex = (index + activeImages.length) % activeImages.length;
+    setCollectionImage(activeImages[collectionCarouselIndex]);
+    imageEl.alt = "Cactus and Chill featured collection image";
+  }
+
+  function showNextCollectionImage() {
+    showCollectionImageAt(collectionCarouselIndex + 1);
+  }
+
+  function showPrevCollectionImage() {
+    showCollectionImageAt(collectionCarouselIndex - 1);
+  }
+
   function startCollectionCarousel(images) {
     if (!imageEl || !images || !images.length) {
       return;
     }
 
-    if (collectionCarouselTimer) {
-      window.clearInterval(collectionCarouselTimer);
-    }
+    stopCollectionCarousel();
 
+    activeImages = [...new Set(images)];
     collectionCarouselIndex = 0;
-    setCollectionImage(images[collectionCarouselIndex]);
-    imageEl.alt = "Cactus and Chill featured collection image";
+    showCollectionImageAt(collectionCarouselIndex);
 
     collectionCarouselTimer = window.setInterval(() => {
-      collectionCarouselIndex = (collectionCarouselIndex + 1) % images.length;
-      setCollectionImage(images[collectionCarouselIndex]);
+      showNextCollectionImage();
     }, 3200);
   }
 
@@ -1048,6 +1053,35 @@ if (tabs.length) {
     if (item) {
       startCollectionCarousel(item.images || [item.image]);
     }
+  }
+
+  if (collectionHero) {
+    collectionHero.addEventListener("mouseenter", stopCollectionCarousel);
+    collectionHero.addEventListener("mouseleave", () => {
+      if (activeImages.length) {
+        startCollectionCarousel(activeImages);
+      }
+    });
+    collectionHero.addEventListener("focusin", stopCollectionCarousel);
+    collectionHero.addEventListener("focusout", () => {
+      if (activeImages.length) {
+        startCollectionCarousel(activeImages);
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      stopCollectionCarousel();
+      showNextCollectionImage();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      stopCollectionCarousel();
+      showPrevCollectionImage();
+    });
   }
 }
 
