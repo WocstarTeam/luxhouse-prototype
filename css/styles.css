@@ -440,92 +440,148 @@ main {
 }
 
 .property-page {
-  background: #f7f3ed;
-  color: #201a16;
+  background: #f6f1ea;
+  color: #1d1814;
 }
 
 .cactus-hero {
   position: relative;
+  min-height: 72vh;
 }
 
 .cactus-hero img {
   width: 100%;
-  height: min(72vh, 760px);
+  height: min(76vh, 860px);
   object-fit: cover;
+}
+
+.cactus-hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 2rem 1.4rem 2.2rem;
+  background: linear-gradient(to top, rgba(13, 10, 8, 0.72) 10%, rgba(13, 10, 8, 0.12) 65%);
+  color: #f9f5ef;
 }
 
 .cactus-backlink {
   position: absolute;
-  top: 1.2rem;
-  left: 1.2rem;
-  z-index: 2;
-  background: rgba(245, 239, 232, 0.94);
-  color: #201a16;
-  border: 1px solid #d9cdbd;
+  top: 1.3rem;
+  left: 1.3rem;
+  background: rgba(246, 241, 234, 0.96);
+  color: #1d1814;
+  border: 1px solid #d9ccb9;
   border-radius: 999px;
   text-decoration: none;
-  font-size: 0.83rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  padding: 0.45rem 0.85rem;
+  padding: 0.45rem 0.82rem;
 }
 
-.cactus-main {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 3rem 1.4rem 4rem;
-}
-
-.cactus-intro h1 {
-  font-size: clamp(2.2rem, 5vw, 3.9rem);
-  margin-top: 0.35rem;
-}
-
-.cactus-kicker {
+.cactus-hero-kicker {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #7a5f49;
 }
 
-.cactus-location {
-  margin-top: 0.45rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #5f4b3a;
+.cactus-hero-overlay h1 {
+  margin-top: 0.35rem;
+  font-size: clamp(2.4rem, 6vw, 5rem);
 }
 
-.cactus-description {
-  margin-top: 1.1rem;
-  max-width: 68ch;
-  color: #5f5044;
+.cactus-hero-tagline {
+  margin-top: 0.55rem;
+  max-width: 46ch;
+  color: rgba(249, 245, 239, 0.92);
 }
 
-.cactus-block {
-  margin-top: 2.4rem;
-  background: #fffdf9;
-  border: 1px solid #dfd2c3;
-  border-radius: 1rem;
-  padding: 1.35rem;
+.cactus-main {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 3.4rem 1.4rem 4.2rem;
 }
 
-.cactus-block h2 {
-  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
-}
-
-.cactus-amenities {
-  margin: 1rem 0 0;
-  padding-left: 1.1rem;
-  color: #4f4339;
+.cactus-layout {
   display: grid;
-  gap: 0.55rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.cactus-content {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.cactus-section {
+  background: #fffdf9;
+  border: 1px solid #ded1c2;
+  border-radius: 1rem;
+  padding: 1.4rem;
+}
+
+.cactus-section h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.45rem);
+}
+
+.cactus-section p {
+  margin-top: 0.7rem;
+  color: #54483d;
+  max-width: 70ch;
+}
+
+.cactus-intro p {
+  margin-top: 0;
+  font-size: 1.03rem;
+}
+
+.cactus-experience-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.cactus-experience-grid article {
+  background: #f9f3ea;
+  border: 1px solid #e2d6c8;
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.cactus-experience-grid h3 {
+  font-size: 1.5rem;
+}
+
+.cactus-experience-grid p {
+  margin-top: 0.5rem;
+  font-size: 0.92rem;
+}
+
+.cactus-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+  gap: 1rem;
+  align-items: center;
+}
+
+.cactus-split img {
+  border-radius: 0.9rem;
+  min-height: 240px;
+  border: 1px solid #dfd2c3;
+}
+
+.cactus-emphasis {
+  font-size: 1.03rem;
+  color: #2c241d;
+  font-weight: 600;
 }
 
 .cactus-gallery {
-  margin-top: 1rem;
+  margin-top: 1.15rem;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
@@ -533,33 +589,63 @@ main {
 
 .cactus-gallery img {
   border-radius: 0.8rem;
-  min-height: 220px;
+  min-height: 210px;
   border: 1px solid #dfd2c3;
 }
 
-.cactus-booking-form {
-  margin-top: 1rem;
+.cactus-amenities-grid {
+  margin: 1.05rem 0 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 0.6rem;
-  max-width: 620px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.cactus-amenities-grid li {
+  border: 1px solid #ded1c2;
+  background: #f9f4ec;
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.75rem;
+  color: #3f352c;
+  font-size: 0.92rem;
+}
+
+.cactus-booking-card {
+  position: sticky;
+  top: 1rem;
+  background: #fffdf9;
+  border: 1px solid #ded1c2;
+  border-radius: 1rem;
+  padding: 1.2rem;
+}
+
+.cactus-booking-card h2 {
+  font-size: 1.9rem;
+}
+
+.cactus-booking-form {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
 }
 
 .cactus-booking-form label {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6b5544;
+  color: #655242;
   font-weight: 700;
 }
 
 .cactus-booking-form input,
 .cactus-booking-form select {
   border: 1px solid #d7c9ba;
-  background: #fffcf7;
+  background: #fefaf4;
   border-radius: 0.7rem;
-  padding: 0.72rem 0.78rem;
+  padding: 0.7rem 0.76rem;
   font: inherit;
-  color: #201a16;
+  color: #1d1814;
 }
 
 .cactus-booking-form button {
@@ -589,7 +675,17 @@ main {
     grid-column: 1 / -1;
   }
 
-  .cactus-amenities,
+  .cactus-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cactus-booking-card {
+    position: static;
+  }
+
+  .cactus-experience-grid,
+  .cactus-split,
+  .cactus-amenities-grid,
   .cactus-gallery {
     grid-template-columns: 1fr;
   }
