@@ -736,12 +736,12 @@ function createPineGalleryItem(imageSrc, index) {
 
   const img = document.createElement("img");
   img.loading = "lazy";
-  img.src = pineSourceForFile(imageSrc);
-  img.alt = pineLabelForImage(imageSrc);
   img.onerror = function () {
     this.onerror = null;
     this.src = "assets/images/placeholders/placeholder-800x600.svg";
   };
+  img.src = pineSourceForFile(imageSrc);
+  img.alt = pineLabelForImage(imageSrc);
 
   button.addEventListener("click", () => {
     openPineLightbox(index);
@@ -765,12 +765,12 @@ function renderPineLightboxThumbs() {
     thumb.setAttribute("aria-label", `View image ${index + 1}`);
 
     const img = document.createElement("img");
-    img.src = pineSourceForFile(imageSrc);
-    img.alt = pineLabelForImage(imageSrc);
     img.onerror = function () {
       this.onerror = null;
       this.src = "assets/images/placeholders/placeholder-600x400.svg";
     };
+    img.src = pineSourceForFile(imageSrc);
+    img.alt = pineLabelForImage(imageSrc);
 
     thumb.addEventListener("click", () => {
       pineGalleryState.currentIndex = index;
@@ -791,12 +791,12 @@ function updatePineLightboxView() {
   }
 
   const imageSrc = pineGalleryState.images[pineGalleryState.currentIndex];
-  imageEl.src = pineSourceForFile(imageSrc);
-  imageEl.alt = pineLabelForImage(imageSrc);
   imageEl.onerror = function () {
     this.onerror = null;
     this.src = "assets/images/placeholders/placeholder-800x600.svg";
   };
+  imageEl.src = pineSourceForFile(imageSrc);
+  imageEl.alt = pineLabelForImage(imageSrc);
 
   thumbs.forEach((thumb, idx) => {
     thumb.classList.toggle("is-active", idx === pineGalleryState.currentIndex);
