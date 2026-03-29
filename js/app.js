@@ -635,30 +635,30 @@ const pineGalleryState = {
 };
 
 const pineImages = [
-  "assets/images/pine/pnc1.jpg",
-  "assets/images/pine/pnc2.jpg",
-  "assets/images/pine/pnc3.jpg",
-  "assets/images/pine/pnc4.jpg",
-  "assets/images/pine/pnc5.jpg"
+  "assets/images/pine/pnc1.png",
+  "assets/images/pine/pnc2.png",
+  "assets/images/pine/pnc3.png",
+  "assets/images/pine/pnc4.png",
+  "assets/images/pine/pnc5.png"
 ];
 
 const pineImageLabels = {
-  "assets/images/pine/pnc1.jpg": "Pine and Peace outdoor hero",
-  "assets/images/pine/pnc2.jpg": "Pine and Peace indoor lounge",
-  "assets/images/pine/pnc3.jpg": "Pine and Peace living area",
-  "assets/images/pine/pnc4.jpg": "Pine and Peace bedroom suite",
-  "assets/images/pine/pnc5.jpg": "Pine and Peace outdoor experience"
+  "assets/images/pine/pnc1.png": "Pine and Peace outdoor hero",
+  "assets/images/pine/pnc2.png": "Pine and Peace indoor lounge",
+  "assets/images/pine/pnc3.png": "Pine and Peace living area",
+  "assets/images/pine/pnc4.png": "Pine and Peace bedroom suite",
+  "assets/images/pine/pnc5.png": "Pine and Peace outdoor experience"
 };
 
 const pineIndoorImageSet = new Set([
-  "assets/images/pine/pnc2.jpg",
-  "assets/images/pine/pnc3.jpg",
-  "assets/images/pine/pnc4.jpg"
+  "assets/images/pine/pnc2.png",
+  "assets/images/pine/pnc3.png",
+  "assets/images/pine/pnc4.png"
 ]);
 
 const pineOutdoorImageSet = new Set([
-  "assets/images/pine/pnc1.jpg",
-  "assets/images/pine/pnc5.jpg"
+  "assets/images/pine/pnc1.png",
+  "assets/images/pine/pnc5.png"
 ]);
 
 function classifyPineImages(filePaths) {
