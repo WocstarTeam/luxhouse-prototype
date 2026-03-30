@@ -30,6 +30,9 @@ const modalDestination = document.getElementById("modalDestination");
 const modalCheckin = document.getElementById("modalCheckin");
 const modalCheckout = document.getElementById("modalCheckout");
 const modalGuests = document.getElementById("modalGuests");
+const addonsGroups = document.querySelectorAll(".addons-group");
+const addonCheckboxes = document.querySelectorAll(".addon-checkbox");
+const totalPriceEl = document.getElementById("totalPrice");
 
 const blockedDateRange = {
   start: "2026-04-10",
@@ -136,6 +139,7 @@ function openBookingModal(preselectedDestination = "") {
   if (continueBookingBtn) {
     continueBookingBtn.disabled = true;
   }
+  syncAddonsGroupVisibility();
 
   bookingModal.classList.add("is-open");
   bookingModal.setAttribute("aria-hidden", "false");
@@ -163,6 +167,45 @@ function setBookingStatus(message, type) {
   if (type === "success") {
     bookingStatus.classList.add("is-success");
   }
+}
+
+function getActiveAddonsGroup() {
+  if (!modalDestination) {
+    return null;
+  }
+  return document.querySelector(`.addons-group[data-property="${modalDestination.value}"]`);
+}
+
+function updateAddonsTotal() {
+  if (!totalPriceEl) {
+    return;
+  }
+
+  const activeGroup = getActiveAddonsGroup();
+  if (!activeGroup) {
+    totalPriceEl.textContent = "0";
+    return;
+  }
+
+  const total = Array.from(activeGroup.querySelectorAll(".addon-checkbox:checked"))
+    .reduce((sum, checkbox) => sum + Number(checkbox.getAttribute("data-price") || 0), 0);
+
+  totalPriceEl.textContent = String(total);
+}
+
+function syncAddonsGroupVisibility() {
+  addonsGroups.forEach((group) => {
+    const isActive = modalDestination && group.getAttribute("data-property") === modalDestination.value;
+    group.hidden = !isActive;
+
+    if (!isActive) {
+      group.querySelectorAll(".addon-checkbox").forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+    }
+  });
+
+  updateAddonsTotal();
 }
 
 function checkAvailability(event) {
@@ -262,6 +305,14 @@ function initBookingModalEvents() {
   if (continueBookingBtn) {
     continueBookingBtn.addEventListener("click", handleBookingRedirect);
   }
+
+  if (modalDestination) {
+    modalDestination.addEventListener("change", syncAddonsGroupVisibility);
+  }
+
+  addonCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", updateAddonsTotal);
+  });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && bookingModal.classList.contains("is-open")) {
