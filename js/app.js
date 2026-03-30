@@ -32,6 +32,9 @@ const modalCheckout = document.getElementById("modalCheckout");
 const modalGuests = document.getElementById("modalGuests");
 const addonsGroups = document.querySelectorAll(".addons-group");
 const addonCheckboxes = document.querySelectorAll(".addon-checkbox");
+const nightlyPriceDisplayEl = document.getElementById("nightlyPriceDisplay");
+const nightsCountEl = document.getElementById("nightsCount");
+const addonsTotalEl = document.getElementById("addonsTotal");
 const totalPriceEl = document.getElementById("totalPrice");
 
 const blockedDateRange = {
@@ -83,6 +86,10 @@ const modalDestinationLabels = {
 };
 
 const supportedProperties = ["cactus", "pine"];
+const nightlyRates = {
+  cactus: 450,
+  pine: 495
+};
 
 let modalAvailabilityReady = false;
 
@@ -176,21 +183,52 @@ function getActiveAddonsGroup() {
   return document.querySelector(`.addons-group[data-property="${modalDestination.value}"]`);
 }
 
-function updateAddonsTotal() {
-  if (!totalPriceEl) {
-    return;
+function calculateNights() {
+  if (!modalCheckin || !modalCheckout || !modalCheckin.value || !modalCheckout.value) {
+    return 0;
   }
 
+  const checkinDate = new Date(modalCheckin.value);
+  const checkoutDate = new Date(modalCheckout.value);
+  const msDiff = checkoutDate - checkinDate;
+  const nights = Math.floor(msDiff / (1000 * 60 * 60 * 24));
+
+  if (!Number.isFinite(nights) || nights <= 0) {
+    return 0;
+  }
+
+  return nights;
+}
+
+function calculateAddons() {
   const activeGroup = getActiveAddonsGroup();
   if (!activeGroup) {
-    totalPriceEl.textContent = "0";
-    return;
+    return 0;
   }
 
-  const total = Array.from(activeGroup.querySelectorAll(".addon-checkbox:checked"))
+  return Array.from(activeGroup.querySelectorAll(".addon-checkbox:checked"))
     .reduce((sum, checkbox) => sum + Number(checkbox.getAttribute("data-price") || 0), 0);
+}
 
-  totalPriceEl.textContent = String(total);
+function updateTotal() {
+  const destination = modalDestination ? modalDestination.value : "";
+  const nightly = destination && nightlyRates[destination] ? nightlyRates[destination] : 0;
+  const nights = calculateNights();
+  const addons = calculateAddons();
+  const total = (nightly * nights) + addons;
+
+  if (nightlyPriceDisplayEl) {
+    nightlyPriceDisplayEl.textContent = String(nightly);
+  }
+  if (nightsCountEl) {
+    nightsCountEl.textContent = String(nights);
+  }
+  if (addonsTotalEl) {
+    addonsTotalEl.textContent = String(addons);
+  }
+  if (totalPriceEl) {
+    totalPriceEl.textContent = String(total);
+  }
 }
 
 function syncAddonsGroupVisibility() {
@@ -205,7 +243,7 @@ function syncAddonsGroupVisibility() {
     }
   });
 
-  updateAddonsTotal();
+  updateTotal();
 }
 
 function checkAvailability(event) {
@@ -310,8 +348,16 @@ function initBookingModalEvents() {
     modalDestination.addEventListener("change", syncAddonsGroupVisibility);
   }
 
+  if (modalCheckin) {
+    modalCheckin.addEventListener("change", updateTotal);
+  }
+
+  if (modalCheckout) {
+    modalCheckout.addEventListener("change", updateTotal);
+  }
+
   addonCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener("change", updateAddonsTotal);
+    checkbox.addEventListener("change", updateTotal);
   });
 
   document.addEventListener("keydown", (event) => {
