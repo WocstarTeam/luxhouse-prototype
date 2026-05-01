@@ -99,15 +99,32 @@ async function handleGetBooking(request, env) {
   return jsonResponse(JSON.parse(bookingRaw));
 }
 
-async function handleVerify(request, env) {
+async function handleCreateVerificationSession(request, env) {
+  const url = new URL(request.url);
   const body = await parseJsonBody(request);
-  const requestId = body.requestId || "";
+  const bodyRequestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
+  const queryRequestId = (url.searchParams.get("requestId") || "").trim();
+  const requestId = bodyRequestId || queryRequestId || createRequestId();
+
+  const existingRaw = await env.BOOKINGS.get(requestId);
+  if (!existingRaw) {
+    const booking = {
+      requestId,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    if (body.checkin) {
+      booking.checkin = body.checkin;
+    }
+    if (body.checkout) {
+      booking.checkout = body.checkout;
+    }
+    await env.BOOKINGS.put(requestId, JSON.stringify(booking));
+  }
 
   const params = new URLSearchParams();
   params.set("type", "document");
-  if (requestId) {
-    params.set("metadata[requestId]", requestId);
-  }
+  params.set("metadata[requestId]", requestId);
   if (env.IDENTITY_RETURN_URL) {
     params.set("return_url", env.IDENTITY_RETURN_URL);
   }
@@ -181,8 +198,12 @@ export default {
       return handleCreateBooking(request, env);
     }
 
+    if (pathname === "/create-verification-session" && method === "POST") {
+      return handleCreateVerificationSession(request, env);
+    }
+
     if (pathname.includes("verify") && method === "POST") {
-      return handleVerify(request, env);
+      return handleCreateVerificationSession(request, env);
     }
 
     if (pathname.includes("get-booking") && method === "GET") {
