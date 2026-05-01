@@ -30,6 +30,12 @@ const modalDestination = document.getElementById("modalDestination");
 const modalCheckin = document.getElementById("modalCheckin");
 const modalCheckout = document.getElementById("modalCheckout");
 const modalGuests = document.getElementById("modalGuests");
+const addonsGroups = document.querySelectorAll(".addons-group");
+const addonCheckboxes = document.querySelectorAll(".addon-checkbox");
+const nightlyPriceDisplayEl = document.getElementById("nightlyPriceDisplay");
+const nightsCountEl = document.getElementById("nightsCount");
+const addonsTotalEl = document.getElementById("addonsTotal");
+const totalPriceEl = document.getElementById("totalPrice");
 
 const blockedDateRange = {
   start: "2026-04-10",
@@ -80,6 +86,10 @@ const modalDestinationLabels = {
 };
 
 const supportedProperties = ["cactus", "pine"];
+const nightlyRates = {
+  cactus: 450,
+  pine: 495
+};
 
 let modalAvailabilityReady = false;
 
@@ -136,6 +146,7 @@ function openBookingModal(preselectedDestination = "") {
   if (continueBookingBtn) {
     continueBookingBtn.disabled = true;
   }
+  syncAddonsGroupVisibility();
 
   bookingModal.classList.add("is-open");
   bookingModal.setAttribute("aria-hidden", "false");
@@ -165,7 +176,77 @@ function setBookingStatus(message, type) {
   }
 }
 
-function checkAvailability(event) {
+function getActiveAddonsGroup() {
+  if (!modalDestination) {
+    return null;
+  }
+  return document.querySelector(`.addons-group[data-property="${modalDestination.value}"]`);
+}
+
+function calculateNights() {
+  if (!modalCheckin || !modalCheckout || !modalCheckin.value || !modalCheckout.value) {
+    return 0;
+  }
+
+  const checkinDate = new Date(modalCheckin.value);
+  const checkoutDate = new Date(modalCheckout.value);
+  const msDiff = checkoutDate - checkinDate;
+  const nights = Math.floor(msDiff / (1000 * 60 * 60 * 24));
+
+  if (!Number.isFinite(nights) || nights <= 0) {
+    return 0;
+  }
+
+  return nights;
+}
+
+function calculateAddons() {
+  const activeGroup = getActiveAddonsGroup();
+  if (!activeGroup) {
+    return 0;
+  }
+
+  return Array.from(activeGroup.querySelectorAll(".addon-checkbox:checked"))
+    .reduce((sum, checkbox) => sum + Number(checkbox.getAttribute("data-price") || 0), 0);
+}
+
+function updateTotal() {
+  const destination = modalDestination ? modalDestination.value : "";
+  const nightly = destination && nightlyRates[destination] ? nightlyRates[destination] : 0;
+  const nights = calculateNights();
+  const addons = calculateAddons();
+  const total = (nightly * nights) + addons;
+
+  if (nightlyPriceDisplayEl) {
+    nightlyPriceDisplayEl.textContent = String(nightly);
+  }
+  if (nightsCountEl) {
+    nightsCountEl.textContent = String(nights);
+  }
+  if (addonsTotalEl) {
+    addonsTotalEl.textContent = String(addons);
+  }
+  if (totalPriceEl) {
+    totalPriceEl.textContent = String(total);
+  }
+}
+
+function syncAddonsGroupVisibility() {
+  addonsGroups.forEach((group) => {
+    const isActive = modalDestination && group.getAttribute("data-property") === modalDestination.value;
+    group.hidden = !isActive;
+
+    if (!isActive) {
+      group.querySelectorAll(".addon-checkbox").forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+    }
+  });
+
+  updateTotal();
+}
+
+async function checkAvailability(event) {
   if (event) {
     event.preventDefault();
   }
@@ -198,17 +279,35 @@ function checkAvailability(event) {
     return;
   }
 
-  const unavailable = datesOverlap(checkin, checkout, blockedDateRange.start, blockedDateRange.end);
+  const API_URL = "https://script.google.com/macros/s/AKfycbxNikbHB1YaG7fAxCzldhBCwc1-DcFUJvPISW6bffZt1g8aA1UavtbjmHFudZ8nTGU2/exec";
 
-  if (unavailable) {
-    setBookingStatus("These dates are not available. Please try different dates.", "error");
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        checkin: modalCheckin.value,
+        checkout: modalCheckout.value
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.available !== true) {
+      setBookingStatus("Sorry, these dates are not available", "error");
+      return;
+    }
+  } catch (error) {
+    setBookingStatus("Unable to check availability right now. Please try again.", "error");
     return;
   }
 
   modalAvailabilityReady = true;
   continueBookingBtn.disabled = false;
   bookingStepTwo.hidden = false;
-  setBookingStatus("Great news - your dates are available.", "success");
+  setBookingStatus("Great news – your dates are available", "success");
 }
 
 function handleBookingRedirect() {
@@ -262,6 +361,22 @@ function initBookingModalEvents() {
   if (continueBookingBtn) {
     continueBookingBtn.addEventListener("click", handleBookingRedirect);
   }
+
+  if (modalDestination) {
+    modalDestination.addEventListener("change", syncAddonsGroupVisibility);
+  }
+
+  if (modalCheckin) {
+    modalCheckin.addEventListener("change", updateTotal);
+  }
+
+  if (modalCheckout) {
+    modalCheckout.addEventListener("change", updateTotal);
+  }
+
+  addonCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", updateTotal);
+  });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && bookingModal.classList.contains("is-open")) {
