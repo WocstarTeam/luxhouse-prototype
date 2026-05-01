@@ -36,6 +36,7 @@ const nightlyPriceDisplayEl = document.getElementById("nightlyPriceDisplay");
 const nightsCountEl = document.getElementById("nightsCount");
 const addonsTotalEl = document.getElementById("addonsTotal");
 const totalPriceEl = document.getElementById("totalPrice");
+const AVAILABILITY_API_URL = "https://script.google.com/macros/s/AKfycbxNikbHB1YaG7fAxCzldhBCwc1-DcFUJvPISW6bffZt1g8aA1UavtbjmHFudZ8nTGU2/exec";
 
 const blockedDateRange = {
   start: "2026-04-10",
@@ -246,68 +247,146 @@ function syncAddonsGroupVisibility() {
   updateTotal();
 }
 
-async function checkAvailability(event) {
+function resolveAvailabilityInputs(sourceForm) {
+  const scopedCheckin = sourceForm ? sourceForm.querySelector("#checkin") : null;
+  const scopedCheckout = sourceForm ? sourceForm.querySelector("#checkout") : null;
+
+  if (scopedCheckin && scopedCheckout) {
+    return { checkinInput: scopedCheckin, checkoutInput: scopedCheckout };
+  }
+
+  if (sourceForm === bookingModalForm) {
+    return { checkinInput: modalCheckin, checkoutInput: modalCheckout };
+  }
+
+  if (sourceForm === bookingForm) {
+    return { checkinInput: checkInDate, checkoutInput: checkOutDate };
+  }
+
+  return {
+    checkinInput: document.querySelector("#checkin") || checkInDate || modalCheckin,
+    checkoutInput: document.querySelector("#checkout") || checkOutDate || modalCheckout
+  };
+}
+
+async function handleCheckAvailability(event) {
   if (event) {
     event.preventDefault();
   }
 
-  if (!modalDestination || !modalCheckin || !modalCheckout || !modalGuests || !continueBookingBtn || !bookingStepTwo) {
+  const sourceForm = event && event.currentTarget instanceof HTMLFormElement ? event.currentTarget : null;
+  const isModalContext = sourceForm === bookingModalForm;
+  const { checkinInput, checkoutInput } = resolveAvailabilityInputs(sourceForm);
+
+  if (!checkinInput || !checkoutInput) {
+    window.alert("Something went wrong");
     return;
   }
 
-  const destination = modalDestination.value;
-  const checkin = modalCheckin.value;
-  const checkout = modalCheckout.value;
-  const guests = Number(modalGuests.value);
+  if (isModalContext && (!modalDestination || !modalGuests || !continueBookingBtn || !bookingStepTwo)) {
+    return;
+  }
 
-  modalAvailabilityReady = false;
-  continueBookingBtn.disabled = true;
-  bookingStepTwo.hidden = true;
+  const checkin = checkinInput.value;
+  const checkout = checkoutInput.value;
+  const destination = modalDestination ? modalDestination.value : "";
+  const guests = modalGuests ? Number(modalGuests.value) : 0;
 
-  if (!destination || !checkin || !checkout || !guests) {
+  if (isModalContext) {
+    modalAvailabilityReady = false;
+    continueBookingBtn.disabled = true;
+    bookingStepTwo.hidden = true;
+  }
+
+  if (!checkin || !checkout) {
+    if (isModalContext) {
+      setBookingStatus("Please complete all required fields before checking availability.", "error");
+    }
+    if (bookingFeedback && sourceForm === bookingForm) {
+      bookingFeedback.textContent = "Please select destination, check-in, and check-out before continuing.";
+    }
+    window.alert("Something went wrong");
+    return;
+  }
+
+  if (isModalContext && (!destination || !guests)) {
     setBookingStatus("Please complete all required fields before checking availability.", "error");
+    window.alert("Something went wrong");
     return;
   }
 
-  if (!supportedProperties.includes(destination)) {
+  if (isModalContext && !supportedProperties.includes(destination)) {
     setBookingStatus("Please choose a valid LuxHouse destination.", "error");
+    window.alert("Something went wrong");
     return;
   }
 
   if (new Date(checkout) <= new Date(checkin)) {
-    setBookingStatus("Check-out must be later than check-in.", "error");
+    if (isModalContext) {
+      setBookingStatus("Check-out must be later than check-in.", "error");
+    }
+    if (bookingFeedback && sourceForm === bookingForm) {
+      bookingFeedback.textContent = "Check-out must be after check-in.";
+    }
+    window.alert("Something went wrong");
     return;
   }
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbxNikbHB1YaG7fAxCzldhBCwc1-DcFUJvPISW6bffZt1g8aA1UavtbjmHFudZ8nTGU2/exec";
-
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(AVAILABILITY_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        checkin: modalCheckin.value,
-        checkout: modalCheckout.value
+        checkin,
+        checkout
       })
     });
+
+    if (!response.ok) {
+      throw new Error(`Availability API error: ${response.status}`);
+    }
 
     const result = await response.json();
 
     if (result.available !== true) {
-      setBookingStatus("Sorry, these dates are not available", "error");
+      if (isModalContext) {
+        setBookingStatus("Sorry, these dates are not available", "error");
+        continueBookingBtn.disabled = true;
+        bookingStepTwo.hidden = true;
+      }
+      if (bookingFeedback && sourceForm === bookingForm) {
+        bookingFeedback.textContent = "Sorry, these dates are not available";
+      }
+      window.alert("Sorry, these dates are not available");
       return;
     }
+
+    if (bookingFeedback && sourceForm === bookingForm) {
+      bookingFeedback.textContent = "Great news – your dates are available";
+    }
+    window.alert("Great news – your dates are available");
   } catch (error) {
-    setBookingStatus("Unable to check availability right now. Please try again.", "error");
+    console.error("Availability check failed:", error);
+    if (isModalContext) {
+      setBookingStatus("Unable to check availability right now. Please try again.", "error");
+      continueBookingBtn.disabled = true;
+      bookingStepTwo.hidden = true;
+    }
+    if (bookingFeedback && sourceForm === bookingForm) {
+      bookingFeedback.textContent = "Unable to check availability right now. Please try again.";
+    }
+    window.alert("Something went wrong");
     return;
   }
 
-  modalAvailabilityReady = true;
-  continueBookingBtn.disabled = false;
-  bookingStepTwo.hidden = false;
-  setBookingStatus("Great news – your dates are available", "success");
+  if (isModalContext) {
+    modalAvailabilityReady = true;
+    continueBookingBtn.disabled = false;
+    bookingStepTwo.hidden = false;
+    setBookingStatus("Great news – your dates are available", "success");
+  }
 }
 
 function handleBookingRedirect() {
@@ -355,7 +434,7 @@ function initBookingModalEvents() {
   });
 
   if (bookingModalForm) {
-    bookingModalForm.addEventListener("submit", checkAvailability);
+    bookingModalForm.addEventListener("submit", handleCheckAvailability);
   }
 
   if (continueBookingBtn) {
@@ -1054,29 +1133,7 @@ if (increaseGuests && decreaseGuests && guestCount) {
 }
 
 if (bookingForm && destinationSelect && checkInDate && checkOutDate && bookingFeedback && guestCount) {
-  bookingForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const destination = destinationSelect.value;
-    const checkIn = checkInDate.value;
-    const checkOut = checkOutDate.value;
-
-    if (!destination || !checkIn || !checkOut) {
-      bookingFeedback.textContent = "Please select destination, check-in, and check-out before continuing.";
-      return;
-    }
-
-    const checkInTime = new Date(checkIn);
-    const checkOutTime = new Date(checkOut);
-
-    if (checkOutTime <= checkInTime) {
-      bookingFeedback.textContent = "Check-out must be after check-in.";
-      return;
-    }
-
-    const label = destinationLabels[destination] || "your selected destination";
-    bookingFeedback.textContent = `Great choice. ${guestCount.value} guests for ${label}. Dates saved from ${checkIn} to ${checkOut}.`;
-  });
+  bookingForm.addEventListener("submit", handleCheckAvailability);
 }
 
 if (tabs.length) {
@@ -1214,7 +1271,8 @@ initPinePage();
 // Expose required API surface
 window.openBookingModal = openBookingModal;
 window.closeBookingModal = closeBookingModal;
-window.checkAvailability = checkAvailability;
+window.handleCheckAvailability = handleCheckAvailability;
+window.checkAvailability = handleCheckAvailability;
 window.handleBookingRedirect = handleBookingRedirect;
 window.handlePayment = handlePayment;
 window.classifyImages = classifyImages;
