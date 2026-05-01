@@ -141,10 +141,23 @@ async function postJson(path, payload) {
 
   if (!response.ok) {
     const message = data.error || `Request failed (${response.status})`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   return data;
+}
+
+async function createVerificationSession(payload) {
+  try {
+    return await postJson("/create-verification-session", payload);
+  } catch (error) {
+    if (error && error.status === 404) {
+      return postJson("/verify", payload);
+    }
+    throw error;
+  }
 }
 
 function persistLatestBooking(booking) {
@@ -504,23 +517,9 @@ function initBookingModal() {
     }
     setStatusMessage(statusEl, "Creating your booking request...", "");
 
-    let requestId = "";
+    const requestId = `LUX-${Date.now()}`;
 
     try {
-      const bookingData = await postJson("/create-booking", {
-        checkin: modalData.checkin,
-        checkout: modalData.checkout,
-        destination: modalData.destination,
-        guests: modalData.guests,
-        addonsTotal: modalData.addonsTotal,
-        total: modalData.total
-      });
-
-      requestId = bookingData.requestId || "";
-      if (!requestId) {
-        throw new Error("Missing request ID from booking service.");
-      }
-
       persistLatestBooking({
         requestId,
         destination: modalData.destination,
@@ -536,10 +535,14 @@ function initBookingModal() {
       });
 
       setStatusMessage(statusEl, "Launching Stripe verification...", "success");
-      const verificationData = await postJson("/create-verification-session", {
+      const verificationData = await createVerificationSession({
         requestId,
         checkin: modalData.checkin,
-        checkout: modalData.checkout
+        checkout: modalData.checkout,
+        destination: modalData.destination,
+        guests: modalData.guests,
+        addonsTotal: modalData.addonsTotal,
+        total: modalData.total
       });
 
       if (verificationData.url) {
@@ -556,14 +559,12 @@ function initBookingModal() {
         error.message || "Could not start verification. Please try again.",
         "error"
       );
-      if (requestId) {
-        persistLatestBooking({
-          requestId,
-          ...modalData,
-          destinationLabel: getDestinationLabel(modalData.destination),
-          createdAt: new Date().toISOString()
-        });
-      }
+      persistLatestBooking({
+        requestId,
+        ...modalData,
+        destinationLabel: getDestinationLabel(modalData.destination),
+        createdAt: new Date().toISOString()
+      });
       continueBtn.disabled = false;
       if (checkAvailabilityBtn) {
         checkAvailabilityBtn.disabled = false;
