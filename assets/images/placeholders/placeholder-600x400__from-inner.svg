@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" role="img" aria-label="Placeholder image">
+  <rect width="600" height="400" fill="#efe5d8"/>
+  <rect x="18" y="18" width="564" height="364" rx="14" fill="#f8f1e7" stroke="#d8c7b2"/>
+  <text x="300" y="188" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="24" fill="#6f5d4c">Image Coming Soon</text>
+  <text x="300" y="220" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="14" fill="#8a7764">LuxHouse Collection</text>
+</svg>

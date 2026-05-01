@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Hero placeholder">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e9ddce"/>
+      <stop offset="100%" stop-color="#d8c4aa"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <text x="800" y="438" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="54" fill="#5f4f3f">LuxHouse Collection</text>
+  <text x="800" y="492" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="24" fill="#7d6a57">Visual Placeholder</text>
+</svg>

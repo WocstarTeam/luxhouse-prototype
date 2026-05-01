@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Summary | LuxHouse Collection</title>
+  <meta name="description" content="Review your LuxHouse stay details and continue to payment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="lux-booking-page">
+  <main class="lux-booking-page-main">
+    <a class="lux-booking-page-back" href="index.html">Back to Home</a>
+    <section class="lux-booking-page-hero">
+      <p class="lux-booking-kicker">The LuxHouse Collection</p>
+      <h1>Booking Summary</h1>
+      <p>Review your stay details, confirm your dates, and continue to payment with confidence.</p>
+    </section>
+
+    <section class="lux-booking-page-card">
+      <div class="lux-booking-page-flow">
+        <div class="lux-booking-page-summary">
+          <h2>Stay Details</h2>
+          <div class="lux-booking-summary-grid">
+            <article>
+              <h3>Property</h3>
+              <p id="summaryDestination">-</p>
+            </article>
+            <article>
+              <h3>Check-in</h3>
+              <p id="summaryCheckin">-</p>
+            </article>
+            <article>
+              <h3>Check-out</h3>
+              <p id="summaryCheckout">-</p>
+            </article>
+            <article>
+              <h3>Guests</h3>
+              <p id="summaryGuests">-</p>
+            </article>
+          </div>
+        </div>
+
+        <aside class="lux-booking-page-actions">
+          <p class="lux-booking-step-label">Step 2 of 2</p>
+          <button type="button" id="proceedToPaymentBtn" class="lux-booking-primary">Proceed to Payment</button>
+
+          <section id="paymentSection" class="lux-payment-section" hidden>
+            <h2>Payment</h2>
+            <p>You're one step away from confirming your reservation.</p>
+            <button type="button" id="payConfirmBtn" class="lux-booking-primary">Pay &amp; Confirm</button>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
