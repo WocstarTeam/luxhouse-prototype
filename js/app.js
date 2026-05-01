@@ -1,85 +1,71 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
-  async function checkAvailability(event) {
-    if (event) {
-      event.preventDefault();
-    }
 
-    const checkinInput = document.querySelector('[name="checkin"]');
-    const checkoutInput = document.querySelector('[name="checkout"]');
-    const resultEl = document.getElementById("availabilityResult");
+  const checkBtn = document.getElementById("checkAvailabilityBtn");
+  const bookBtn = document.getElementById("continueBtn");
 
-    if (!checkinInput || !checkoutInput || !resultEl) {
-      return;
-    }
+  // =========================
+  // CHECK AVAILABILITY
+  // =========================
+  if (checkBtn) {
+    checkBtn.addEventListener("click", async () => {
+      try {
+        const checkin = document.querySelector('[name="checkin"]').value;
+        const checkout = document.querySelector('[name="checkout"]').value;
 
-    const payload = {
-      checkin: checkinInput.value,
-      checkout: checkoutInput.value
-    };
+        console.log("Checking availability:", checkin, checkout);
 
-    console.log("Sending:", payload);
+        const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ checkin, checkout }),
+        });
 
-    try {
-      const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/availability", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
+        const data = await res.json();
+        console.log("Availability response:", data);
 
-      const data = await res.json();
-      console.log("Response:", data);
+        const result = document.getElementById("availabilityResult");
+        if (result) {
+          result.textContent = data.available
+            ? "Available for your dates"
+            : "Not available";
+        }
 
-      if (data.available === true) {
-        resultEl.textContent = "Available for your dates";
-      } else {
-        resultEl.textContent = "Not available";
+      } catch (err) {
+        console.error("Availability error:", err);
       }
-    } catch (error) {
-      console.error(error);
-      resultEl.textContent = "Not available";
-    }
+    });
   }
 
-  async function continueToBooking(event) {
-    if (event) {
-      event.preventDefault();
-    }
+  // =========================
+  // CONTINUE TO BOOKING
+  // =========================
+  if (bookBtn) {
+    bookBtn.addEventListener("click", async () => {
+      try {
+        console.log("Booking button clicked");
 
-    const requestId = "LUX-" + Date.now();
-    const payload = { requestId };
+        const requestId = "LUX-" + Date.now();
 
-    console.log("Sending:", payload);
+        const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/create-verification-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requestId }),
+        });
 
-    try {
-      const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/create-verification-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
+        const data = await res.json();
+        console.log("Stripe session:", data);
 
-      const data = await res.json();
-      console.log("Response:", data);
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert("No verification URL returned");
+        }
 
-      if (data.url) {
-        window.location.href = data.url;
+      } catch (err) {
+        console.error("Booking error:", err);
+        alert("Booking failed. Check console.");
       }
-    } catch (error) {
-      console.error(error);
-    }
+    });
   }
 
-  const checkAvailabilityBtn = document.getElementById("checkAvailabilityBtn");
-  const continueBtn = document.getElementById("continueBtn");
-
-  if (checkAvailabilityBtn) {
-    checkAvailabilityBtn.addEventListener("click", checkAvailability);
-  }
-
-  if (continueBtn) {
-    continueBtn.addEventListener("click", continueToBooking);
-  }
 });
