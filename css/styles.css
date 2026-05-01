@@ -227,6 +227,26 @@ a {
   color: #f8e7d4;
 }
 
+.availability-result {
+  margin-top: 12px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.availability-result.loading {
+  color: #888;
+}
+
+.availability-result.success {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.availability-result.error {
+  color: #c62828;
+  font-weight: 500;
+}
+
 main {
   max-width: 1120px;
   margin: 0 auto;

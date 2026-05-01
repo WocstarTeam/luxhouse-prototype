@@ -255,15 +255,41 @@ async function handleCheckAvailability(event) {
   const trigger = event && event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   const sourceForm = trigger ? trigger.closest("form") : null;
   const isModalContext = sourceForm === bookingModalForm;
-  const checkinInput = sourceForm
-    ? sourceForm.querySelector("#checkin") || sourceForm.querySelector("#checkInDate") || sourceForm.querySelector("#modalCheckin")
-    : null;
-  const checkoutInput = sourceForm
-    ? sourceForm.querySelector("#checkout") || sourceForm.querySelector("#checkOutDate") || sourceForm.querySelector("#modalCheckout")
-    : null;
+  if (!sourceForm) {
+    return;
+  }
 
-  if (!checkinInput || !checkoutInput) {
-    window.alert("Please select check-in and check-out dates.");
+  const checkinInput = sourceForm.querySelector("#checkin")
+    || sourceForm.querySelector("#checkInDate")
+    || sourceForm.querySelector("#modalCheckin");
+  const checkoutInput = sourceForm.querySelector("#checkout")
+    || sourceForm.querySelector("#checkOutDate")
+    || sourceForm.querySelector("#modalCheckout");
+  let availabilityResult = sourceForm.querySelector("#availabilityResult");
+  const actionButton = trigger && trigger.tagName === "BUTTON"
+    ? trigger
+    : sourceForm.querySelector("button[type=\"submit\"]");
+
+  if (!availabilityResult && actionButton) {
+    availabilityResult = document.createElement("div");
+    availabilityResult.id = "availabilityResult";
+    availabilityResult.className = "availability-result";
+    actionButton.insertAdjacentElement("afterend", availabilityResult);
+  }
+
+  if (!availabilityResult) {
+    return;
+  }
+
+  if (!checkinInput || !checkoutInput || !checkinInput.value || !checkoutInput.value) {
+    availabilityResult.innerHTML = "Not available for selected dates";
+    availabilityResult.className = "availability-result error";
+    if (bookingFeedback && sourceForm === bookingForm) {
+      bookingFeedback.textContent = "";
+    }
+    if (isModalContext) {
+      setBookingStatus("", "");
+    }
     return;
   }
 
@@ -282,37 +308,34 @@ async function handleCheckAvailability(event) {
     bookingStepTwo.hidden = true;
   }
 
+  if (actionButton) {
+    actionButton.disabled = true;
+    actionButton.innerText = "Checking...";
+  }
+  availabilityResult.innerHTML = "Checking availability...";
+  availabilityResult.className = "availability-result loading";
+
   if (!checkin || !checkout) {
-    if (isModalContext) {
-      setBookingStatus("Please complete all required fields before checking availability.", "error");
-    }
-    if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "Please select destination, check-in, and check-out before continuing.";
-    }
-    window.alert("Please select check-in and check-out dates.");
+    availabilityResult.innerHTML = "Not available for selected dates";
+    availabilityResult.className = "availability-result error";
     return;
   }
 
   if (isModalContext && (!destination || !guests)) {
-    setBookingStatus("Please complete all required fields before checking availability.", "error");
-    window.alert("Something went wrong");
+    availabilityResult.innerHTML = "Not available for selected dates";
+    availabilityResult.className = "availability-result error";
     return;
   }
 
   if (isModalContext && !supportedProperties.includes(destination)) {
-    setBookingStatus("Please choose a valid LuxHouse destination.", "error");
-    window.alert("Something went wrong");
+    availabilityResult.innerHTML = "Not available for selected dates";
+    availabilityResult.className = "availability-result error";
     return;
   }
 
   if (new Date(checkout) <= new Date(checkin)) {
-    if (isModalContext) {
-      setBookingStatus("Check-out must be later than check-in.", "error");
-    }
-    if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "Check-out must be after check-in.";
-    }
-    window.alert("Something went wrong");
+    availabilityResult.innerHTML = "Not available for selected dates";
+    availabilityResult.className = "availability-result error";
     return;
   }
 
@@ -336,40 +359,54 @@ async function handleCheckAvailability(event) {
 
     if (result.available !== true) {
       if (isModalContext) {
-        setBookingStatus("Sorry, these dates are not available", "error");
         continueBookingBtn.disabled = true;
         bookingStepTwo.hidden = true;
       }
+      availabilityResult.innerHTML = "Not available for selected dates";
+      availabilityResult.className = "availability-result error";
       if (bookingFeedback && sourceForm === bookingForm) {
-        bookingFeedback.textContent = "Sorry, these dates are not available";
+        bookingFeedback.textContent = "";
       }
-      window.alert("Not available ❌");
+      if (isModalContext) {
+        setBookingStatus("", "");
+      }
       return;
     }
 
+    availabilityResult.innerHTML = "Available for your dates";
+    availabilityResult.className = "availability-result success";
     if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "Great news – your dates are available";
+      bookingFeedback.textContent = "";
     }
-    window.alert("Available ✅");
+    if (isModalContext) {
+      setBookingStatus("", "");
+    }
   } catch (err) {
     console.error(err);
     if (isModalContext) {
-      setBookingStatus("Unable to check availability right now. Please try again.", "error");
       continueBookingBtn.disabled = true;
       bookingStepTwo.hidden = true;
     }
+    availabilityResult.innerHTML = "Unable to check availability. Please try again.";
+    availabilityResult.className = "availability-result error";
     if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "Unable to check availability right now. Please try again.";
+      bookingFeedback.textContent = "";
     }
-    window.alert("Something went wrong");
+    if (isModalContext) {
+      setBookingStatus("", "");
+    }
     return;
+  } finally {
+    if (actionButton) {
+      actionButton.disabled = false;
+      actionButton.innerText = "Check Availability";
+    }
   }
 
   if (isModalContext) {
     modalAvailabilityReady = true;
     continueBookingBtn.disabled = false;
     bookingStepTwo.hidden = false;
-    setBookingStatus("Great news – your dates are available", "success");
   }
 }
 
@@ -423,6 +460,7 @@ function initBookingModalEvents() {
       modalCheckAvailabilityBtn.id = "modalCheckAvailabilityBtn";
       modalCheckAvailabilityBtn.addEventListener("click", handleCheckAvailability);
     }
+    bookingModalForm.addEventListener("submit", (event) => event.preventDefault());
   }
 
   if (continueBookingBtn) {
@@ -1126,6 +1164,7 @@ if (bookingForm && destinationSelect && checkInDate && checkOutDate && bookingFe
     homeCheckAvailabilityBtn.id = "checkAvailabilityBtn";
     homeCheckAvailabilityBtn.addEventListener("click", handleCheckAvailability);
   }
+  bookingForm.addEventListener("submit", (event) => event.preventDefault());
 }
 
 if (tabs.length) {
