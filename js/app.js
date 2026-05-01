@@ -37,6 +37,10 @@ const nightsCountEl = document.getElementById("nightsCount");
 const addonsTotalEl = document.getElementById("addonsTotal");
 const totalPriceEl = document.getElementById("totalPrice");
 const AVAILABILITY_API_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev";
+const VERIFY_API_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev/verify";
+const NOT_AVAILABLE_MESSAGE = "Not available for selected dates";
+const GENERIC_BOOKING_ERROR_MESSAGE = "Something went wrong. Please try again.";
+const MODAL_AVAILABLE_BUTTON_LABEL = "✔ Available — Continue";
 
 const blockedDateRange = {
   start: "2026-04-10",
@@ -114,6 +118,123 @@ function makeImageLabel(fileName) {
   return fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim();
 }
 
+function setAvailabilityFeedback(target, message, state = "") {
+  if (!target) {
+    return;
+  }
+  target.textContent = message;
+  target.className = `availability-result${state ? ` ${state}` : ""}`;
+}
+
+function getAvailabilityResultForForm(sourceForm) {
+  if (!sourceForm) {
+    return null;
+  }
+
+  let availabilityResult = sourceForm.querySelector("#availabilityResult");
+  if (availabilityResult) {
+    return availabilityResult;
+  }
+
+  const actionButton = sourceForm.querySelector("button[type=\"submit\"]");
+  if (!actionButton) {
+    return null;
+  }
+
+  availabilityResult = document.createElement("div");
+  availabilityResult.id = "availabilityResult";
+  availabilityResult.className = "availability-result";
+  actionButton.insertAdjacentElement("afterend", availabilityResult);
+  return availabilityResult;
+}
+
+function getModalCheckAvailabilityButton() {
+  if (!bookingModalForm) {
+    return null;
+  }
+  return bookingModalForm.querySelector("#modalCheckAvailabilityBtn")
+    || bookingModalForm.querySelector("button[type=\"submit\"]");
+}
+
+function resetModalAvailabilityState() {
+  modalAvailabilityReady = false;
+
+  if (continueBookingBtn) {
+    continueBookingBtn.disabled = true;
+  }
+  if (bookingStepTwo) {
+    bookingStepTwo.hidden = true;
+  }
+
+  const modalCheckAvailabilityBtn = getModalCheckAvailabilityButton();
+  if (modalCheckAvailabilityBtn) {
+    modalCheckAvailabilityBtn.disabled = false;
+    modalCheckAvailabilityBtn.innerText = "Check Availability";
+  }
+
+  if (bookingModalForm) {
+    const availabilityResult = bookingModalForm.querySelector("#availabilityResult");
+    if (availabilityResult) {
+      setAvailabilityFeedback(availabilityResult, "", "");
+    }
+  }
+}
+
+function setInlineFormError(form, message) {
+  if (!form) {
+    return;
+  }
+
+  let status = form.querySelector(".availability-result");
+  if (!status) {
+    status = document.createElement("div");
+    status.className = "availability-result";
+    const submitButton = form.querySelector("button[type=\"submit\"]");
+    if (submitButton) {
+      submitButton.insertAdjacentElement("afterend", status);
+    } else {
+      form.appendChild(status);
+    }
+  }
+
+  setAvailabilityFeedback(status, message, message ? "error" : "");
+}
+
+async function startIdentityVerification(actionButton, onError) {
+  const previousLabel = actionButton ? actionButton.innerText : "";
+
+  if (actionButton) {
+    actionButton.disabled = true;
+    actionButton.innerText = "Redirecting...";
+  }
+
+  try {
+    const response = await fetch(VERIFY_API_URL, {
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Verify API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data || typeof data.url !== "string" || !data.url) {
+      throw new Error("Verify API did not return a valid URL.");
+    }
+
+    window.location.href = data.url;
+  } catch (error) {
+    console.error(error);
+    if (typeof onError === "function") {
+      onError(GENERIC_BOOKING_ERROR_MESSAGE);
+    }
+    if (actionButton) {
+      actionButton.disabled = false;
+      actionButton.innerText = previousLabel;
+    }
+  }
+}
+
 // =========================================================
 // Booking Modal API
 // =========================================================
@@ -122,8 +243,6 @@ function openBookingModal(preselectedDestination = "") {
   if (!bookingModal) {
     return;
   }
-
-  modalAvailabilityReady = false;
 
   if (bookingModalForm) {
     bookingModalForm.reset();
@@ -141,12 +260,7 @@ function openBookingModal(preselectedDestination = "") {
     bookingStatus.textContent = "";
     bookingStatus.classList.remove("is-error", "is-success");
   }
-  if (bookingStepTwo) {
-    bookingStepTwo.hidden = true;
-  }
-  if (continueBookingBtn) {
-    continueBookingBtn.disabled = true;
-  }
+  resetModalAvailabilityState();
   syncAddonsGroupVisibility();
 
   bookingModal.classList.add("is-open");
@@ -265,31 +379,30 @@ async function handleCheckAvailability(event) {
   const checkoutInput = sourceForm.querySelector("#checkout")
     || sourceForm.querySelector("#checkOutDate")
     || sourceForm.querySelector("#modalCheckout");
-  let availabilityResult = sourceForm.querySelector("#availabilityResult");
+  const availabilityResult = getAvailabilityResultForForm(sourceForm);
   const actionButton = trigger && trigger.tagName === "BUTTON"
     ? trigger
     : sourceForm.querySelector("button[type=\"submit\"]");
 
-  if (!availabilityResult && actionButton) {
-    availabilityResult = document.createElement("div");
-    availabilityResult.id = "availabilityResult";
-    availabilityResult.className = "availability-result";
-    actionButton.insertAdjacentElement("afterend", availabilityResult);
-  }
-
-  if (!availabilityResult) {
+  if (!availabilityResult || !actionButton) {
     return;
   }
 
-  if (!checkinInput || !checkoutInput || !checkinInput.value || !checkoutInput.value) {
-    availabilityResult.innerHTML = "Not available for selected dates";
-    availabilityResult.className = "availability-result error";
+  const showUnavailableState = () => {
+    setAvailabilityFeedback(availabilityResult, NOT_AVAILABLE_MESSAGE, "error");
     if (bookingFeedback && sourceForm === bookingForm) {
       bookingFeedback.textContent = "";
     }
     if (isModalContext) {
       setBookingStatus("", "");
     }
+  };
+
+  if (!checkinInput || !checkoutInput || !checkinInput.value || !checkoutInput.value) {
+    if (isModalContext) {
+      resetModalAvailabilityState();
+    }
+    showUnavailableState();
     return;
   }
 
@@ -299,45 +412,45 @@ async function handleCheckAvailability(event) {
 
   const checkin = checkinInput.value;
   const checkout = checkoutInput.value;
-  const destination = modalDestination ? modalDestination.value : "";
+  const destination = modalDestination ? modalDestination.value.trim() : "";
   const guests = modalGuests ? Number(modalGuests.value) : 0;
 
-  if (isModalContext) {
-    modalAvailabilityReady = false;
-    continueBookingBtn.disabled = true;
-    bookingStepTwo.hidden = true;
-  }
-
-  if (actionButton) {
-    actionButton.disabled = true;
-    actionButton.innerText = "Checking...";
-  }
-  availabilityResult.innerHTML = "Checking availability...";
-  availabilityResult.className = "availability-result loading";
-
   if (!checkin || !checkout) {
-    availabilityResult.innerHTML = "Not available for selected dates";
-    availabilityResult.className = "availability-result error";
+    if (isModalContext) {
+      resetModalAvailabilityState();
+    }
+    showUnavailableState();
     return;
   }
 
   if (isModalContext && (!destination || !guests)) {
-    availabilityResult.innerHTML = "Not available for selected dates";
-    availabilityResult.className = "availability-result error";
+    resetModalAvailabilityState();
+    showUnavailableState();
     return;
   }
 
   if (isModalContext && !supportedProperties.includes(destination)) {
-    availabilityResult.innerHTML = "Not available for selected dates";
-    availabilityResult.className = "availability-result error";
+    resetModalAvailabilityState();
+    showUnavailableState();
     return;
   }
 
   if (new Date(checkout) <= new Date(checkin)) {
-    availabilityResult.innerHTML = "Not available for selected dates";
-    availabilityResult.className = "availability-result error";
+    if (isModalContext) {
+      resetModalAvailabilityState();
+    }
+    showUnavailableState();
     return;
   }
+
+  if (isModalContext) {
+    resetModalAvailabilityState();
+    setBookingStatus("", "");
+  }
+
+  actionButton.disabled = true;
+  actionButton.innerText = "Checking...";
+  setAvailabilityFeedback(availabilityResult, "Checking availability...", "loading");
 
   try {
     const response = await fetch(AVAILABILITY_API_URL, {
@@ -359,22 +472,13 @@ async function handleCheckAvailability(event) {
 
     if (result.available !== true) {
       if (isModalContext) {
-        continueBookingBtn.disabled = true;
-        bookingStepTwo.hidden = true;
+        resetModalAvailabilityState();
       }
-      availabilityResult.innerHTML = "Not available for selected dates";
-      availabilityResult.className = "availability-result error";
-      if (bookingFeedback && sourceForm === bookingForm) {
-        bookingFeedback.textContent = "";
-      }
-      if (isModalContext) {
-        setBookingStatus("", "");
-      }
+      showUnavailableState();
       return;
     }
 
-    availabilityResult.innerHTML = "Available for your dates";
-    availabilityResult.className = "availability-result success";
+    setAvailabilityFeedback(availabilityResult, "Available for your dates", "success");
     if (bookingFeedback && sourceForm === bookingForm) {
       bookingFeedback.textContent = "";
     }
@@ -384,21 +488,19 @@ async function handleCheckAvailability(event) {
   } catch (err) {
     console.error(err);
     if (isModalContext) {
-      continueBookingBtn.disabled = true;
-      bookingStepTwo.hidden = true;
+      resetModalAvailabilityState();
+      setBookingStatus("", "");
     }
-    availabilityResult.innerHTML = "Unable to check availability. Please try again.";
-    availabilityResult.className = "availability-result error";
+    setAvailabilityFeedback(availabilityResult, GENERIC_BOOKING_ERROR_MESSAGE, "error");
     if (bookingFeedback && sourceForm === bookingForm) {
       bookingFeedback.textContent = "";
     }
-    if (isModalContext) {
-      setBookingStatus("", "");
-    }
     return;
   } finally {
-    if (actionButton) {
-      actionButton.disabled = false;
+    actionButton.disabled = false;
+    if (isModalContext && modalAvailabilityReady) {
+      actionButton.innerText = MODAL_AVAILABLE_BUTTON_LABEL;
+    } else {
       actionButton.innerText = "Check Availability";
     }
   }
@@ -407,11 +509,17 @@ async function handleCheckAvailability(event) {
     modalAvailabilityReady = true;
     continueBookingBtn.disabled = false;
     bookingStepTwo.hidden = false;
+    actionButton.innerText = MODAL_AVAILABLE_BUTTON_LABEL;
   }
 }
 
-function handleBookingRedirect() {
+async function handleBookingRedirect(event) {
+  if (event) {
+    event.preventDefault();
+  }
+
   if (!modalAvailabilityReady || !modalDestination || !modalCheckin || !modalCheckout || !modalGuests) {
+    setBookingStatus("Please check availability before continuing.", "error");
     return;
   }
 
@@ -420,21 +528,38 @@ function handleBookingRedirect() {
     return;
   }
 
-  const params = new URLSearchParams({
-    destination: modalDestination.value,
-    checkin: modalCheckin.value,
-    checkout: modalCheckout.value,
-    guests: modalGuests.value,
-    message: bookingMessage ? bookingMessage.value.trim() : ""
-  });
-
-  window.location.href = `booking.html?${params.toString()}`;
+  setBookingStatus("", "");
+  const actionButton = event && event.currentTarget instanceof HTMLButtonElement
+    ? event.currentTarget
+    : continueBookingBtn;
+  await startIdentityVerification(actionButton, (message) => setBookingStatus(message, "error"));
 }
 
 function handlePayment() {
-  // Integrate Stripe Checkout or PaymentIntent here.
-  // Wire this button to your backend endpoint for secure payment session creation.
-  window.alert("Stripe integration placeholder: Integrate Stripe Checkout or PaymentIntent here.");
+  const payConfirmBtn = document.getElementById("payConfirmBtn");
+  const paymentSection = document.getElementById("paymentSection");
+  let paymentStatus = document.getElementById("paymentStatus");
+
+  if (!paymentStatus && paymentSection) {
+    paymentStatus = document.createElement("p");
+    paymentStatus.id = "paymentStatus";
+    paymentStatus.className = "lux-booking-status";
+    paymentSection.appendChild(paymentStatus);
+  }
+
+  if (paymentStatus) {
+    paymentStatus.textContent = "";
+    paymentStatus.classList.remove("is-error", "is-success");
+  }
+
+  startIdentityVerification(payConfirmBtn, (message) => {
+    if (!paymentStatus) {
+      return;
+    }
+    paymentStatus.textContent = message;
+    paymentStatus.classList.remove("is-success");
+    paymentStatus.classList.add("is-error");
+  });
 }
 
 function initBookingModalEvents() {
@@ -467,16 +592,39 @@ function initBookingModalEvents() {
     continueBookingBtn.addEventListener("click", handleBookingRedirect);
   }
 
+  const clearModalStatus = () => {
+    setBookingStatus("", "");
+  };
+
   if (modalDestination) {
-    modalDestination.addEventListener("change", syncAddonsGroupVisibility);
+    modalDestination.addEventListener("change", () => {
+      resetModalAvailabilityState();
+      clearModalStatus();
+      syncAddonsGroupVisibility();
+    });
   }
 
   if (modalCheckin) {
-    modalCheckin.addEventListener("change", updateTotal);
+    modalCheckin.addEventListener("change", () => {
+      resetModalAvailabilityState();
+      clearModalStatus();
+      updateTotal();
+    });
   }
 
   if (modalCheckout) {
-    modalCheckout.addEventListener("change", updateTotal);
+    modalCheckout.addEventListener("change", () => {
+      resetModalAvailabilityState();
+      clearModalStatus();
+      updateTotal();
+    });
+  }
+
+  if (modalGuests) {
+    modalGuests.addEventListener("change", () => {
+      resetModalAvailabilityState();
+      clearModalStatus();
+    });
   }
 
   addonCheckboxes.forEach((checkbox) => {
@@ -822,14 +970,16 @@ function initCactusPage() {
       const guests = document.getElementById("luxCactusGuests");
 
       if (!checkin || !checkout || !guests || !checkin.value || !checkout.value || !guests.value) {
-        window.alert("Please complete check-in, check-out, and guests.");
+        setInlineFormError(cactusForm, "Please complete check-in, check-out, and guests.");
         return;
       }
 
       if (new Date(checkout.value) <= new Date(checkin.value)) {
-        window.alert("Check-out must be later than check-in.");
+        setInlineFormError(cactusForm, "Check-out must be later than check-in.");
         return;
       }
+
+      setInlineFormError(cactusForm, "");
 
       const params = new URLSearchParams({
         destination: "cactus",
@@ -1115,13 +1265,15 @@ function initPinePage() {
       const guests = document.getElementById("luxPineGuests");
 
       if (!checkin || !checkout || !guests || !checkin.value || !checkout.value || !guests.value) {
-        window.alert("Please complete check-in, check-out, and guests.");
+        setInlineFormError(pineForm, "Please complete check-in, check-out, and guests.");
         return;
       }
       if (new Date(checkout.value) <= new Date(checkin.value)) {
-        window.alert("Check-out must be later than check-in.");
+        setInlineFormError(pineForm, "Check-out must be later than check-in.");
         return;
       }
+
+      setInlineFormError(pineForm, "");
 
       const params = new URLSearchParams({
         destination: "pine",
