@@ -36,7 +36,7 @@ const nightlyPriceDisplayEl = document.getElementById("nightlyPriceDisplay");
 const nightsCountEl = document.getElementById("nightsCount");
 const addonsTotalEl = document.getElementById("addonsTotal");
 const totalPriceEl = document.getElementById("totalPrice");
-const AVAILABILITY_API_URL = "https://script.google.com/macros/s/AKfycbxNikbHB1YaG7fAxCzldhBCwc1-DcFUJvPISW6bffZt1g8aA1UavtbjmHFudZ8nTGU2/exec";
+const AVAILABILITY_API_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev";
 
 const blockedDateRange = {
   start: "2026-04-10",
@@ -247,39 +247,23 @@ function syncAddonsGroupVisibility() {
   updateTotal();
 }
 
-function resolveAvailabilityInputs(sourceForm) {
-  const scopedCheckin = sourceForm ? sourceForm.querySelector("#checkin") : null;
-  const scopedCheckout = sourceForm ? sourceForm.querySelector("#checkout") : null;
-
-  if (scopedCheckin && scopedCheckout) {
-    return { checkinInput: scopedCheckin, checkoutInput: scopedCheckout };
-  }
-
-  if (sourceForm === bookingModalForm) {
-    return { checkinInput: modalCheckin, checkoutInput: modalCheckout };
-  }
-
-  if (sourceForm === bookingForm) {
-    return { checkinInput: checkInDate, checkoutInput: checkOutDate };
-  }
-
-  return {
-    checkinInput: document.querySelector("#checkin") || checkInDate || modalCheckin,
-    checkoutInput: document.querySelector("#checkout") || checkOutDate || modalCheckout
-  };
-}
-
 async function handleCheckAvailability(event) {
   if (event) {
     event.preventDefault();
   }
 
-  const sourceForm = event && event.currentTarget instanceof HTMLFormElement ? event.currentTarget : null;
+  const trigger = event && event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  const sourceForm = trigger ? trigger.closest("form") : null;
   const isModalContext = sourceForm === bookingModalForm;
-  const { checkinInput, checkoutInput } = resolveAvailabilityInputs(sourceForm);
+  const checkinInput = sourceForm
+    ? sourceForm.querySelector("#checkin") || sourceForm.querySelector("#checkInDate") || sourceForm.querySelector("#modalCheckin")
+    : null;
+  const checkoutInput = sourceForm
+    ? sourceForm.querySelector("#checkout") || sourceForm.querySelector("#checkOutDate") || sourceForm.querySelector("#modalCheckout")
+    : null;
 
   if (!checkinInput || !checkoutInput) {
-    window.alert("Something went wrong");
+    window.alert("Please select check-in and check-out dates.");
     return;
   }
 
@@ -305,7 +289,7 @@ async function handleCheckAvailability(event) {
     if (bookingFeedback && sourceForm === bookingForm) {
       bookingFeedback.textContent = "Please select destination, check-in, and check-out before continuing.";
     }
-    window.alert("Something went wrong");
+    window.alert("Please select check-in and check-out dates.");
     return;
   }
 
@@ -359,16 +343,16 @@ async function handleCheckAvailability(event) {
       if (bookingFeedback && sourceForm === bookingForm) {
         bookingFeedback.textContent = "Sorry, these dates are not available";
       }
-      window.alert("Sorry, these dates are not available");
+      window.alert("Not available ❌");
       return;
     }
 
     if (bookingFeedback && sourceForm === bookingForm) {
       bookingFeedback.textContent = "Great news – your dates are available";
     }
-    window.alert("Great news – your dates are available");
-  } catch (error) {
-    console.error("Availability check failed:", error);
+    window.alert("Available ✅");
+  } catch (err) {
+    console.error(err);
     if (isModalContext) {
       setBookingStatus("Unable to check availability right now. Please try again.", "error");
       continueBookingBtn.disabled = true;
@@ -434,7 +418,11 @@ function initBookingModalEvents() {
   });
 
   if (bookingModalForm) {
-    bookingModalForm.addEventListener("submit", handleCheckAvailability);
+    const modalCheckAvailabilityBtn = bookingModalForm.querySelector("button[type=\"submit\"]");
+    if (modalCheckAvailabilityBtn) {
+      modalCheckAvailabilityBtn.id = "modalCheckAvailabilityBtn";
+      modalCheckAvailabilityBtn.addEventListener("click", handleCheckAvailability);
+    }
   }
 
   if (continueBookingBtn) {
@@ -1133,7 +1121,11 @@ if (increaseGuests && decreaseGuests && guestCount) {
 }
 
 if (bookingForm && destinationSelect && checkInDate && checkOutDate && bookingFeedback && guestCount) {
-  bookingForm.addEventListener("submit", handleCheckAvailability);
+  const homeCheckAvailabilityBtn = bookingForm.querySelector("button[type=\"submit\"]");
+  if (homeCheckAvailabilityBtn) {
+    homeCheckAvailabilityBtn.id = "checkAvailabilityBtn";
+    homeCheckAvailabilityBtn.addEventListener("click", handleCheckAvailability);
+  }
 }
 
 if (tabs.length) {
