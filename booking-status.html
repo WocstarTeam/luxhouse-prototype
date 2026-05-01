@@ -112,11 +112,26 @@
 
   <script>
     (function () {
+      const API_BASE_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev";
+      const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
+      const POLL_INTERVAL_MS = 5000;
+
       const datesEl = document.getElementById("dates");
       const statusEl = document.getElementById("statusMessage");
       const paymentButton = document.getElementById("paymentButton");
       const params = new URLSearchParams(window.location.search);
-      const requestId = params.get("requestId");
+
+      function getLatestBooking() {
+        try {
+          const raw = localStorage.getItem(LATEST_BOOKING_STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      const latestBooking = getLatestBooking();
+      const requestId = params.get("requestId") || (latestBooking && latestBooking.requestId) || "";
 
       function setStatus(text, type) {
         statusEl.textContent = text;
@@ -135,36 +150,61 @@
         return;
       }
 
-      fetch(
-        "https://restless-waterfall-a71b.tech-e7b.workers.dev/get-booking?requestId=" +
-          encodeURIComponent(requestId)
-      )
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("Request failed with status " + response.status);
-          }
-          return response.json();
-        })
-        .then(function (data) {
-          const checkin = data.checkin || data.checkIn || data.check_in;
-          const checkout = data.checkout || data.checkOut || data.check_out;
-          const status = String(data.status || "").toLowerCase();
+      let pollTimer = null;
 
-          datesEl.textContent = resolveDate(checkin) + " \u2192 " + resolveDate(checkout);
+      function stopPolling() {
+        if (pollTimer) {
+          clearTimeout(pollTimer);
+          pollTimer = null;
+        }
+      }
 
-          if (status === "approved") {
-            setStatus("Approved \u2014 ready to book", "approved");
-            paymentButton.style.display = "inline-block";
-          } else if (status === "rejected") {
-            setStatus("Verification failed", "rejected");
-          } else {
-            setStatus("Verification in progress...", "pending");
-          }
-        })
-        .catch(function () {
-          datesEl.textContent = "--";
-          setStatus("Unable to load booking status", "rejected");
-        });
+      function schedulePoll() {
+        stopPolling();
+        pollTimer = setTimeout(loadStatus, POLL_INTERVAL_MS);
+      }
+
+      function loadStatus() {
+        fetch(
+          API_BASE_URL + "/get-booking?requestId=" + encodeURIComponent(requestId)
+        )
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("Request failed with status " + response.status);
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            const checkin = data.checkin || data.checkIn || data.check_in;
+            const checkout = data.checkout || data.checkOut || data.check_out;
+            const status = String(data.status || "").toLowerCase();
+
+            datesEl.textContent = resolveDate(checkin) + " \u2192 " + resolveDate(checkout);
+
+            if (status === "approved") {
+              setStatus("Approved \u2014 ready to book", "approved");
+              paymentButton.style.display = "inline-block";
+              stopPolling();
+              return;
+            }
+
+            if (status === "rejected") {
+              setStatus("Verification failed", "rejected");
+              stopPolling();
+              return;
+            }
+
+            paymentButton.style.display = "none";
+            setStatus("Verification in process...", "pending");
+            schedulePoll();
+          })
+          .catch(function () {
+            setStatus("Unable to load booking status. Retrying...", "rejected");
+            schedulePoll();
+          });
+      }
+
+      loadStatus();
     })();
   </script>
 </body>

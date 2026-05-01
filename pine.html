@@ -215,7 +215,8 @@
         <input id="modalCheckout" name="checkout" type="date" required>
         <label for="modalGuests">Guests</label>
         <input id="modalGuests" name="guests" type="number" min="1" max="20" value="6" required>
-        <button type="submit" class="lux-booking-primary">Check Availability</button>
+        <button type="submit" id="checkAvailabilityBtn" class="lux-booking-primary">Check Availability</button>
+        <div id="availabilityResult" class="availability-result"></div>
       </form>
       <p class="lux-booking-status" id="bookingStatus" aria-live="polite"></p>
       <section class="lux-booking-step-two" id="bookingStepTwo" hidden>

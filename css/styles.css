@@ -1594,6 +1594,11 @@ body.modal-open {
   gap: 0.56rem;
 }
 
+.lux-booking-step-two[hidden],
+.addons-group[hidden] {
+  display: none !important;
+}
+
 .lux-booking-status {
   min-height: 1.25rem;
   margin-top: 0.9rem;
