@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booking Status</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --pending: #d97706;
+      --approved: #15803d;
+      --rejected: #dc2626;
+      --btn: #111827;
+      --btn-hover: #030712;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #ffffff, var(--bg) 50%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: 1.65rem;
+      letter-spacing: 0.01em;
+    }
+
+    .dates {
+      margin: 0 0 16px;
+      font-size: 1rem;
+      color: var(--muted);
+    }
+
+    .status {
+      margin: 0;
+      min-height: 28px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .status.pending {
+      color: var(--pending);
+    }
+
+    .status.approved {
+      color: var(--approved);
+    }
+
+    .status.rejected {
+      color: var(--rejected);
+    }
+
+    .status.default {
+      color: var(--muted);
+    }
+
+    .pay-btn {
+      display: none;
+      margin-top: 24px;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      background: var(--btn);
+      color: #fff;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .pay-btn:hover {
+      background: var(--btn-hover);
+      transform: translateY(-1px);
+    }
+
+    .pay-btn:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Your Booking Status</h1>
+    <p id="dates" class="dates">--</p>
+    <p id="statusMessage" class="status default">Loading...</p>
+    <button id="paymentButton" class="pay-btn" type="button">Proceed to Payment</button>
+  </main>
+
+  <script>
+    (function () {
+      const datesEl = document.getElementById("dates");
+      const statusEl = document.getElementById("statusMessage");
+      const paymentButton = document.getElementById("paymentButton");
+      const params = new URLSearchParams(window.location.search);
+      const requestId = params.get("requestId");
+
+      function setStatus(text, type) {
+        statusEl.textContent = text;
+        statusEl.className = "status " + (type || "default");
+      }
+
+      function resolveDate(value) {
+        if (!value) return "--";
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString();
+      }
+
+      if (!requestId) {
+        datesEl.textContent = "--";
+        setStatus("Request ID is missing", "rejected");
+        return;
+      }
+
+      fetch(
+        "https://restless-waterfall-a71b.tech-e7b.workers.dev/get-booking?requestId=" +
+          encodeURIComponent(requestId)
+      )
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("Request failed with status " + response.status);
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          const checkin = data.checkin || data.checkIn || data.check_in;
+          const checkout = data.checkout || data.checkOut || data.check_out;
+          const status = String(data.status || "").toLowerCase();
+
+          datesEl.textContent = resolveDate(checkin) + " \u2192 " + resolveDate(checkout);
+
+          if (status === "approved") {
+            setStatus("Approved \u2014 ready to book", "approved");
+            paymentButton.style.display = "inline-block";
+          } else if (status === "rejected") {
+            setStatus("Verification failed", "rejected");
+          } else {
+            setStatus("Verification in progress...", "pending");
+          }
+        })
+        .catch(function () {
+          datesEl.textContent = "--";
+          setStatus("Unable to load booking status", "rejected");
+        });
+    })();
+  </script>
+</body>
+</html>
