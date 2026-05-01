@@ -453,14 +453,14 @@ async function handleCheckAvailability(event) {
   setAvailabilityFeedback(availabilityResult, "Checking availability...", "loading");
 
   try {
-    const response = await fetch(AVAILABILITY_API_URL, {
+    const response = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/availability", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        checkin,
-        checkout
+        checkin: checkin,
+        checkout: checkout
       })
     });
 
