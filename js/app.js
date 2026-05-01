@@ -97,6 +97,7 @@ const nightlyRates = {
 };
 
 let modalAvailabilityReady = false;
+let activeAvailabilityForm = null;
 
 // =========================================================
 // Utility
@@ -361,178 +362,91 @@ function syncAddonsGroupVisibility() {
   updateTotal();
 }
 
-async function handleCheckAvailability(event) {
-  if (event) {
-    event.preventDefault();
-  }
+async function checkAvailability() {
 
-  const trigger = event && event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-  const sourceForm = trigger ? trigger.closest("form") : null;
-  const isModalContext = sourceForm === bookingModalForm;
-  if (!sourceForm) {
+  const scopedForm = activeAvailabilityForm;
+  const checkinInput = scopedForm
+    ? scopedForm.querySelector('[name="checkin"]')
+    : document.querySelector('[name="checkin"]');
+  const checkoutInput = scopedForm
+    ? scopedForm.querySelector('[name="checkout"]')
+    : document.querySelector('[name="checkout"]');
+  const checkin = checkinInput ? checkinInput.value : "";
+  const checkout = checkoutInput ? checkoutInput.value : "";
+
+  console.log("Sending:", { checkin, checkout });
+
+  const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/availability", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      checkin,
+      checkout
+    })
+  });
+
+  const data = await res.json();
+
+  console.log("Response:", data);
+
+  const resultBox = scopedForm
+    ? (scopedForm.querySelector("#availabilityResult") || getAvailabilityResultForForm(scopedForm))
+    : document.getElementById("availabilityResult");
+  const continueBtn = document.getElementById("continueBtn");
+
+  if (!resultBox || !continueBtn) {
     return;
   }
 
-  const checkinInput = sourceForm.querySelector("#checkin")
-    || sourceForm.querySelector("#checkInDate")
-    || sourceForm.querySelector("#modalCheckin");
-  const checkoutInput = sourceForm.querySelector("#checkout")
-    || sourceForm.querySelector("#checkOutDate")
-    || sourceForm.querySelector("#modalCheckout");
-  const availabilityResult = getAvailabilityResultForForm(sourceForm);
-  const actionButton = trigger && trigger.tagName === "BUTTON"
-    ? trigger
-    : sourceForm.querySelector("button[type=\"submit\"]");
+  if (data.available) {
+    resultBox.innerText = "Available for your dates";
+    resultBox.style.color = "green";
 
-  if (!availabilityResult || !actionButton) {
-    return;
-  }
-
-  const showUnavailableState = () => {
-    setAvailabilityFeedback(availabilityResult, NOT_AVAILABLE_MESSAGE, "error");
-    if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "";
-    }
-    if (isModalContext) {
-      setBookingStatus("", "");
-    }
-  };
-
-  if (!checkinInput || !checkoutInput || !checkinInput.value || !checkoutInput.value) {
-    if (isModalContext) {
-      resetModalAvailabilityState();
-    }
-    showUnavailableState();
-    return;
-  }
-
-  if (isModalContext && (!modalDestination || !modalGuests || !continueBookingBtn || !bookingStepTwo)) {
-    return;
-  }
-
-  const checkin = checkinInput.value;
-  const checkout = checkoutInput.value;
-  const destination = modalDestination ? modalDestination.value.trim() : "";
-  const guests = modalGuests ? Number(modalGuests.value) : 0;
-
-  if (!checkin || !checkout) {
-    if (isModalContext) {
-      resetModalAvailabilityState();
-    }
-    showUnavailableState();
-    return;
-  }
-
-  if (isModalContext && (!destination || !guests)) {
-    resetModalAvailabilityState();
-    showUnavailableState();
-    return;
-  }
-
-  if (isModalContext && !supportedProperties.includes(destination)) {
-    resetModalAvailabilityState();
-    showUnavailableState();
-    return;
-  }
-
-  if (new Date(checkout) <= new Date(checkin)) {
-    if (isModalContext) {
-      resetModalAvailabilityState();
-    }
-    showUnavailableState();
-    return;
-  }
-
-  if (isModalContext) {
-    resetModalAvailabilityState();
-    setBookingStatus("", "");
-  }
-
-  actionButton.disabled = true;
-  actionButton.innerText = "Checking...";
-  setAvailabilityFeedback(availabilityResult, "Checking availability...", "loading");
-
-  try {
-    const response = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/availability", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        checkin: checkin,
-        checkout: checkout
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Availability API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    if (result.available !== true) {
-      if (isModalContext) {
-        resetModalAvailabilityState();
-      }
-      showUnavailableState();
-      return;
-    }
-
-    setAvailabilityFeedback(availabilityResult, "Available for your dates", "success");
-    if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "";
-    }
-    if (isModalContext) {
-      setBookingStatus("", "");
-    }
-  } catch (err) {
-    console.error(err);
-    if (isModalContext) {
-      resetModalAvailabilityState();
-      setBookingStatus("", "");
-    }
-    setAvailabilityFeedback(availabilityResult, GENERIC_BOOKING_ERROR_MESSAGE, "error");
-    if (bookingFeedback && sourceForm === bookingForm) {
-      bookingFeedback.textContent = "";
-    }
-    return;
-  } finally {
-    actionButton.disabled = false;
-    if (isModalContext && modalAvailabilityReady) {
-      actionButton.innerText = MODAL_AVAILABLE_BUTTON_LABEL;
-    } else {
-      actionButton.innerText = "Check Availability";
-    }
-  }
-
-  if (isModalContext) {
+    // enable continue button
+    continueBtn.disabled = false;
     modalAvailabilityReady = true;
-    continueBookingBtn.disabled = false;
-    bookingStepTwo.hidden = false;
-    actionButton.innerText = MODAL_AVAILABLE_BUTTON_LABEL;
+    if (bookingStepTwo) {
+      bookingStepTwo.hidden = false;
+    }
+
+  } else {
+    resultBox.innerText = "Not available for selected dates";
+    resultBox.style.color = "red";
+
+    // disable continue button
+    continueBtn.disabled = true;
+    modalAvailabilityReady = false;
+    if (bookingStepTwo) {
+      bookingStepTwo.hidden = true;
+    }
   }
 }
 
-async function handleBookingRedirect(event) {
+function handleCheckAvailability(event) {
   if (event) {
     event.preventDefault();
   }
-
-  if (!modalAvailabilityReady || !modalDestination || !modalCheckin || !modalCheckout || !modalGuests) {
-    setBookingStatus("Please check availability before continuing.", "error");
-    return;
-  }
-
-  if (!supportedProperties.includes(modalDestination.value)) {
-    setBookingStatus("Please choose a valid LuxHouse destination.", "error");
-    return;
-  }
-
-  setBookingStatus("", "");
-  const actionButton = event && event.currentTarget instanceof HTMLButtonElement
-    ? event.currentTarget
-    : continueBookingBtn;
-  await startIdentityVerification(actionButton, (message) => setBookingStatus(message, "error"));
+  activeAvailabilityForm = event && event.currentTarget instanceof HTMLElement
+    ? event.currentTarget.closest("form")
+    : null;
+  checkAvailability().catch((err) => {
+    console.error("Availability error:", err);
+    const resultBox = document.getElementById("availabilityResult");
+    if (resultBox) {
+      resultBox.innerText = GENERIC_BOOKING_ERROR_MESSAGE;
+      resultBox.style.color = "red";
+    }
+    const continueBtn = document.getElementById("continueBtn");
+    if (continueBtn) {
+      continueBtn.disabled = true;
+    }
+    modalAvailabilityReady = false;
+    if (bookingStepTwo) {
+      bookingStepTwo.hidden = true;
+    }
+  });
 }
 
 function handlePayment() {
@@ -589,7 +503,19 @@ function initBookingModalEvents() {
   }
 
   if (continueBookingBtn) {
-    continueBookingBtn.addEventListener("click", handleBookingRedirect);
+    continueBookingBtn.id = "continueBtn";
+    document.getElementById("continueBtn").addEventListener("click", async () => {
+
+      const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/verify", {
+        method: "POST"
+      });
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    });
   }
 
   const clearModalStatus = () => {
@@ -1455,8 +1381,7 @@ initPinePage();
 window.openBookingModal = openBookingModal;
 window.closeBookingModal = closeBookingModal;
 window.handleCheckAvailability = handleCheckAvailability;
-window.checkAvailability = handleCheckAvailability;
-window.handleBookingRedirect = handleBookingRedirect;
+window.checkAvailability = checkAvailability;
 window.handlePayment = handlePayment;
 window.classifyImages = classifyImages;
 window.openLightbox = openLightbox;
