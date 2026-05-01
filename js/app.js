@@ -1,4 +1,9 @@
-﻿// =========================================================
+﻿document.addEventListener("DOMContentLoaded", () => {
+  const legacyContinueBtn = document.getElementById("continueBookingBtn");
+  if (legacyContinueBtn) {
+    legacyContinueBtn.outerHTML = "<button id=\"continueBtn\">Continue to booking</button>";
+  }
+// =========================================================
 // LuxHouse Prototype - Core Interactions
 // =========================================================
 
@@ -24,7 +29,7 @@ const bookingModal = document.getElementById("bookingModal");
 const bookingModalForm = document.getElementById("bookingModalForm");
 const bookingStatus = document.getElementById("bookingStatus");
 const bookingStepTwo = document.getElementById("bookingStepTwo");
-const continueBookingBtn = document.getElementById("continueBookingBtn");
+const continueBookingBtn = document.getElementById("continueBtn");
 const bookingMessage = document.getElementById("bookingMessage");
 const modalDestination = document.getElementById("modalDestination");
 const modalCheckin = document.getElementById("modalCheckin");
@@ -502,21 +507,55 @@ function initBookingModalEvents() {
     bookingModalForm.addEventListener("submit", (event) => event.preventDefault());
   }
 
-  if (continueBookingBtn) {
-    continueBookingBtn.id = "continueBtn";
-    document.getElementById("continueBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("continueBtn");
 
-      const res = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/verify", {
-        method: "POST"
+  if (!btn) {
+    console.error("Button not found");
+    return;
+  }
+
+  btn.addEventListener("click", async () => {
+    try {
+      console.log("CLICK WORKS");
+
+      const checkin = document.querySelector('[name="checkin"]').value;
+      const checkout = document.querySelector('[name="checkout"]').value;
+
+      console.log("Dates:", checkin, checkout);
+
+      const bookingRes = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/create-booking", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ checkin, checkout })
       });
 
-      const data = await res.json();
+      const bookingData = await bookingRes.json();
+      console.log("Booking:", bookingData);
 
-      if (data.url) {
-        window.location.href = data.url;
+      const verifyRes = await fetch("https://restless-waterfall-a71b.tech-e7b.workers.dev/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ requestId: bookingData.requestId })
+      });
+
+      const verifyData = await verifyRes.json();
+      console.log("Verify:", verifyData);
+
+      if (verifyData.url) {
+        window.location.href = verifyData.url;
+      } else {
+        alert("Verification failed");
       }
-    });
-  }
+
+    } catch (err) {
+      console.error("ERROR:", err);
+      alert("Something broke. Check console.");
+    }
+  });
 
   const clearModalStatus = () => {
     setBookingStatus("", "");
@@ -1389,3 +1428,5 @@ window.closeLightbox = closeLightbox;
 window.showNextImage = showNextImage;
 window.showPrevImage = showPrevImage;
 window.handleSwipe = handleSwipe;
+});
+
