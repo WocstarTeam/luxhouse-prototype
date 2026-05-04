@@ -113,6 +113,11 @@ a {
   z-index: 2;
 }
 
+.hero-intro-card {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
 .hero-kicker {
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -128,7 +133,7 @@ a {
   margin-inline: auto;
 }
 
-.hero-content > p {
+.hero-summary {
   margin: 1rem auto 0;
   max-width: 58ch;
   color: rgba(255, 255, 255, 0.9);
@@ -1964,23 +1969,54 @@ body.modal-open {
 .lux-home-page .hero-shell {
   min-height: 96svh;
   padding-bottom: 3.6rem;
+  background-position: center 44%;
 }
 
 .lux-home-page .top-nav {
   padding-top: 0.25rem;
+  text-shadow: 0 2px 18px rgba(17, 9, 5, 0.34);
 }
 
 .lux-home-page .nav-links a {
   letter-spacing: 0.01em;
 }
 
-.lux-home-page .hero-content h1 {
-  max-width: 13ch;
-  font-size: clamp(2.4rem, 6.6vw, 4.6rem);
+.lux-home-page .hero-content {
+  margin-top: clamp(9vh, 13vh, 15vh);
 }
 
-.lux-home-page .hero-content > p {
-  max-width: 52ch;
+.lux-home-page .hero-intro-card {
+  width: min(100%, 760px);
+  padding: clamp(1.05rem, 2.2vw, 1.65rem) clamp(1.15rem, 2.4vw, 2rem);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(255, 250, 242, 0.78), rgba(242, 221, 193, 0.68));
+  border: 1px solid rgba(255, 248, 236, 0.64);
+  box-shadow: 0 22px 50px rgba(28, 16, 9, 0.24);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.lux-home-page .hero-kicker {
+  color: #6f4b31;
+}
+
+.lux-home-page .hero-content h1 {
+  max-width: 11.5ch;
+  margin-inline: auto;
+  color: #2e1f14;
+  text-wrap: balance;
+  font-size: clamp(2.25rem, 6vw, 4.45rem);
+}
+
+.lux-home-page .hero-summary {
+  max-width: 48ch;
+  color: #4a3525;
+}
+
+.lux-home-page .booking-bar {
+  margin-top: 1.65rem;
+  background: rgba(248, 236, 218, 0.92);
+  border-color: rgba(242, 227, 205, 0.98);
 }
 
 .lux-home-page .destination-grid article {
@@ -2008,6 +2044,14 @@ body.modal-open {
   .lux-home-page .destination-grid {
     grid-template-columns: 1fr;
     max-width: 520px;
+  }
+
+  .lux-home-page .hero-content {
+    margin-top: clamp(8vh, 11vh, 13vh);
+  }
+
+  .lux-home-page .hero-intro-card {
+    padding-inline: 1rem;
   }
 
   .collection-nav {
