@@ -271,46 +271,42 @@ async function handleCreateVerificationSession(request, env) {
 }
 
 async function handleWebhook(request) {
-  let event;
+  let event = {};
   try {
     event = await request.json();
   } catch (error) {
     console.error("Webhook JSON parse error:", error);
-    return new Response("Invalid payload", { status: 400 });
+    event = {};
   }
 
   const eventType = event && typeof event.type === "string" ? event.type : "";
-
-  if (
-    eventType !== "identity.verification_session.verified" &&
-    eventType !== "identity.verification_session.requires_input" &&
-    eventType !== "identity.verification_session.canceled"
-  ) {
-    return new Response("Webhook received", { status: 200 });
-  }
-
   const session = event && event.data ? event.data.object : null;
   const requestId = session?.metadata?.requestId;
 
   console.log(eventType, requestId);
 
-  if (!requestId) {
-    return new Response("Missing requestId", { status: 400 });
-  }
-
-  if (eventType === "identity.verification_session.verified") {
+  if (eventType === "identity.verification_session.verified" && requestId) {
     BOOKINGS[requestId] = { status: "verified" };
   }
 
-  if (eventType === "identity.verification_session.requires_input") {
+  if (eventType === "identity.verification_session.requires_input" && requestId) {
     BOOKINGS[requestId] = { status: "requires_input" };
   }
 
-  if (eventType === "identity.verification_session.canceled") {
+  if (eventType === "identity.verification_session.canceled" && requestId) {
     BOOKINGS[requestId] = { status: "rejected" };
   }
 
-  return new Response("Webhook received", { status: 200 });
+  return new Response(
+    JSON.stringify({
+      received: true,
+      event: event.type,
+      requestId: session?.metadata?.requestId || null,
+    }),
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 }
 
 export default {
