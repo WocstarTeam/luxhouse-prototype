@@ -313,6 +313,111 @@ function initHeroBookingBar() {
   });
 }
 
+function initDestinationCarousel() {
+  const root = document.getElementById("destinationCarousel");
+  const track = document.getElementById("destinationCarouselTrack");
+  const prevBtn = document.getElementById("destinationPrevBtn");
+  const nextBtn = document.getElementById("destinationNextBtn");
+  if (!root || !track || !prevBtn || !nextBtn) {
+    return;
+  }
+
+  const slides = Array.from(track.querySelectorAll(".destination-slide"));
+  const dots = Array.from(root.querySelectorAll(".destination-carousel-dot"));
+  if (!slides.length) {
+    return;
+  }
+
+  let currentIndex = 0;
+  let autoTimer = null;
+  const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function renderSlide(index) {
+    currentIndex = (index + slides.length) % slides.length;
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    slides.forEach((slide, slideIndex) => {
+      const isActive = slideIndex === currentIndex;
+      slide.classList.toggle("is-active", isActive);
+      slide.setAttribute("aria-hidden", String(!isActive));
+    });
+
+    dots.forEach((dot, dotIndex) => {
+      const isActive = dotIndex === currentIndex;
+      dot.classList.toggle("is-active", isActive);
+      dot.setAttribute("aria-selected", String(isActive));
+      dot.setAttribute("tabindex", isActive ? "0" : "-1");
+    });
+  }
+
+  function stopAutoRotate() {
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+  }
+
+  function startAutoRotate() {
+    if (prefersReducedMotion || slides.length < 2) {
+      return;
+    }
+    stopAutoRotate();
+    autoTimer = window.setInterval(() => {
+      renderSlide(currentIndex + 1);
+    }, 6500);
+  }
+
+  function goToRelativeSlide(step) {
+    renderSlide(currentIndex + step);
+    startAutoRotate();
+  }
+
+  prevBtn.addEventListener("click", () => {
+    goToRelativeSlide(-1);
+  });
+
+  nextBtn.addEventListener("click", () => {
+    goToRelativeSlide(1);
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      const nextIndex = Number(dot.getAttribute("data-destination-index"));
+      if (!Number.isFinite(nextIndex)) {
+        return;
+      }
+      renderSlide(nextIndex);
+      startAutoRotate();
+    });
+  });
+
+  root.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      goToRelativeSlide(-1);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      goToRelativeSlide(1);
+    }
+  });
+
+  root.addEventListener("mouseenter", stopAutoRotate);
+  root.addEventListener("mouseleave", startAutoRotate);
+  root.addEventListener("focusin", stopAutoRotate);
+  root.addEventListener("focusout", (event) => {
+    if (root.contains(event.relatedTarget)) {
+      return;
+    }
+    startAutoRotate();
+  });
+
+  renderSlide(0);
+  startAutoRotate();
+}
+
 function initBookingModal() {
   const modal = document.getElementById("bookingModal");
   if (!modal) {
@@ -1137,6 +1242,7 @@ function init() {
   window.__luxBookingInitDone = true;
 
   initHeroBookingBar();
+  initDestinationCarousel();
   initBookingModal();
   initPropertyForms();
   initBookingSummaryPage();

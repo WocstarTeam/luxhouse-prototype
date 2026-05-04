@@ -74,23 +74,43 @@
       <h2>The LuxHouse Collection</h2>
       <p>Our story is a collection of happy places, each built for shared memory-making, quiet reset, and celebration under one roof.</p>
 
-      <div class="destination-grid">
-        <article>
-          <a class="property-link" href="cactus.html" aria-label="View Cactus and Chill House details">
-            <img src="assets/images/cactus/Firepit%20Closeup.png" alt="Cactus and Chill firepit view">
-          </a>
-          <h3><a class="property-link" href="cactus.html">The Cactus &amp; Chill House</a></h3>
-          <p class="location">Mesa, Arizona</p>
-          <p>Desert textures, warm evenings, and outdoor living made for reconnection.</p>
-        </article>
-        <article>
-          <a class="property-link" href="pine.html" aria-label="View Pine and Peace House details">
-            <img src="assets/images/pine/pnc1.png" alt="Pine and Peace hero image" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
-          </a>
-          <h3><a class="property-link" href="pine.html">The Pine and Peace House</a></h3>
-          <p class="location">Carnelian Bay, Lake Tahoe</p>
-          <p>Elevated alpine living in the heart of the Sierras, with room for every season.</p>
-        </article>
+      <div class="destination-carousel" id="destinationCarousel" aria-label="Featured LuxHouse guesthouses" tabindex="0">
+        <div class="destination-carousel-track" id="destinationCarouselTrack">
+          <article class="destination-slide is-active" data-destination-index="0">
+            <a class="destination-slide-media property-link" href="cactus.html" aria-label="View Cactus and Chill House details">
+              <img src="assets/images/cactus/Firepit%20Closeup.png" alt="Cactus and Chill firepit view">
+            </a>
+            <div class="destination-slide-copy">
+              <p class="destination-slide-kicker">Featured guesthouse</p>
+              <h3><a class="property-link" href="cactus.html">The Cactus &amp; Chill House</a></h3>
+              <p class="location">Mesa, Arizona</p>
+              <p>Desert textures, warm evenings, and outdoor living made for reconnection.</p>
+              <a class="destination-slide-cta" href="cactus.html">Explore Cactus &amp; Chill</a>
+            </div>
+          </article>
+
+          <article class="destination-slide" data-destination-index="1">
+            <a class="destination-slide-media property-link" href="pine.html" aria-label="View Pine and Peace House details">
+              <img src="assets/images/pine/pnc1.png" alt="Pine and Peace hero image" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </a>
+            <div class="destination-slide-copy">
+              <p class="destination-slide-kicker">Featured guesthouse</p>
+              <h3><a class="property-link" href="pine.html">The Pine and Peace House</a></h3>
+              <p class="location">Carnelian Bay, Lake Tahoe</p>
+              <p>Elevated alpine living in the heart of the Sierras, with room for every season.</p>
+              <a class="destination-slide-cta" href="pine.html">Explore Pine &amp; Peace</a>
+            </div>
+          </article>
+        </div>
+
+        <div class="destination-carousel-controls">
+          <button class="destination-carousel-nav prev" id="destinationPrevBtn" type="button" aria-label="Previous guesthouse slide">&#10094;</button>
+          <div class="destination-carousel-dots" role="tablist" aria-label="Choose guesthouse slide">
+            <button class="destination-carousel-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show The Cactus and Chill House" data-destination-index="0"></button>
+            <button class="destination-carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show The Pine and Peace House" data-destination-index="1"></button>
+          </div>
+          <button class="destination-carousel-nav next" id="destinationNextBtn" type="button" aria-label="Next guesthouse slide">&#10095;</button>
+        </div>
       </div>
     </section>
 
