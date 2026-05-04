@@ -296,7 +296,7 @@ function initHeroBookingBar() {
           bookingModalController.open(payload, { availabilityConfirmed: true });
         }
       } else {
-        setAvailabilityResult(resultEl, "Not available for these dates.", "error");
+        setAvailabilityResult(resultEl, "These dates were just booked. Please choose alternative dates.", "error");
         if (feedbackEl) {
           feedbackEl.textContent = "Those dates are unavailable. Opening suggested alternatives now.";
         }
@@ -567,7 +567,7 @@ function initBookingModal() {
 
     availabilitySuggestionsEl.hidden = false;
     availabilitySuggestionsEl.innerHTML = `
-      <p class="lux-availability-suggestions-title">Those dates are booked. Looking for alternatives...</p>
+      <p class="lux-availability-suggestions-title">Our apologies, these dates have already been booked.</p>
       <p class="lux-availability-suggestions-subtitle">Searching for nearby ${modalData.nights} ${nightsText} options at ${destinationLabel}.</p>
     `;
 
@@ -596,7 +596,7 @@ function initBookingModal() {
       .join("");
 
     availabilitySuggestionsEl.innerHTML = `
-      <p class="lux-availability-suggestions-title">Those dates are unavailable. Choose one of these available alternatives:</p>
+      <p class="lux-availability-suggestions-title">Our apologies, these dates have already been booked. Please select one of the available alternatives below, or choose new dates.</p>
       <div class="lux-availability-suggestions-actions">${buttonsMarkup}</div>
     `;
 
@@ -667,11 +667,11 @@ function initBookingModal() {
         setConfirmedLayout(false);
         stepTwoEl.hidden = true;
         continueBtn.disabled = true;
-        setAvailabilityResult(availabilityResult, "Not available for these dates", "error");
+        setAvailabilityResult(availabilityResult, "", "");
         setStatusMessage(
           statusEl,
-          "Those dates are unavailable. Choose one of the suggested available options below.",
-          "error"
+          "Our apologies, these dates have already been booked. Please select an alternative below or choose new dates.",
+          ""
         );
         await showAlternativeSuggestions(modalData);
       }
@@ -920,7 +920,7 @@ function initPropertyForms() {
             bookingModalController.open(payload, { availabilityConfirmed: true });
           }
         } else {
-          setAvailabilityResult(resultEl, "Not available for these dates. Opening alternatives...", "error");
+          setAvailabilityResult(resultEl, "These dates were just booked. Opening alternatives...", "error");
           if (bookingModalController && bookingModalController.open) {
             bookingModalController.open(payload, { autoCheck: true });
           }
