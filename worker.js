@@ -149,59 +149,77 @@ async function handleGetBooking(request, env) {
 }
 
 async function handleBookingStatus(request, env) {
-  const url = new URL(request.url);
-  const requestId = (url.searchParams.get("requestId") || "").trim();
+  const pendingVerificationResponse = {
+    ok: true,
+    status: "pending_verification",
+    message:
+      "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.",
+  };
 
-  if (!requestId) {
-    return jsonResponse({
-      ok: false,
-      status: "missing_request_id",
-      message:
-        "We received your verification return, but could not locate your booking request.",
-    });
-  }
-
-  let bookingRaw;
   try {
-    bookingRaw = await env.BOOKINGS.get(requestId);
-  } catch (error) {
-    console.error("Booking status lookup error:", error);
-    return jsonResponse(
-      {
-        ok: false,
-        status: "fatal_error",
-        message: "We hit an unexpected error while loading your booking status.",
-      },
-      500
-    );
-  }
+    const url = new URL(request.url);
+    const requestId = url.searchParams.get("requestId");
+    const safeRequestId = typeof requestId === "string" ? requestId.trim() : "";
 
-  if (!bookingRaw) {
+    if (!safeRequestId) {
+      return jsonResponse({
+        ok: false,
+        status: "missing_request_id",
+        message:
+          "We received your verification return, but could not locate your booking request.",
+      });
+    }
+
+    const bookingRaw = await env.BOOKINGS.get(safeRequestId);
+    if (bookingRaw == null) {
+      return jsonResponse(pendingVerificationResponse);
+    }
+
+    let booking = {};
+    if (typeof bookingRaw === "string" && bookingRaw) {
+      try {
+        const parsed = JSON.parse(bookingRaw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          booking = parsed;
+        }
+      } catch (error) {
+        console.error("Booking status parse error:", error);
+      }
+    }
+
+    const statusValue = typeof booking.status === "string" ? booking.status.trim().toLowerCase() : "";
+    const existingStatus = statusValue || "unknown";
+
+    const checkin =
+      typeof booking.checkin === "string"
+        ? booking.checkin
+        : typeof booking.checkIn === "string"
+        ? booking.checkIn
+        : typeof booking.check_in === "string"
+        ? booking.check_in
+        : null;
+
+    const checkout =
+      typeof booking.checkout === "string"
+        ? booking.checkout
+        : typeof booking.checkOut === "string"
+        ? booking.checkOut
+        : typeof booking.check_out === "string"
+        ? booking.check_out
+        : null;
+
     return jsonResponse({
       ok: true,
-      status: "pending_verification",
-      message: STATUS_MESSAGES.pending_verification,
+      status: existingStatus,
+      message: getStatusMessage(existingStatus),
+      requestId: safeRequestId,
+      checkin,
+      checkout,
     });
-  }
-
-  let booking = {};
-  try {
-    booking = JSON.parse(bookingRaw);
   } catch (error) {
-    console.error("Booking status parse error:", error);
-    booking = {};
+    console.error("Booking status handler error:", error);
+    return jsonResponse(pendingVerificationResponse);
   }
-
-  const existingStatus = String(booking.status || "unknown").trim().toLowerCase() || "unknown";
-
-  return jsonResponse({
-    ok: true,
-    status: existingStatus,
-    message: getStatusMessage(existingStatus),
-    requestId,
-    checkin: booking.checkin || booking.checkIn || booking.check_in || null,
-    checkout: booking.checkout || booking.checkOut || booking.check_out || null,
-  });
 }
 
 function isBookingStatusPath(pathname) {

@@ -112,8 +112,6 @@
 
   <script>
     (function () {
-      const API_BASE_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev";
-      const STATUS_PATH = "/booking-status";
       const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
       const POLL_INTERVAL_MS = 5000;
       const REQUEST_TIMEOUT_MS = 10000;
@@ -135,7 +133,7 @@
       const datesEl = document.getElementById("dates");
       const statusEl = document.getElementById("statusMessage");
       const paymentButton = document.getElementById("paymentButton");
-      const params = new URLSearchParams(window.location.search);
+      const url = new URL(window.location.href);
 
       function getLatestBooking() {
         try {
@@ -147,7 +145,8 @@
       }
 
       const latestBooking = getLatestBooking();
-      const requestId = params.get("requestId") || (latestBooking && latestBooking.requestId) || "";
+      const requestId = url.searchParams.get("requestId");
+      const safeRequestId = typeof requestId === "string" ? requestId.trim() : "";
 
       function setStatus(text, type) {
         statusEl.textContent = text;
@@ -188,14 +187,6 @@
         return "pending";
       }
 
-      function createStatusUrl() {
-        const endpoint = new URL(API_BASE_URL + STATUS_PATH);
-        if (requestId) {
-          endpoint.searchParams.set("requestId", requestId);
-        }
-        return endpoint.toString();
-      }
-
       let pollTimer = null;
 
       function stopPolling() {
@@ -217,11 +208,15 @@
         }, REQUEST_TIMEOUT_MS);
 
         try {
-          const response = await fetch(createStatusUrl(), {
+          const response = await fetch(`https://luxhouse-worker.tech-e7b.workers.dev/booking-status?requestId=${safeRequestId}`, {
             method: "GET",
             headers: { Accept: "application/json" },
             signal: controller.signal,
           });
+
+          if (!response.ok) {
+            throw new Error("Request failed with status " + response.status);
+          }
 
           let data = null;
           try {
@@ -230,11 +225,7 @@
             throw new Error("Invalid JSON response");
           }
 
-          if (!response.ok && (!data || typeof data !== "object")) {
-            throw new Error("Request failed with status " + response.status);
-          }
-
-          return data || {};
+          return data && typeof data === "object" ? data : {};
         } finally {
           clearTimeout(timeoutId);
         }
@@ -273,14 +264,14 @@
           }
 
           setStatus(message, statusClass);
-          if (requestId) {
+          if (safeRequestId) {
             schedulePoll();
           }
         } catch (error) {
           console.error("Booking status load failed:", error);
           paymentButton.style.display = "none";
           setStatus(PENDING_REVIEW_MESSAGE, "pending");
-          if (requestId) {
+          if (safeRequestId) {
             schedulePoll();
           }
         }
