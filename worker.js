@@ -291,9 +291,15 @@ async function handleCreateVerificationSession(request, env) {
   const params = new URLSearchParams();
   params.set("type", "document");
   params.set("metadata[requestId]", requestId);
-  if (env.IDENTITY_RETURN_URL) {
-    params.set("return_url", env.IDENTITY_RETURN_URL);
+
+  const configuredReturnUrl =
+    typeof env.IDENTITY_RETURN_URL === "string" ? env.IDENTITY_RETURN_URL.trim() : "";
+  const fallbackReturnUrl = `${url.origin}/booking-status.html`;
+  const returnUrl = new URL(configuredReturnUrl || fallbackReturnUrl, request.url);
+  if (!returnUrl.searchParams.get("requestId")) {
+    returnUrl.searchParams.set("requestId", requestId);
   }
+  params.set("return_url", returnUrl.toString());
 
   const stripeRes = await fetch("https://api.stripe.com/v1/identity/verification_sessions", {
     method: "POST",

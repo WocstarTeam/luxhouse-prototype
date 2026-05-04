@@ -145,8 +145,12 @@
       }
 
       const latestBooking = getLatestBooking();
-      const requestId = url.searchParams.get("requestId");
-      const safeRequestId = typeof requestId === "string" ? requestId.trim() : "";
+      const requestIdFromUrl = url.searchParams.get("requestId");
+      const requestIdFromStorage =
+        latestBooking && typeof latestBooking.requestId === "string"
+          ? latestBooking.requestId
+          : "";
+      const safeRequestId = (requestIdFromUrl || requestIdFromStorage || "").trim();
 
       paymentButton.addEventListener("click", function () {
         const nextUrl = new URL("booking.html", window.location.href);
