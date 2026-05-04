@@ -1,3 +1,7 @@
 name = "luxhouse-worker"
 main = "worker.js"
 compatibility_date = "2024-05-01"
+
+[[kv_namespaces]]
+binding = "BOOKINGS"
+id = "d66c6e4115ea43adbd604291fc84ed04"
