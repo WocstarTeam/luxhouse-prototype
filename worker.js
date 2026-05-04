@@ -1,3 +1,5 @@
+globalThis.BOOKINGS = globalThis.BOOKINGS || {};
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -19,7 +21,7 @@ const STATUS_MESSAGES = {
     "Thank you. Your booking request is being reviewed by our team.",
 };
 
-let BOOKINGS = {};
+let BOOKINGS = globalThis.BOOKINGS;
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -151,19 +153,11 @@ async function handleGetBooking(request, env) {
 }
 
 async function handleBookingStatus(request, env) {
-  const pendingVerificationResponse = {
-    ok: true,
-    status: "pending_verification",
-    message:
-      "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.",
-  };
-
   try {
     const url = new URL(request.url);
-    const requestId = url.searchParams?.get("requestId");
-    const safeRequestId = typeof requestId === "string" ? requestId.trim() : "";
+    const requestId = (url.searchParams?.get("requestId") || "").trim();
 
-    if (!safeRequestId) {
+    if (!requestId) {
       return jsonResponse({
         ok: false,
         status: "missing_request_id",
@@ -172,45 +166,36 @@ async function handleBookingStatus(request, env) {
       });
     }
 
-    let booking = null;
-
-    try {
-      const memoryStore = BOOKINGS && typeof BOOKINGS === "object" ? BOOKINGS : null;
-      if (memoryStore && memoryStore[safeRequestId] && typeof memoryStore[safeRequestId] === "object") {
-        booking = memoryStore[safeRequestId];
-      } else {
-        const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.get === "function" ? env.BOOKINGS : null;
-        const bookingRaw = kvStore ? await kvStore.get(safeRequestId) : null;
-        if (typeof bookingRaw === "string" && bookingRaw) {
-          try {
-            const parsed = JSON.parse(bookingRaw);
-            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-              booking = parsed;
-            }
-          } catch (parseError) {
-            console.error("Storage read failed", parseError);
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Storage read failed", e);
-    }
+    const booking = globalThis.BOOKINGS[requestId];
 
     if (!booking) {
-      return jsonResponse(pendingVerificationResponse);
+      return new Response(JSON.stringify({
+        ok: true,
+        status: "pending_verification",
+        message: "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly."
+      }), { headers: { "Content-Type": "application/json" } });
     }
 
-    const statusValue = typeof booking.status === "string" ? booking.status.trim().toLowerCase() : "";
-    const existingStatus = statusValue || "unknown";
+    if (booking.status === "verified") {
+      return new Response(JSON.stringify({
+        ok: true,
+        status: "verified",
+        message: "Your identity verification was successful. You may now continue with your booking."
+      }), { headers: { "Content-Type": "application/json" } });
+    }
 
-    return jsonResponse({
+    return new Response(JSON.stringify({
       ok: true,
-      status: existingStatus,
-      message: getStatusMessage(existingStatus),
-    });
+      status: "pending_verification",
+      message: "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly."
+    }), { headers: { "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Booking status handler error:", error);
-    return jsonResponse(pendingVerificationResponse);
+    return new Response(JSON.stringify({
+      ok: true,
+      status: "pending_verification",
+      message: "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly."
+    }), { headers: { "Content-Type": "application/json" } });
   }
 }
 
@@ -297,13 +282,8 @@ async function handleWebhook(request) {
 
   console.log(eventType, requestId);
 
-  if (eventType === "identity.verification_session.verified" && requestId) {
-    // Store verified status in memory
-    if (typeof BOOKINGS === "undefined") {
-      globalThis.BOOKINGS = {};
-    }
-
-    BOOKINGS[requestId] = {
+  if (event.type === "identity.verification_session.verified" && requestId) {
+    globalThis.BOOKINGS[requestId] = {
       status: "verified",
       updatedAt: Date.now()
     };
