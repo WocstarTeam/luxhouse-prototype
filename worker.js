@@ -227,8 +227,17 @@ async function handleCreateVerificationSession(request, env) {
   const url = new URL(request.url);
   const body = await parseJsonBody(request);
   const bodyRequestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
-  const queryRequestId = (url.searchParams.get("requestId") || "").trim();
-  const requestId = bodyRequestId || queryRequestId || createRequestId();
+
+  // Try to get existing requestId from URL
+  let requestId = (url.searchParams.get("requestId") || "").trim();
+  if (!requestId && bodyRequestId) {
+    requestId = bodyRequestId;
+  }
+
+  // If missing, generate one
+  if (!requestId) {
+    requestId = "LUX-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
+  }
 
   const existingRaw = await env.BOOKINGS.get(requestId);
   if (!existingRaw) {
@@ -267,7 +276,10 @@ async function handleCreateVerificationSession(request, env) {
     return jsonResponse({ error: stripeData.error?.message || "Stripe error" }, 500);
   }
 
-  return jsonResponse({ url: stripeData.url });
+  return jsonResponse({
+    url: stripeData.url,
+    requestId: requestId,
+  });
 }
 
 async function handleWebhook(request) {
