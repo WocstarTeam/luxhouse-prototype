@@ -429,6 +429,10 @@ main {
   line-height: 1.64;
 }
 
+.destination-slide .location + .destination-slide-description {
+  margin-top: 1.25rem;
+}
+
 .destination-slide-description + .destination-slide-description {
   margin-top: 1.15rem;
 }
