@@ -2122,12 +2122,40 @@ body.modal-open {
   border-color: rgba(242, 227, 205, 0.98);
 }
 
-.lux-home-page .destination-carousel {
-  max-width: 1040px;
+.lux-home-page .intro {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding-inline: clamp(0.75rem, 1.7vw, 1.35rem);
+}
+
+.lux-home-page .intro > h2,
+.lux-home-page .intro > p {
+  max-width: 1120px;
   margin-inline: auto;
+  padding-inline: clamp(0.45rem, 0.9vw, 0.8rem);
+}
+
+.lux-home-page .destination-carousel {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.lux-home-page .destination-slide {
+  min-height: clamp(470px, 52vw, 640px);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+.lux-home-page .destination-slide img {
+  min-height: 100%;
 }
 
 .lux-home-page .destination-slide-copy {
+  padding: clamp(1.45rem, 2.4vw, 2.7rem);
   background: linear-gradient(138deg, #fffaf2 0%, #f2e2cf 100%);
 }
 
@@ -2141,6 +2169,24 @@ body.modal-open {
 }
 
 @media (max-width: 860px) {
+  .lux-home-page .intro {
+    left: auto;
+    right: auto;
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
+    padding-inline: 0;
+  }
+
+  .lux-home-page .intro > h2,
+  .lux-home-page .intro > p {
+    padding-inline: 0;
+  }
+
+  .lux-home-page .destination-slide {
+    min-height: auto;
+  }
+
   .lux-home-page .destination-slide img {
     min-height: 260px;
   }
