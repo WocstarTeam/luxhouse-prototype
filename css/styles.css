@@ -1976,6 +1976,10 @@ body.modal-open {
 }
 
 .lux-home-page .top-nav {
+  max-width: 1680px;
+  width: min(100%, 1680px);
+  margin: 0 auto;
+  padding-inline: clamp(0.25rem, 1.4vw, 1.1rem);
   padding-top: 0.25rem;
   text-shadow: 0 2px 18px rgba(17, 9, 5, 0.34);
 }
@@ -1985,7 +1989,7 @@ body.modal-open {
 }
 
 .lux-home-page .hero-content {
-  margin-top: clamp(9vh, 13vh, 15vh);
+  margin-top: clamp(16vh, 21vh, 24vh);
 }
 
 .lux-home-page .hero-kicker {
@@ -2015,7 +2019,7 @@ body.modal-open {
 }
 
 .lux-home-page .booking-bar {
-  margin-top: 1.65rem;
+  margin-top: 2.35rem;
   background: rgba(248, 236, 218, 0.92);
   border-color: rgba(242, 227, 205, 0.98);
 }
@@ -2048,7 +2052,7 @@ body.modal-open {
   }
 
   .lux-home-page .hero-content {
-    margin-top: clamp(8vh, 11vh, 13vh);
+    margin-top: clamp(12vh, 16vh, 18vh);
   }
 
   .lux-home-page .hero-content h1 {
