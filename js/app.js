@@ -407,6 +407,65 @@ function initHeroBookingBar() {
   });
 }
 
+function initFeaturedDestinationImageRotator() {
+  const rotator = document.getElementById("featuredDestinationRotator");
+  if (!rotator) {
+    return;
+  }
+
+  const frames = Array.from(rotator.querySelectorAll(".destination-rotator-image"));
+  if (frames.length < 2) {
+    return;
+  }
+
+  const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let activeIndex = 0;
+  let timer = null;
+  const dwellMs = 5400;
+
+  function showFrame(index) {
+    activeIndex = (index + frames.length) % frames.length;
+    frames.forEach((frame, frameIndex) => {
+      const isActive = frameIndex === activeIndex;
+      frame.classList.toggle("is-active", isActive);
+      frame.setAttribute("aria-hidden", String(!isActive));
+    });
+  }
+
+  function stop() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  function start() {
+    if (prefersReducedMotion) {
+      return;
+    }
+    stop();
+    timer = window.setInterval(() => {
+      showFrame(activeIndex + 1);
+    }, dwellMs);
+  }
+
+  rotator.addEventListener("mouseenter", stop);
+  rotator.addEventListener("mouseleave", start);
+  rotator.addEventListener("focusin", stop);
+  rotator.addEventListener("focusout", (event) => {
+    if (rotator.contains(event.relatedTarget)) {
+      return;
+    }
+    start();
+  });
+
+  showFrame(0);
+  start();
+}
+
 function initDestinationCarousel() {
   const root = document.getElementById("destinationCarousel");
   const track = document.getElementById("destinationCarouselTrack");
@@ -1351,6 +1410,7 @@ function init() {
   window.__luxBookingInitDone = true;
 
   maskPineContentUntilLaunch();
+  initFeaturedDestinationImageRotator();
   initHeroBookingBar();
   initDestinationCarousel();
   initBookingModal();

@@ -78,7 +78,10 @@
         <div class="destination-carousel-track" id="destinationCarouselTrack">
           <article class="destination-slide is-active" data-destination-index="0">
             <a class="destination-slide-media property-link" href="cactus.html" aria-label="View Cactus and Chill House details">
-              <img src="salon1.png" alt="Cactus and Chill salon view">
+              <div class="destination-rotator" id="featuredDestinationRotator" aria-live="polite">
+                <img class="destination-rotator-image is-active" src="salon1.png" alt="Cactus and Chill salon view" aria-hidden="false">
+                <img class="destination-rotator-image destination-rotator-image--zoom" src="grill1.png" alt="Cactus and Chill grill view" aria-hidden="true" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+              </div>
             </a>
             <div class="destination-slide-copy">
               <p class="destination-slide-kicker">Featured guesthouse</p>
@@ -277,6 +280,6 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=20260504-3"></script>
+  <script src="js/app.js?v=20260504-4"></script>
 </body>
 </html>

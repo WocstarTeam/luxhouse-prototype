@@ -306,11 +306,48 @@ main {
 
 .destination-slide-media {
   min-height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.destination-rotator {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.destination-rotator-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1);
+  transition: opacity 820ms ease;
+}
+
+.destination-rotator-image.is-active {
+  opacity: 1;
+  z-index: 2;
+}
+
+.destination-rotator-image--zoom.is-active {
+  animation: destination-zoom-in 5400ms ease-out forwards;
 }
 
 .destination-slide img {
   height: 100%;
   min-height: 430px;
+}
+
+@keyframes destination-zoom-in {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+  }
 }
 
 .destination-slide-copy {
