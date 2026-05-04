@@ -368,6 +368,7 @@ main {
 .destination-slide-copy-main {
   display: flex;
   flex-direction: column;
+  min-height: 100%;
 }
 
 .destination-slide-logo-wrap {
@@ -422,38 +423,46 @@ main {
 }
 
 .destination-slide-details {
-  margin-top: 1rem;
-  padding-top: 0.88rem;
+  margin-top: 1.15rem;
+  padding-top: 1rem;
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.56rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.72rem, 1.2vw, 1rem);
   border-top: 1px solid rgba(31, 64, 57, 0.18);
+  max-width: 430px;
+  justify-items: center;
 }
 
 .destination-slide-detail {
-  padding: 0.62rem 0.54rem;
+  width: clamp(126px, 10.8vw, 164px);
+  aspect-ratio: 1 / 1;
+  padding: clamp(0.66rem, 0.95vw, 0.88rem);
   border: 1px solid rgba(31, 64, 57, 0.14);
-  border-radius: 0.6rem;
+  border-radius: 999px;
   background: linear-gradient(170deg, rgba(255, 255, 255, 0.7) 0%, rgba(247, 236, 221, 0.9) 100%);
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.24rem;
 }
 
 .destination-slide-detail-value {
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.22rem, 2vw, 1.6rem);
+  font-size: clamp(1.85rem, 2.45vw, 2.4rem);
   line-height: 1;
   color: #1f4039;
 }
 
 .destination-slide-detail-label {
-  font-size: 0.58rem;
-  letter-spacing: 0.11em;
+  font-size: 0.61rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(31, 24, 18, 0.82);
   line-height: 1.35;
+  max-width: 12ch;
 }
 
 .destination-slide-cta {
@@ -943,8 +952,8 @@ main {
     grid-template-columns: minmax(0, 1fr) clamp(78px, 18vw, 102px);
   }
 
-  .destination-slide-details {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .destination-slide-detail {
+    width: clamp(116px, 23vw, 148px);
   }
 
   .booking-bar {
@@ -2279,15 +2288,32 @@ body.modal-open {
 
 .lux-home-page .destination-slide-details {
   border-top-color: rgba(31, 64, 57, 0.22);
+  align-content: stretch;
 }
 
 .lux-home-page .destination-slide-detail {
   background: linear-gradient(170deg, rgba(255, 255, 255, 0.74) 0%, rgba(245, 231, 214, 0.92) 100%);
+  box-shadow: 0 10px 24px rgba(31, 24, 18, 0.12);
+}
+
+.lux-home-page .destination-slide-copy--with-logo {
+  height: 100%;
+  align-items: stretch;
+}
+
+.lux-home-page .destination-slide-copy-main {
+  justify-content: flex-start;
 }
 
 .lux-home-page .destination-slide-cta {
+  margin-top: 1.35rem;
   border-color: rgba(31, 64, 57, 0.2);
   background: #fffdf8;
+}
+
+.lux-home-page .destination-slide-copy--with-logo .destination-slide-cta {
+  margin-top: auto;
+  margin-bottom: 0.2rem;
 }
 
 .lux-home-page .destination-slide-cta:hover {
@@ -2333,6 +2359,7 @@ body.modal-open {
 
   .lux-home-page .destination-slide-details {
     gap: 0.48rem;
+    max-width: 100%;
   }
 
   .lux-home-page .destination-carousel-nav {
