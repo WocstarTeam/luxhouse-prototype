@@ -1,5 +1,7 @@
 const API_BASE_URL = "https://luxhouse-worker.tech-e7b.workers.dev";
 const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
+const MIN_STAY_NIGHTS = 2;
+const MAX_STAY_NIGHTS = 28;
 const NIGHTLY_RATES = {
   cactus: 625,
   pine: 710
@@ -125,9 +127,16 @@ function enforceDateOrder(checkinInput, checkoutInput) {
     checkinInput.value = today;
   }
 
-  const minCheckout = addDays(checkinInput.value, 1);
+  const minCheckout = addDays(checkinInput.value, MIN_STAY_NIGHTS);
+  const maxCheckout = addDays(checkinInput.value, MAX_STAY_NIGHTS);
   checkoutInput.min = minCheckout;
-  if (!checkoutInput.value || checkoutInput.value <= checkinInput.value) {
+  checkoutInput.max = maxCheckout;
+  if (
+    !checkoutInput.value ||
+    checkoutInput.value <= checkinInput.value ||
+    checkoutInput.value < minCheckout ||
+    checkoutInput.value > maxCheckout
+  ) {
     checkoutInput.value = minCheckout;
   }
 }
@@ -141,6 +150,13 @@ function validateStayInputs({ destination, checkin, checkout, guests }) {
   }
   if (checkout <= checkin) {
     return "Check-out must be after check-in.";
+  }
+  const nights = nightsBetween(checkin, checkout);
+  if (nights < MIN_STAY_NIGHTS) {
+    return `The minimum stay is ${MIN_STAY_NIGHTS} nights.`;
+  }
+  if (nights > MAX_STAY_NIGHTS) {
+    return `The maximum stay is ${MAX_STAY_NIGHTS} nights.`;
   }
   if (!Number.isFinite(guests) || guests < 1) {
     return "Please enter a valid guest count.";

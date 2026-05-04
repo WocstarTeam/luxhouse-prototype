@@ -20,6 +20,8 @@ const STATUS_MESSAGES = {
   unknown:
     "Thank you. Your booking request is being reviewed by our team.",
 };
+const MIN_STAY_NIGHTS = 2;
+const MAX_STAY_NIGHTS = 28;
 
 let BOOKINGS = globalThis.BOOKINGS;
 globalThis.ICAL_EVENTS_CACHE = globalThis.ICAL_EVENTS_CACHE || {};
@@ -56,6 +58,29 @@ function parseIsoDateToUtcMs(value) {
     return NaN;
   }
   return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function calculateStayNights(checkin, checkout) {
+  const startMs = parseIsoDateToUtcMs(checkin);
+  const endMs = parseIsoDateToUtcMs(checkout);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+    return NaN;
+  }
+  return Math.round((endMs - startMs) / 86400000);
+}
+
+function getStayRangeError(checkin, checkout) {
+  const nights = calculateStayNights(checkin, checkout);
+  if (!Number.isFinite(nights)) {
+    return "Invalid date range";
+  }
+  if (nights < MIN_STAY_NIGHTS) {
+    return `The minimum stay is ${MIN_STAY_NIGHTS} nights.`;
+  }
+  if (nights > MAX_STAY_NIGHTS) {
+    return `The maximum stay is ${MAX_STAY_NIGHTS} nights.`;
+  }
+  return "";
 }
 
 function parseIcalDateValueToUtcMs(value) {
@@ -532,6 +557,11 @@ async function handleAvailability(request, env) {
     return jsonResponse({ available: false, error: "Missing dates" }, 400);
   }
 
+  const stayRangeError = getStayRangeError(checkin, checkout);
+  if (stayRangeError) {
+    return jsonResponse({ available: false, error: stayRangeError }, 400);
+  }
+
   const requestedStartMs = parseIsoDateToUtcMs(checkin);
   const requestedEndMs = parseIsoDateToUtcMs(checkout);
   if (!Number.isFinite(requestedStartMs) || !Number.isFinite(requestedEndMs) || requestedEndMs <= requestedStartMs) {
@@ -587,6 +617,10 @@ async function handleCreateBooking(request, env) {
 
   if (!checkin || !checkout) {
     return jsonResponse({ error: "checkin and checkout are required" }, 400);
+  }
+  const stayRangeError = getStayRangeError(checkin, checkout);
+  if (stayRangeError) {
+    return jsonResponse({ error: stayRangeError }, 400);
   }
 
   const requestId = createRequestId();
@@ -713,8 +747,18 @@ function isBookingStatusPath(pathname) {
 async function handleCreateVerificationSession(request, env) {
   const url = new URL(request.url);
   const body = await parseJsonBody(request);
+  const bodyCheckin = typeof body.checkin === "string" ? body.checkin.trim() : "";
+  const bodyCheckout = typeof body.checkout === "string" ? body.checkout.trim() : "";
   const bodyRequestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
   const bodyReturnUrl = typeof body.returnUrl === "string" ? body.returnUrl.trim() : "";
+
+  if (!bodyCheckin || !bodyCheckout) {
+    return jsonResponse({ error: "checkin and checkout are required" }, 400);
+  }
+  const verificationStayError = getStayRangeError(bodyCheckin, bodyCheckout);
+  if (verificationStayError) {
+    return jsonResponse({ error: verificationStayError }, 400);
+  }
 
   // Try to get existing requestId from URL
   let requestId = (url.searchParams.get("requestId") || "").trim();
@@ -735,10 +779,10 @@ async function handleCreateVerificationSession(request, env) {
       createdAt: new Date().toISOString(),
     };
     if (body.checkin) {
-      booking.checkin = body.checkin;
+      booking.checkin = bodyCheckin;
     }
     if (body.checkout) {
-      booking.checkout = body.checkout;
+      booking.checkout = bodyCheckout;
     }
     await env.BOOKINGS.put(requestId, JSON.stringify(booking));
   }
@@ -750,8 +794,8 @@ async function handleCreateVerificationSession(request, env) {
     ...existingMemory,
     requestId,
     status: "pending_verification",
-    checkin: body.checkin || existingMemory.checkin || null,
-    checkout: body.checkout || existingMemory.checkout || null,
+    checkin: bodyCheckin || existingMemory.checkin || null,
+    checkout: bodyCheckout || existingMemory.checkout || null,
     updatedAt: Date.now(),
   };
 
@@ -801,6 +845,13 @@ async function handleCreatePaymentSession(request, env) {
   const destination = typeof body.destinationLabel === "string" ? body.destinationLabel.trim() : "LuxHouse Booking";
   const checkin = typeof body.checkin === "string" ? body.checkin.trim() : "";
   const checkout = typeof body.checkout === "string" ? body.checkout.trim() : "";
+  if (!checkin || !checkout) {
+    return jsonResponse({ error: "checkin and checkout are required" }, 400);
+  }
+  const paymentStayError = getStayRangeError(checkin, checkout);
+  if (paymentStayError) {
+    return jsonResponse({ error: paymentStayError }, 400);
+  }
   const totalNumber = Number(body.total);
   const totalAmountCents = Number.isFinite(totalNumber) && totalNumber > 0
     ? Math.round(totalNumber * 100)
