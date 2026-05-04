@@ -55,6 +55,17 @@ function nightsBetween(checkin, checkout) {
   return Math.round(diff / 86400000);
 }
 
+function formatCurrency(amount) {
+  const numeric = Number(amount);
+  if (!Number.isFinite(numeric)) {
+    return "0";
+  }
+  return numeric.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
+}
+
 function setAvailabilityResult(resultEl, message, kind) {
   if (!resultEl) {
     return;
@@ -251,7 +262,10 @@ function initHeroBookingBar() {
       if (available) {
         setAvailabilityResult(resultEl, "Available for your dates.", "success");
         if (feedbackEl) {
-          feedbackEl.textContent = "Great news - click Book to continue with verification.";
+          feedbackEl.textContent = "Great news. We are opening your pricing and stay options now.";
+        }
+        if (bookingModalController && bookingModalController.open) {
+          bookingModalController.open(payload, { availabilityConfirmed: true });
         }
       } else {
         setAvailabilityResult(resultEl, "Not available for these dates.", "error");
@@ -288,6 +302,8 @@ function initBookingModal() {
   const checkAvailabilityBtn =
     document.getElementById("checkAvailabilityBtn") ||
     (form ? form.querySelector('button[type="submit"]') : null);
+  const offerTitleEl = document.getElementById("availabilityOfferTitle");
+  const offerCopyEl = document.getElementById("availabilityOfferCopy");
 
   if (!form || !destinationInput || !checkinInput || !checkoutInput || !guestsInput || !stepTwoEl || !continueBtn) {
     return;
@@ -336,23 +352,39 @@ function initBookingModal() {
 
   function syncPricingUI() {
     const pricing = getCurrentModalData();
+    const staySubtotal = pricing.nights * pricing.nightlyRate;
 
     const nightlyRateEl = document.getElementById("nightlyPriceDisplay");
     const nightsEl = document.getElementById("nightsCount");
+    const staySubtotalEl = document.getElementById("staySubtotal");
     const addonsEl = document.getElementById("addonsTotal");
     const totalEl = document.getElementById("totalPrice");
 
     if (nightlyRateEl) {
-      nightlyRateEl.textContent = String(pricing.nightlyRate);
+      nightlyRateEl.textContent = formatCurrency(pricing.nightlyRate);
     }
     if (nightsEl) {
       nightsEl.textContent = String(pricing.nights);
     }
+    if (staySubtotalEl) {
+      staySubtotalEl.textContent = formatCurrency(staySubtotal);
+    }
     if (addonsEl) {
-      addonsEl.textContent = String(pricing.addonsTotal);
+      addonsEl.textContent = formatCurrency(pricing.addonsTotal);
     }
     if (totalEl) {
-      totalEl.textContent = String(pricing.total);
+      totalEl.textContent = formatCurrency(pricing.total);
+    }
+  }
+
+  function updateAvailabilityOfferCopy() {
+    const pricing = getCurrentModalData();
+    const destinationLabel = getDestinationLabel(pricing.destination) || "LuxHouse";
+    if (offerTitleEl) {
+      offerTitleEl.textContent = "Great news. Your selected dates are available.";
+    }
+    if (offerCopyEl) {
+      offerCopyEl.textContent = `Your ${pricing.nights}-night stay at ${destinationLabel} starts at $${formatCurrency(pricing.nightlyRate)} per night. Select any enhancements below, then proceed to verification.`;
     }
   }
 
@@ -384,7 +416,8 @@ function initBookingModal() {
     syncPricingUI();
   }
 
-  function openModal(prefill) {
+  function openModal(prefill, options) {
+    const modalOptions = options || {};
     const prefillData = prefill || {};
     modal.classList.add("is-open");
     modal.setAttribute("aria-hidden", "false");
@@ -413,6 +446,19 @@ function initBookingModal() {
 
     showDestinationAddons(destinationInput.value);
     syncPricingUI();
+
+    if (modalOptions.availabilityConfirmed) {
+      state.isAvailable = true;
+      stepTwoEl.hidden = false;
+      continueBtn.disabled = false;
+      setAvailabilityResult(availabilityResult, "Available for your selected dates.", "success");
+      setStatusMessage(
+        statusEl,
+        "Great news. Personalize your stay below, then proceed to verification.",
+        "success"
+      );
+      updateAvailabilityOfferCopy();
+    }
   }
 
   function closeModal() {
@@ -457,12 +503,13 @@ function initBookingModal() {
         continueBtn.disabled = false;
         showDestinationAddons(modalData.destination);
         syncPricingUI();
-        setAvailabilityResult(availabilityResult, "Available for your dates", "success");
+        setAvailabilityResult(availabilityResult, "Great news. Your dates are available.", "success");
         setStatusMessage(
           statusEl,
-          "Available. Enhance your stay and continue to Stripe verification.",
+          "Review your pricing, add any enhancements, and proceed when ready.",
           "success"
         );
+        updateAvailabilityOfferCopy();
       } else {
         stepTwoEl.hidden = true;
         continueBtn.disabled = true;
@@ -710,7 +757,7 @@ function initPropertyForms() {
             "success"
           );
           if (bookingModalController && bookingModalController.open) {
-            bookingModalController.open(payload);
+            bookingModalController.open(payload, { availabilityConfirmed: true });
           }
         } else {
           setAvailabilityResult(resultEl, "Not available for these dates.", "error");

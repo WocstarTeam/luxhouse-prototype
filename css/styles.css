@@ -1594,6 +1594,101 @@ body.modal-open {
   gap: 0.56rem;
 }
 
+.lux-availability-offer {
+  background:
+    radial-gradient(circle at 7% 8%, rgba(201, 158, 113, 0.22), transparent 38%),
+    linear-gradient(145deg, #fffefb 0%, #f7efe2 100%);
+  border: 1px solid #ddcdb8;
+  border-radius: 0.95rem;
+  padding: 0.95rem;
+}
+
+.lux-availability-offer-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7a624c;
+}
+
+.lux-availability-offer h3 {
+  margin: 0.35rem 0 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  line-height: 1.08;
+  color: #21180f;
+}
+
+.lux-availability-offer p {
+  margin: 0.35rem 0 0;
+  color: #5f4f41;
+}
+
+.lux-price-breakdown {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lux-price-breakdown article {
+  border: 1px solid #dfcfbc;
+  border-radius: 0.75rem;
+  background: #fffdf9;
+  padding: 0.65rem;
+}
+
+.lux-price-breakdown span {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7d6854;
+  font-weight: 700;
+}
+
+.lux-price-breakdown strong {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 1.05rem;
+  color: #231a12;
+}
+
+.lux-addons-heading {
+  margin: 0.45rem 0 0.05rem;
+  font-size: 1.08rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  color: #211810;
+}
+
+.addons-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.addons-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #ddccba;
+  border-radius: 0.7rem;
+  padding: 0.62rem 0.7rem;
+  background: #fffdf8;
+}
+
+.lux-booking-total-wrap {
+  border-top: 1px solid #ddccba;
+  margin-top: 0.2rem;
+  padding-top: 0.7rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lux-booking-total-wrap p {
+  margin: 0;
+}
+
 .lux-booking-step-two[hidden],
 .addons-group[hidden] {
   display: none !important;
@@ -1790,6 +1885,10 @@ body.modal-open {
   .lux-booking-panel {
     width: min(94vw, 620px);
     padding: 1rem;
+  }
+
+  .lux-price-breakdown {
+    grid-template-columns: 1fr;
   }
 }
 

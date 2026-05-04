@@ -220,7 +220,30 @@
       </form>
       <p class="lux-booking-status" id="bookingStatus" aria-live="polite"></p>
       <section class="lux-booking-step-two" id="bookingStepTwo" hidden>
-        <h3>Enhance Your Stay</h3>
+        <div class="lux-availability-offer">
+          <p class="lux-availability-offer-kicker">Great news</p>
+          <h3 id="availabilityOfferTitle">Your selected dates are available.</h3>
+          <p id="availabilityOfferCopy">
+            Your stay is ready to reserve. Review your pricing, choose any enhancements, and proceed when you are ready.
+          </p>
+
+          <div class="lux-price-breakdown">
+            <article>
+              <span>Nightly Rate</span>
+              <strong>$<span id="nightlyPriceDisplay">0</span></strong>
+            </article>
+            <article>
+              <span>Nights</span>
+              <strong><span id="nightsCount">0</span></strong>
+            </article>
+            <article>
+              <span>Stay Subtotal</span>
+              <strong>$<span id="staySubtotal">0</span></strong>
+            </article>
+          </div>
+        </div>
+
+        <h4 class="lux-addons-heading">Enhance Your Stay</h4>
         <div class="addons-group" data-property="cactus" hidden>
           <label><input type="checkbox" class="addon-checkbox" data-price="120"> Charcuterie Board ($120)</label>
           <label><input type="checkbox" class="addon-checkbox" data-price="95"> Champagne &amp; Chocolate ($95)</label>
@@ -231,11 +254,11 @@
           <label><input type="checkbox" class="addon-checkbox" data-price="150"> Ski Recovery Spa Kit ($150)</label>
           <label><input type="checkbox" class="addon-checkbox" data-price="300"> Private Chef ($300)</label>
         </div>
-        <p>Nightly Rate: $<span id="nightlyPriceDisplay">0</span></p>
-        <p>Nights: <span id="nightsCount">0</span></p>
-        <p>Add-ons: $<span id="addonsTotal">0</span></p>
-        <p class="addons-total">Estimated Total: $<span id="totalPrice">0</span></p>
-        <button type="button" id="continueBookingBtn" class="lux-booking-primary" disabled>Continue to Booking</button>
+        <div class="lux-booking-total-wrap">
+          <p>Add-ons: $<span id="addonsTotal">0</span></p>
+          <p class="addons-total">Estimated Total: $<span id="totalPrice">0</span></p>
+        </div>
+        <button type="button" id="continueBookingBtn" class="lux-booking-primary" disabled>Proceed to Verification</button>
       </section>
     </section>
   </div>

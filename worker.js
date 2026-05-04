@@ -317,6 +317,211 @@ function getStatusMessage(status) {
   return STATUS_MESSAGES[normalizeStatusForMessage(status)] || STATUS_MESSAGES.unknown;
 }
 
+function formatUtcDateToIcalDate(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+function addDaysUtc(value, daysToAdd) {
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  date.setUTCDate(date.getUTCDate() + daysToAdd);
+  return date;
+}
+
+function escapeIcalText(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function toSafeBookingRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value;
+}
+
+function shouldIncludeInRequestCalendar(booking) {
+  if (!booking) {
+    return false;
+  }
+
+  const checkin = typeof booking.checkin === "string" ? booking.checkin.trim() : "";
+  const checkout = typeof booking.checkout === "string" ? booking.checkout.trim() : "";
+  if (!checkin || !checkout) {
+    return false;
+  }
+
+  const status = String(booking.status || "").trim().toLowerCase();
+  if (status === "rejected" || status === "requires_input") {
+    return false;
+  }
+
+  const hasExplicitRequestMarker = Boolean(booking.bookingRequestedAt);
+  const hasGuestDetails = Boolean(
+    (typeof booking.guestName === "string" && booking.guestName.trim()) ||
+      (typeof booking.guestEmail === "string" && booking.guestEmail.trim()) ||
+      (typeof booking.guestPhone === "string" && booking.guestPhone.trim())
+  );
+
+  return hasExplicitRequestMarker || hasGuestDetails;
+}
+
+async function collectBookingsForCalendar(env) {
+  const byRequestId = new Map();
+
+  const memoryBookings = globalThis.BOOKINGS && typeof globalThis.BOOKINGS === "object" ? globalThis.BOOKINGS : {};
+  for (const [requestId, value] of Object.entries(memoryBookings)) {
+    const booking = toSafeBookingRecord(value);
+    if (!booking) {
+      continue;
+    }
+    const resolvedId = String(booking.requestId || requestId || "").trim();
+    if (!resolvedId) {
+      continue;
+    }
+    byRequestId.set(resolvedId, { ...booking, requestId: resolvedId });
+  }
+
+  const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.list === "function" && typeof env.BOOKINGS.get === "function"
+    ? env.BOOKINGS
+    : null;
+  if (!kvStore) {
+    return Array.from(byRequestId.values());
+  }
+
+  try {
+    let cursor = undefined;
+    while (true) {
+      const listed = await kvStore.list({ cursor, limit: 1000 });
+      const keys = listed && Array.isArray(listed.keys) ? listed.keys : [];
+      for (const keyInfo of keys) {
+        const keyName = typeof keyInfo?.name === "string" ? keyInfo.name : "";
+        if (!keyName) {
+          continue;
+        }
+
+        try {
+          const raw = await kvStore.get(keyName);
+          if (typeof raw !== "string" || !raw) {
+            continue;
+          }
+          const parsed = JSON.parse(raw);
+          const booking = toSafeBookingRecord(parsed);
+          if (!booking) {
+            continue;
+          }
+          const resolvedId = String(booking.requestId || keyName || "").trim();
+          if (!resolvedId) {
+            continue;
+          }
+          byRequestId.set(resolvedId, { ...booking, requestId: resolvedId });
+        } catch (error) {
+          console.error(`Skipping invalid booking record for key ${keyName}:`, error);
+        }
+      }
+
+      if (!listed || listed.list_complete) {
+        break;
+      }
+      cursor = listed.cursor;
+      if (!cursor) {
+        break;
+      }
+    }
+  } catch (error) {
+    console.error("Unable to list BOOKINGS KV for calendar feed:", error);
+  }
+
+  return Array.from(byRequestId.values());
+}
+
+function buildBookingRequestsIcs(bookings) {
+  const nowStamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//LuxHouse//Booking Requests//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "X-WR-CALNAME:LuxHouse Booking Requests",
+    "X-WR-CALDESC:Requested bookings from the LuxHouse website.",
+  ];
+
+  for (const booking of bookings) {
+    if (!shouldIncludeInRequestCalendar(booking)) {
+      continue;
+    }
+
+    const checkinDate = new Date(`${booking.checkin}T00:00:00Z`);
+    const checkoutDate = new Date(`${booking.checkout}T00:00:00Z`);
+    if (Number.isNaN(checkinDate.getTime()) || Number.isNaN(checkoutDate.getTime()) || checkoutDate <= checkinDate) {
+      continue;
+    }
+
+    const uid = `${escapeIcalText(String(booking.requestId || createRequestId()))}@luxhouse-worker`;
+    const dtStart = formatUtcDateToIcalDate(checkinDate);
+    const dtEnd = formatUtcDateToIcalDate(checkoutDate);
+    const guestName = typeof booking.guestName === "string" && booking.guestName.trim() ? booking.guestName.trim() : "Guest";
+    const status = String(booking.status || "requested").trim().toLowerCase();
+    const summary = `REQUESTED - ${guestName}`;
+    const descriptionParts = [
+      `Request ID: ${booking.requestId || "N/A"}`,
+      `Status: ${status || "requested"}`,
+      `Check-in: ${booking.checkin || "N/A"}`,
+      `Check-out: ${booking.checkout || "N/A"}`,
+    ];
+    if (booking.guestEmail) {
+      descriptionParts.push(`Email: ${booking.guestEmail}`);
+    }
+    if (booking.guestPhone) {
+      descriptionParts.push(`Phone: ${booking.guestPhone}`);
+    }
+    if (booking.notes) {
+      descriptionParts.push(`Notes: ${booking.notes}`);
+    }
+    const description = descriptionParts.join("\n");
+
+    lines.push("BEGIN:VEVENT");
+    lines.push(`UID:${uid}`);
+    lines.push(`DTSTAMP:${nowStamp}`);
+    lines.push(`DTSTART;VALUE=DATE:${dtStart}`);
+    lines.push(`DTEND;VALUE=DATE:${dtEnd}`);
+    lines.push(`SUMMARY:${escapeIcalText(summary)}`);
+    lines.push(`DESCRIPTION:${escapeIcalText(description)}`);
+    lines.push("STATUS:TENTATIVE");
+    lines.push("TRANSP:TRANSPARENT");
+    lines.push("END:VEVENT");
+  }
+
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+async function handleBookingRequestsCalendar(env) {
+  const bookings = await collectBookingsForCalendar(env);
+  const ics = buildBookingRequestsIcs(bookings);
+  return new Response(ics, {
+    status: 200,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
 async function handleAvailability(request, env) {
   const body = await parseJsonBody(request);
   const checkin = String(body.checkin || "").trim();
@@ -609,6 +814,8 @@ async function handleCreatePaymentSession(request, env) {
     ...memoryBooking,
     requestId,
     status: memoryBooking.status || "verified",
+    bookingRequestStatus: "requested",
+    bookingRequestedAt: new Date().toISOString(),
     guestName,
     guestEmail,
     guestPhone,
@@ -818,6 +1025,10 @@ export default {
 
     if (pathname.includes("get-booking") && method === "GET") {
       return handleGetBooking(request, env);
+    }
+
+    if (pathname === "/booking-requests.ics" && method === "GET") {
+      return handleBookingRequestsCalendar(env);
     }
 
     if (method === "GET" && isBookingStatusPath(pathname)) {
