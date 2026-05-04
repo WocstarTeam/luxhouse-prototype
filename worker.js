@@ -298,7 +298,17 @@ async function handleWebhook(request) {
   console.log(eventType, requestId);
 
   if (eventType === "identity.verification_session.verified" && requestId) {
-    BOOKINGS[requestId] = { status: "verified" };
+    // Store verified status in memory
+    if (typeof BOOKINGS === "undefined") {
+      globalThis.BOOKINGS = {};
+    }
+
+    BOOKINGS[requestId] = {
+      status: "verified",
+      updatedAt: Date.now()
+    };
+
+    console.log("Booking verified:", requestId);
   }
 
   if (eventType === "identity.verification_session.requires_input" && requestId) {
@@ -313,7 +323,7 @@ async function handleWebhook(request) {
     JSON.stringify({
       received: true,
       event: event.type,
-      requestId: session?.metadata?.requestId || null,
+      requestId: requestId || null,
     }),
     {
       headers: { "Content-Type": "application/json" },
