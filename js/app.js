@@ -622,7 +622,7 @@ function initBookingModal() {
       .join("");
 
     availabilitySuggestionsEl.innerHTML = `
-      <p class="lux-availability-suggestions-title">Our apologies, these dates have already been booked. Please select one of the available alternatives below, or choose new dates.</p>
+      <p class="lux-availability-suggestions-title">Available alternatives for your selected stay:</p>
       <div class="lux-availability-suggestions-actions">${buttonsMarkup}</div>
       <button type="button" class="lux-suggestion-custom-btn">Choose Your Own New Dates</button>
     `;
