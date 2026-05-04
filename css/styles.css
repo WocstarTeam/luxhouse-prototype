@@ -423,13 +423,13 @@ main {
 }
 
 .destination-slide-details {
-  margin-top: 1.15rem;
-  padding-top: 1rem;
+  margin-top: clamp(1.9rem, 2.6vw, 2.5rem);
+  padding-top: 0;
   width: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(72px, 1fr));
   gap: clamp(0.42rem, 0.9vw, 0.82rem);
-  border-top: 1px solid rgba(31, 64, 57, 0.18);
+  border-top: 0;
   max-width: none;
   justify-items: center;
 }
@@ -2287,7 +2287,7 @@ body.modal-open {
 }
 
 .lux-home-page .destination-slide-details {
-  border-top-color: rgba(31, 64, 57, 0.22);
+  border-top: 0;
   align-content: stretch;
 }
 
