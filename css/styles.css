@@ -2094,9 +2094,7 @@ body.modal-open {
 
 .lux-home-page {
   color: #241d17;
-  background:
-    radial-gradient(circle at 16% 10%, rgba(255, 255, 255, 0.95) 0%, transparent 42%),
-    linear-gradient(180deg, #ffffff 0%, #fcfcfd 58%, #f7f7f8 100%);
+  background: #ffffff;
 }
 
 .lux-home-page .hero-shell {
