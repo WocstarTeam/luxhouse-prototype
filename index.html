@@ -12,56 +12,62 @@
 </head>
 <body class="lux-home-page">
   <header class="hero-shell" id="top">
-    <nav class="top-nav">
-      <a class="brand" href="#top">LuxHouse Collection</a>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
-      <div class="nav-links" id="site-nav">
-        <a href="#destinations">Guesthouses</a>
-        <a href="#collections">Collections</a>
-        <a href="#homes">Why LuxHouse</a>
-        <a href="#" data-open-booking-modal>Book</a>
-      </div>
-    </nav>
+    <div class="hero-media">
+      <img class="hero-media-image" src="coverpicaz.png" alt="LuxHouse pool and exterior at sunset" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-hero.svg';">
+    </div>
 
-    <section class="hero-content" aria-label="Hero content">
-      <p class="hero-kicker">Design philosophy: Luxury Familiarity</p>
-      <h1>Two guesthouses. One signature LuxHouse vibe.</h1>
-      <p>Where the desert meets a deep breath, alpine mornings meet social luxury, and every stay feels like home with elevated edges.</p>
-
-      <form class="booking-bar" id="bookingForm" action="#" method="get">
-        <label class="booking-field destination-field" for="destinationSelect">
-          <span class="field-label">Destination</span>
-          <select id="destinationSelect" name="destination" required>
-            <option value="">Choose one</option>
-            <option value="cactus-and-chill">Cactus and Chill - Mesa, Arizona</option>
-            <option value="pine-and-peace">Pine and Peace - Carnelian Bay, Lake Tahoe</option>
-          </select>
-        </label>
-
-        <label class="booking-field" for="checkInDate">
-          <span class="field-label">Check-in</span>
-          <input id="checkInDate" name="checkin" type="date" required>
-        </label>
-
-        <label class="booking-field" for="checkOutDate">
-          <span class="field-label">Check-out</span>
-          <input id="checkOutDate" name="checkout" type="date" required>
-        </label>
-
-        <div class="booking-field guest-field" role="group" aria-label="Guest count">
-          <span class="field-label">Guests</span>
-          <div class="guest-controls">
-            <button type="button" id="decreaseGuests" aria-label="Decrease guests">-</button>
-            <input id="guestCount" name="guests" type="number" value="6" min="1" max="20" readonly>
-            <button type="button" id="increaseGuests" aria-label="Increase guests">+</button>
-          </div>
+    <div class="hero-panel">
+      <nav class="top-nav">
+        <a class="brand" href="#top">LuxHouse Collection</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+        <div class="nav-links" id="site-nav">
+          <a href="#destinations">Guesthouses</a>
+          <a href="#collections">Collections</a>
+          <a href="#homes">Why LuxHouse</a>
+          <a href="#" data-open-booking-modal>Book</a>
         </div>
+      </nav>
 
-        <button class="booking-submit" type="submit">Check Availability</button>
-        <div id="homeAvailabilityResult" class="availability-result"></div>
-      </form>
-      <p class="booking-feedback" id="bookingFeedback" aria-live="polite"></p>
-    </section>
+      <section class="hero-content" aria-label="Hero content">
+        <p class="hero-kicker">Design philosophy: Luxury Familiarity</p>
+        <h1>Two guesthouses. One signature LuxHouse vibe.</h1>
+        <p>Where the desert meets a deep breath, alpine mornings meet social luxury, and every stay feels like home with elevated edges.</p>
+
+        <form class="booking-bar" id="bookingForm" action="#" method="get">
+          <label class="booking-field destination-field" for="destinationSelect">
+            <span class="field-label">Destination</span>
+            <select id="destinationSelect" name="destination" required>
+              <option value="">Choose one</option>
+              <option value="cactus-and-chill">Cactus and Chill - Mesa, Arizona</option>
+              <option value="pine-and-peace">Pine and Peace - Carnelian Bay, Lake Tahoe</option>
+            </select>
+          </label>
+
+          <label class="booking-field" for="checkInDate">
+            <span class="field-label">Check-in</span>
+            <input id="checkInDate" name="checkin" type="date" required>
+          </label>
+
+          <label class="booking-field" for="checkOutDate">
+            <span class="field-label">Check-out</span>
+            <input id="checkOutDate" name="checkout" type="date" required>
+          </label>
+
+          <div class="booking-field guest-field" role="group" aria-label="Guest count">
+            <span class="field-label">Guests</span>
+            <div class="guest-controls">
+              <button type="button" id="decreaseGuests" aria-label="Decrease guests">-</button>
+              <input id="guestCount" name="guests" type="number" value="6" min="1" max="20" readonly>
+              <button type="button" id="increaseGuests" aria-label="Increase guests">+</button>
+            </div>
+          </div>
+
+          <button class="booking-submit" type="submit">Check Availability</button>
+          <div id="homeAvailabilityResult" class="availability-result"></div>
+        </form>
+        <p class="booking-feedback" id="bookingFeedback" aria-live="polite"></p>
+      </section>
+    </div>
   </header>
 
   <main>
