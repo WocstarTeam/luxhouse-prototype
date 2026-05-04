@@ -172,51 +172,18 @@ async function handleBookingStatus(request, env) {
       });
     }
 
-    const bookingRaw = await env.BOOKINGS.get(safeRequestId);
-    if (bookingRaw == null) {
+    const booking = BOOKINGS && typeof BOOKINGS === "object" ? BOOKINGS[safeRequestId] : null;
+    if (!booking || typeof booking !== "object") {
       return jsonResponse(pendingVerificationResponse);
-    }
-
-    let booking = {};
-    if (typeof bookingRaw === "string" && bookingRaw) {
-      try {
-        const parsed = JSON.parse(bookingRaw);
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          booking = parsed;
-        }
-      } catch (error) {
-        console.error("Booking status parse error:", error);
-      }
     }
 
     const statusValue = typeof booking.status === "string" ? booking.status.trim().toLowerCase() : "";
     const existingStatus = statusValue || "unknown";
 
-    const checkin =
-      typeof booking.checkin === "string"
-        ? booking.checkin
-        : typeof booking.checkIn === "string"
-        ? booking.checkIn
-        : typeof booking.check_in === "string"
-        ? booking.check_in
-        : null;
-
-    const checkout =
-      typeof booking.checkout === "string"
-        ? booking.checkout
-        : typeof booking.checkOut === "string"
-        ? booking.checkOut
-        : typeof booking.check_out === "string"
-        ? booking.check_out
-        : null;
-
     return jsonResponse({
       ok: true,
       status: existingStatus,
       message: getStatusMessage(existingStatus),
-      requestId: safeRequestId,
-      checkin,
-      checkout,
     });
   } catch (error) {
     console.error("Booking status handler error:", error);

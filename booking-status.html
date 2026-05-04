@@ -120,11 +120,11 @@
       const STATUS_MESSAGES = {
         pending_verification: PENDING_REVIEW_MESSAGE,
         verified:
-          "Your identity verification was successful. You may continue with your booking request.",
+          "Your identity verification was successful. You may now continue with your booking.",
         requires_input:
-          "We could not complete the verification. Please try again or contact our team.",
+          "We could not complete verification. Please try again.",
         rejected:
-          "We could not approve the verification at this stage. Please contact our team for support.",
+          "Verification could not be completed. Please contact support.",
         approved:
           "Your request has been approved. Our team will contact you with the next steps.",
         default: "Thank you. Your booking request is being reviewed by our team.",
@@ -160,12 +160,28 @@
       }
 
       function getStatusMessage(status, providedMessage) {
-        if (typeof providedMessage === "string" && providedMessage.trim()) {
-          return providedMessage.trim();
-        }
-
         if (status === "pending") {
           return STATUS_MESSAGES.pending_verification;
+        }
+
+        if (status === "pending_verification") {
+          return STATUS_MESSAGES.pending_verification;
+        }
+
+        if (status === "verified") {
+          return STATUS_MESSAGES.verified;
+        }
+
+        if (status === "requires_input") {
+          return STATUS_MESSAGES.requires_input;
+        }
+
+        if (status === "rejected") {
+          return STATUS_MESSAGES.rejected;
+        }
+
+        if (typeof providedMessage === "string" && providedMessage.trim()) {
+          return providedMessage.trim();
         }
 
         return STATUS_MESSAGES[status] || STATUS_MESSAGES.default;
@@ -245,15 +261,16 @@
           datesEl.textContent = resolveDate(checkin) + " \u2192 " + resolveDate(checkout);
           paymentButton.style.display = "none";
 
-          if (status === "approved") {
+          if (status === "approved" || status === "verified") {
             setStatus(message, statusClass);
+            paymentButton.textContent =
+              status === "verified" ? "Continue Booking" : "Proceed to Payment";
             paymentButton.style.display = "inline-block";
             stopPolling();
             return;
           }
 
           if (
-            status === "verified" ||
             status === "requires_input" ||
             status === "rejected" ||
             status === "missing_request_id"
