@@ -296,6 +296,7 @@ function initBookingModal() {
   const availabilityResult = document.getElementById("availabilityResult");
   const statusEl = document.getElementById("bookingStatus");
   const stepTwoEl = document.getElementById("bookingStepTwo");
+  const modalTitleEl = document.getElementById("bookingModalTitle");
   const continueBtn =
     document.getElementById("continueBookingBtn") ||
     document.getElementById("continueBtn");
@@ -316,6 +317,14 @@ function initBookingModal() {
   const state = {
     isAvailable: false
   };
+  const defaultTitle = modalTitleEl ? modalTitleEl.textContent : "Start Your Booking";
+
+  function setConfirmedLayout(enabled) {
+    modal.classList.toggle("is-availability-confirmed", Boolean(enabled));
+    if (modalTitleEl) {
+      modalTitleEl.textContent = enabled ? "Your Stay Is Ready" : defaultTitle;
+    }
+  }
 
   function getCurrentModalData() {
     const destination = normalizeDestination(destinationInput.value);
@@ -405,6 +414,7 @@ function initBookingModal() {
 
   function resetModalState() {
     state.isAvailable = false;
+    setConfirmedLayout(false);
     stepTwoEl.hidden = true;
     continueBtn.disabled = true;
     setAvailabilityResult(availabilityResult, "", "");
@@ -449,6 +459,7 @@ function initBookingModal() {
 
     if (modalOptions.availabilityConfirmed) {
       state.isAvailable = true;
+      setConfirmedLayout(true);
       stepTwoEl.hidden = false;
       continueBtn.disabled = false;
       setAvailabilityResult(availabilityResult, "Available for your selected dates.", "success");
@@ -499,6 +510,7 @@ function initBookingModal() {
       state.isAvailable = available;
 
       if (available) {
+        setConfirmedLayout(true);
         stepTwoEl.hidden = false;
         continueBtn.disabled = false;
         showDestinationAddons(modalData.destination);
@@ -511,6 +523,7 @@ function initBookingModal() {
         );
         updateAvailabilityOfferCopy();
       } else {
+        setConfirmedLayout(false);
         stepTwoEl.hidden = true;
         continueBtn.disabled = true;
         setAvailabilityResult(availabilityResult, "Not available for these dates", "error");
@@ -522,6 +535,7 @@ function initBookingModal() {
       }
     } catch (error) {
       state.isAvailable = false;
+      setConfirmedLayout(false);
       stepTwoEl.hidden = true;
       continueBtn.disabled = true;
       setAvailabilityResult(

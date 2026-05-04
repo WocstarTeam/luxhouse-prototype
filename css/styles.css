@@ -1700,6 +1700,13 @@ body.modal-open {
   font-weight: 600;
 }
 
+.lux-booking-modal.is-availability-confirmed .lux-booking-form,
+.lux-booking-modal.is-availability-confirmed #bookingStatus,
+.lux-booking-modal.is-availability-confirmed #availabilityResult,
+.lux-booking-modal.is-availability-confirmed .lux-booking-header > p:last-child {
+  display: none;
+}
+
 .lux-booking-status.is-error {
   color: #8d2d21;
 }
