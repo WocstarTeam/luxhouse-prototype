@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev";
+const API_BASE_URL = "https://luxhouse-worker.tech-e7b.workers.dev";
 const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
 const NIGHTLY_RATES = {
   cactus: 625,
@@ -727,9 +727,13 @@ function initBookingSummaryPage() {
   const checkinEl = document.getElementById("summaryCheckin");
   const checkoutEl = document.getElementById("summaryCheckout");
   const guestsEl = document.getElementById("summaryGuests");
-  const proceedBtn = document.getElementById("proceedToPaymentBtn");
-  const paySection = document.getElementById("paymentSection");
-  const payConfirmBtn = document.getElementById("payConfirmBtn");
+  const requestForm = document.getElementById("bookingRequestForm");
+  const nameInput = document.getElementById("bookingGuestName");
+  const emailInput = document.getElementById("bookingGuestEmail");
+  const phoneInput = document.getElementById("bookingGuestPhone");
+  const notesInput = document.getElementById("bookingGuestNotes");
+  const submitRequestBtn = document.getElementById("submitBookingRequestBtn");
+  const requestStatusEl = document.getElementById("bookingRequestStatus");
 
   if (!destinationEl || !checkinEl || !checkoutEl || !guestsEl) {
     return;
@@ -737,30 +741,137 @@ function initBookingSummaryPage() {
 
   const params = new URLSearchParams(window.location.search);
   const latest = getLatestBooking() || {};
-
-  const destination =
-    getDestinationLabel(params.get("destination")) ||
+  const destinationParam = params.get("destination") || "";
+  const normalizedDestination =
+    normalizeDestination(destinationParam) ||
+    normalizeDestination(latest.destination) ||
+    "";
+  const destinationLabel =
+    getDestinationLabel(destinationParam) ||
+    getDestinationLabel(normalizedDestination) ||
     latest.destinationLabel ||
     "-";
+
+  const requestId =
+    params.get("requestId") ||
+    latest.requestId ||
+    `LUX-${Date.now()}`;
+
   const checkin = params.get("checkin") || latest.checkin || "-";
   const checkout = params.get("checkout") || latest.checkout || "-";
   const guests = params.get("guests") || latest.guests || "-";
 
-  destinationEl.textContent = destination;
+  destinationEl.textContent = destinationLabel;
   checkinEl.textContent = checkin;
   checkoutEl.textContent = checkout;
   guestsEl.textContent = String(guests);
 
-  if (proceedBtn && paySection) {
-    proceedBtn.addEventListener("click", () => {
-      paySection.hidden = false;
-    });
+  if (nameInput && typeof latest.guestName === "string") {
+    nameInput.value = latest.guestName;
+  }
+  if (emailInput && typeof latest.guestEmail === "string") {
+    emailInput.value = latest.guestEmail;
+  }
+  if (phoneInput && typeof latest.guestPhone === "string") {
+    phoneInput.value = latest.guestPhone;
+  }
+  if (notesInput && typeof latest.notes === "string") {
+    notesInput.value = latest.notes;
   }
 
-  if (payConfirmBtn) {
-    payConfirmBtn.addEventListener("click", () => {
-      payConfirmBtn.disabled = true;
-      payConfirmBtn.textContent = "Payment flow coming next";
+  function setRequestStatus(message, type) {
+    if (!requestStatusEl) {
+      return;
+    }
+    requestStatusEl.textContent = message || "";
+    requestStatusEl.style.color = "#4b5563";
+    if (type === "success") {
+      requestStatusEl.style.color = "#15803d";
+    }
+    if (type === "error") {
+      requestStatusEl.style.color = "#b91c1c";
+    }
+  }
+
+  if (!requestForm || !nameInput || !emailInput || !phoneInput || !submitRequestBtn) {
+    return;
+  }
+
+  requestForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const guestName = nameInput.value.trim();
+    const guestEmail = emailInput.value.trim();
+    const guestPhone = phoneInput.value.trim();
+    const notes = notesInput ? notesInput.value.trim() : "";
+
+    if (!guestName || !guestEmail || !guestPhone) {
+      setRequestStatus("Please complete your name, email, and phone number.", "error");
+      return;
+    }
+
+    submitRequestBtn.disabled = true;
+    setRequestStatus("Submitting your booking request and preparing secure payment...", "");
+
+    const payload = {
+      requestId,
+      destination: normalizedDestination,
+      destinationLabel,
+      checkin,
+      checkout,
+      guests: coerceGuests(guests),
+      total: Number(latest.total) || 0,
+      guestName,
+      guestEmail,
+      guestPhone,
+      notes,
+    };
+
+    try {
+      persistLatestBooking({
+        ...latest,
+        ...payload,
+        requestId,
+        destination: normalizedDestination || latest.destination || "",
+        destinationLabel,
+        updatedAt: new Date().toISOString(),
+      });
+
+      const paymentData = await postJson("/create-payment-session", payload);
+      if (paymentData && paymentData.url) {
+        setRequestStatus("Redirecting to Stripe payment...", "success");
+        window.location.assign(paymentData.url);
+        return;
+      }
+
+      throw new Error("Payment session was created, but no redirect URL was returned.");
+    } catch (error) {
+      console.error("Booking request submission failed:", error);
+      setRequestStatus(
+        error && error.message
+          ? error.message
+          : "We could not start payment right now. Please try again.",
+        "error"
+      );
+      submitRequestBtn.disabled = false;
+    }
+  });
+
+  if (params.get("payment") === "success") {
+    setRequestStatus("Payment completed. Thank you - our team will confirm your booking shortly.", "success");
+    submitRequestBtn.disabled = true;
+  }
+
+  if (params.get("payment") === "cancelled") {
+    setRequestStatus("Payment was cancelled. You can submit again when ready.", "error");
+    if (submitRequestBtn) {
+      submitRequestBtn.disabled = false;
+    }
+  }
+
+  if (window.location.hash === "#payment") {
+    setTimeout(() => {
+      requestForm.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 }

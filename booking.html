@@ -9,6 +9,44 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .lux-booking-request-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .lux-booking-request-form label {
+      display: grid;
+      gap: 6px;
+      text-align: left;
+      font-weight: 600;
+      color: #2b2b2b;
+      font-size: 0.92rem;
+    }
+
+    .lux-booking-request-form input,
+    .lux-booking-request-form textarea {
+      width: 100%;
+      border: 1px solid #d3d6dd;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+    }
+
+    .lux-booking-request-form textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .lux-booking-request-status {
+      min-height: 24px;
+      margin: 4px 0 0;
+      font-size: 0.93rem;
+      color: #4b5563;
+    }
+  </style>
 </head>
 <body class="lux-booking-page">
   <main class="lux-booking-page-main">
@@ -16,7 +54,7 @@
     <section class="lux-booking-page-hero">
       <p class="lux-booking-kicker">The LuxHouse Collection</p>
       <h1>Booking Summary</h1>
-      <p>Review your stay details, confirm your dates, and continue to payment with confidence.</p>
+      <p>Review your stay details, add your guest information, and continue to secure Stripe payment.</p>
     </section>
 
     <section class="lux-booking-page-card">
@@ -44,14 +82,30 @@
         </div>
 
         <aside class="lux-booking-page-actions">
-          <p class="lux-booking-step-label">Step 2 of 2</p>
-          <button type="button" id="proceedToPaymentBtn" class="lux-booking-primary">Proceed to Payment</button>
+          <p class="lux-booking-step-label">Step 3 of 3</p>
+          <h2>Request Booking</h2>
+          <p>Complete your contact details and continue to Stripe to finalize payment.</p>
 
-          <section id="paymentSection" class="lux-payment-section" hidden>
-            <h2>Payment</h2>
-            <p>You're one step away from confirming your reservation.</p>
-            <button type="button" id="payConfirmBtn" class="lux-booking-primary">Pay &amp; Confirm</button>
-          </section>
+          <form id="bookingRequestForm" class="lux-booking-request-form">
+            <label>
+              Full Name
+              <input id="bookingGuestName" name="guestName" type="text" autocomplete="name" required>
+            </label>
+            <label>
+              Email Address
+              <input id="bookingGuestEmail" name="guestEmail" type="email" autocomplete="email" required>
+            </label>
+            <label>
+              Phone Number
+              <input id="bookingGuestPhone" name="guestPhone" type="tel" autocomplete="tel" required>
+            </label>
+            <label>
+              Notes (Optional)
+              <textarea id="bookingGuestNotes" name="guestNotes" placeholder="Arrival notes, special requests, or anything we should know."></textarea>
+            </label>
+            <button type="submit" id="submitBookingRequestBtn" class="lux-booking-primary">Submit Request &amp; Proceed to Payment</button>
+            <p id="bookingRequestStatus" class="lux-booking-request-status" aria-live="polite"></p>
+          </form>
         </aside>
       </div>
     </section>
