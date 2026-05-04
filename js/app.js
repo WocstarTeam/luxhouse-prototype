@@ -6,6 +6,11 @@ const NIGHTLY_RATES = {
   cactus: 625,
   pine: 710
 };
+const FEATURE_FLAGS = Object.freeze({
+  pineEnabled: false
+});
+const PINE_COMING_SOON_MESSAGE =
+  "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
 
 let bookingModalController = null;
 
@@ -20,6 +25,21 @@ function normalizeDestination(value) {
   return "";
 }
 
+function isPineEnabled() {
+  return FEATURE_FLAGS.pineEnabled === true;
+}
+
+function isDestinationEnabled(value) {
+  const normalized = normalizeDestination(value);
+  if (!normalized) {
+    return false;
+  }
+  if (normalized === "pine" && !isPineEnabled()) {
+    return false;
+  }
+  return true;
+}
+
 function getDestinationLabel(destination) {
   const normalized = normalizeDestination(destination);
   if (normalized === "cactus") {
@@ -29,6 +49,76 @@ function getDestinationLabel(destination) {
     return "Pine & Peace House";
   }
   return "";
+}
+
+function maskPineContentUntilLaunch() {
+  if (isPineEnabled()) {
+    return;
+  }
+
+  const body = document.body;
+  if (body && body.classList.contains("lux-pine-page")) {
+    body.className = "lux-home-page";
+    body.innerHTML = `
+      <main style="min-height:100svh;display:grid;place-items:center;padding:1.4rem;background:#f7f2ea;color:#2b231e;font-family:'Manrope','Segoe UI',sans-serif;">
+        <section style="width:min(92vw,640px);background:#fffaf3;border:1px solid #d6c7b2;box-shadow:0 20px 48px rgba(33,21,12,0.14);padding:1.5rem;text-align:center;">
+          <p style="margin:0;text-transform:uppercase;letter-spacing:0.1em;font-size:0.72rem;color:#2f5a52;font-weight:700;">The LuxHouse Collection</p>
+          <h1 style="margin:0.65rem 0 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(2rem,5.3vw,3rem);line-height:1.05;">Pine &amp; Peace House<br>Coming Soon</h1>
+          <p style="margin:0.9rem auto 0;max-width:38ch;color:#68584a;">${PINE_COMING_SOON_MESSAGE}</p>
+          <a href="index.html" style="display:inline-block;margin-top:1.15rem;text-decoration:none;border:1px solid #d6c7b2;background:#fff9f1;color:#2b231e;padding:0.62rem 0.92rem;font-size:0.82rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Back to Collection</a>
+        </section>
+      </main>
+    `;
+    return;
+  }
+
+  document.querySelectorAll("[data-pine-content]").forEach((element) => {
+    element.remove();
+  });
+
+  document
+    .querySelectorAll('option[value="pine"], option[value="pine-and-peace"]')
+    .forEach((option) => {
+      option.remove();
+    });
+
+  document.querySelectorAll(".addons-group[data-property=\"pine\"]").forEach((group) => {
+    group.remove();
+  });
+
+  const heroLines = Array.from(document.querySelectorAll(".hero-line"));
+  if (heroLines.length >= 4) {
+    heroLines[0].textContent = "Signature";
+    heroLines[1].textContent = "desert";
+    heroLines[2].textContent = "guesthouse";
+    heroLines[3].textContent = "luxury standard.";
+  }
+  const heroSummary = document.querySelector(".hero-summary");
+  if (heroSummary) {
+    heroSummary.textContent =
+      "Cactus & Chill offers warm design, elevated comfort, and effortless group hosting.";
+  }
+
+  const track = document.getElementById("destinationCarouselTrack");
+  if (track) {
+    const slides = Array.from(track.querySelectorAll(".destination-slide"));
+    slides.forEach((slide, index) => {
+      slide.setAttribute("data-destination-index", String(index));
+      slide.setAttribute("aria-hidden", String(index !== 0));
+      slide.classList.toggle("is-active", index === 0);
+    });
+  }
+
+  const dots = Array.from(
+    document.querySelectorAll(".destination-carousel-dot")
+  );
+  dots.forEach((dot, index) => {
+    dot.setAttribute("data-destination-index", String(index));
+    const isActive = index === 0;
+    dot.classList.toggle("is-active", isActive);
+    dot.setAttribute("aria-selected", String(isActive));
+    dot.setAttribute("tabindex", isActive ? "0" : "-1");
+  });
 }
 
 function formatDateISO(date) {
@@ -142,8 +232,12 @@ function enforceDateOrder(checkinInput, checkoutInput) {
 }
 
 function validateStayInputs({ destination, checkin, checkout, guests }) {
-  if (!normalizeDestination(destination)) {
+  const normalizedDestination = normalizeDestination(destination);
+  if (!normalizedDestination) {
     return "Please select a destination.";
+  }
+  if (!isDestinationEnabled(normalizedDestination)) {
+    return PINE_COMING_SOON_MESSAGE;
   }
   if (!checkin || !checkout) {
     return "Please select check-in and check-out dates.";
@@ -316,6 +410,7 @@ function initHeroBookingBar() {
 function initDestinationCarousel() {
   const root = document.getElementById("destinationCarousel");
   const track = document.getElementById("destinationCarouselTrack");
+  const controls = root ? root.querySelector(".destination-carousel-controls") : null;
   const prevBtn = document.getElementById("destinationPrevBtn");
   const nextBtn = document.getElementById("destinationNextBtn");
   if (!root || !track || !prevBtn || !nextBtn) {
@@ -325,6 +420,16 @@ function initDestinationCarousel() {
   const slides = Array.from(track.querySelectorAll(".destination-slide"));
   const dots = Array.from(root.querySelectorAll(".destination-carousel-dot"));
   if (!slides.length) {
+    return;
+  }
+
+  if (slides.length < 2) {
+    if (controls) {
+      controls.hidden = true;
+    }
+    track.style.transform = "translateX(0)";
+    slides[0].classList.add("is-active");
+    slides[0].setAttribute("aria-hidden", "false");
     return;
   }
 
@@ -1168,6 +1273,10 @@ function initBookingSummaryPage() {
       setRequestStatus("Please complete your name, email, and phone number.", "error");
       return;
     }
+    if (!isDestinationEnabled(normalizedDestination)) {
+      setRequestStatus(PINE_COMING_SOON_MESSAGE, "error");
+      return;
+    }
 
     submitRequestBtn.disabled = true;
     setRequestStatus("Submitting your booking request and preparing secure payment...", "");
@@ -1241,6 +1350,7 @@ function init() {
   }
   window.__luxBookingInitDone = true;
 
+  maskPineContentUntilLaunch();
   initHeroBookingBar();
   initDestinationCarousel();
   initBookingModal();

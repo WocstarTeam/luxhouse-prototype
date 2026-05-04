@@ -184,7 +184,7 @@
         <select id="modalDestination" name="destination" required>
           <option value="">Select destination</option>
           <option value="cactus">Cactus &amp; Chill House</option>
-          <option value="pine">Pine &amp; Peace House</option>
+          <option value="pine" data-pine-content>Pine &amp; Peace House</option>
         </select>
         <label for="modalCheckin">Check-in</label>
         <input id="modalCheckin" name="checkin" type="date" required>
@@ -226,7 +226,7 @@
           <label><input type="checkbox" class="addon-checkbox" data-price="95"> Champagne &amp; Chocolate ($95)</label>
           <label><input type="checkbox" class="addon-checkbox" data-price="300"> Private Chef ($300)</label>
         </div>
-        <div class="addons-group" data-property="pine" hidden>
+        <div class="addons-group" data-property="pine" data-pine-content hidden>
           <label><input type="checkbox" class="addon-checkbox" data-price="80"> S'mores &amp; Spirits Kit ($80)</label>
           <label><input type="checkbox" class="addon-checkbox" data-price="150"> Ski Recovery Spa Kit ($150)</label>
           <label><input type="checkbox" class="addon-checkbox" data-price="300"> Private Chef ($300)</label>
@@ -240,6 +240,6 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=20260504-2"></script>
+  <script src="js/app.js?v=20260504-3"></script>
 </body>
 </html>

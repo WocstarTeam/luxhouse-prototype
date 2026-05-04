@@ -22,6 +22,9 @@ const STATUS_MESSAGES = {
 };
 const MIN_STAY_NIGHTS = 2;
 const MAX_STAY_NIGHTS = 28;
+const PINE_ENABLED = false;
+const PINE_COMING_SOON_MESSAGE =
+  "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
 
 let BOOKINGS = globalThis.BOOKINGS;
 globalThis.ICAL_EVENTS_CACHE = globalThis.ICAL_EVENTS_CACHE || {};
@@ -135,6 +138,11 @@ function normalizeAvailabilityDestination(value) {
     return "cactus";
   }
   return "";
+}
+
+function isTemporarilyUnavailableDestination(value) {
+  const normalized = normalizeAvailabilityDestination(value);
+  return normalized === "pine" && !PINE_ENABLED;
 }
 
 function unfoldIcalLines(text) {
@@ -552,6 +560,9 @@ async function handleAvailability(request, env) {
   const checkin = String(body.checkin || "").trim();
   const checkout = String(body.checkout || "").trim();
   const destination = String(body.destination || body.property || "").trim();
+  if (isTemporarilyUnavailableDestination(destination)) {
+    return jsonResponse({ available: false, error: PINE_COMING_SOON_MESSAGE });
+  }
 
   if (!checkin || !checkout) {
     return jsonResponse({ available: false, error: "Missing dates" }, 400);
@@ -614,6 +625,10 @@ async function handleCreateBooking(request, env) {
   const body = await parseJsonBody(request);
   const checkin = body.checkin;
   const checkout = body.checkout;
+  const destination = String(body.destination || body.property || "").trim();
+  if (isTemporarilyUnavailableDestination(destination)) {
+    return jsonResponse({ error: PINE_COMING_SOON_MESSAGE }, 400);
+  }
 
   if (!checkin || !checkout) {
     return jsonResponse({ error: "checkin and checkout are required" }, 400);
@@ -747,6 +762,12 @@ function isBookingStatusPath(pathname) {
 async function handleCreateVerificationSession(request, env) {
   const url = new URL(request.url);
   const body = await parseJsonBody(request);
+  const destinationRaw = String(
+    body.destination || body.property || body.destinationLabel || ""
+  ).trim();
+  if (isTemporarilyUnavailableDestination(destinationRaw)) {
+    return jsonResponse({ error: PINE_COMING_SOON_MESSAGE }, 400);
+  }
   const bodyCheckin = typeof body.checkin === "string" ? body.checkin.trim() : "";
   const bodyCheckout = typeof body.checkout === "string" ? body.checkout.trim() : "";
   const bodyRequestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
@@ -837,6 +858,12 @@ async function handleCreatePaymentSession(request, env) {
   const requestId =
     (typeof body.requestId === "string" && body.requestId.trim()) ||
     createRequestId();
+  const destinationRaw = String(
+    body.destination || body.property || body.destinationLabel || ""
+  ).trim();
+  if (isTemporarilyUnavailableDestination(destinationRaw)) {
+    return jsonResponse({ error: PINE_COMING_SOON_MESSAGE }, 400);
+  }
 
   const guestName = typeof body.guestName === "string" ? body.guestName.trim() : "";
   const guestEmail = typeof body.guestEmail === "string" ? body.guestEmail.trim() : "";
