@@ -296,7 +296,7 @@ function initHeroBookingBar() {
           bookingModalController.open(payload, { availabilityConfirmed: true });
         }
       } else {
-        setAvailabilityResult(resultEl, "These dates were just booked. Please choose alternative dates.", "error");
+        setAvailabilityResult(resultEl, "", "");
         if (feedbackEl) {
           feedbackEl.textContent = "Those dates are unavailable. Opening suggested alternatives now.";
         }
