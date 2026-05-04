@@ -439,14 +439,14 @@ main {
 
 .destination-slide-details {
   margin-top: clamp(1.9rem, 2.6vw, 2.5rem);
-  padding-top: 0;
+  padding-top: 0.9rem;
   width: 100%;
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-evenly;
   align-items: flex-start;
   gap: 0;
-  border-top: 0;
+  border-top: 1px solid rgba(31, 64, 57, 0.12);
   max-width: none;
 }
 
@@ -2311,7 +2311,7 @@ body.modal-open {
 
 .lux-home-page .destination-slide-details {
   margin-top: clamp(2.7rem, 3.8vw, 3.6rem);
-  border-top: 0;
+  border-top: 1px solid rgba(31, 64, 57, 0.12);
   align-content: stretch;
 }
 
