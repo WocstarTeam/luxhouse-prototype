@@ -2295,6 +2295,7 @@ body.modal-open {
 }
 
 .lux-home-page .destination-slide-details {
+  margin-top: clamp(2.7rem, 3.8vw, 3.6rem);
   border-top: 0;
   align-content: stretch;
 }
