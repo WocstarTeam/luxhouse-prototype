@@ -4,6 +4,21 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+const STATUS_MESSAGES = {
+  pending_verification:
+    "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.",
+  verified:
+    "Your identity verification was successful. You may continue with your booking request.",
+  requires_input:
+    "We could not complete the verification. Please try again or contact our team.",
+  rejected:
+    "We could not approve the verification at this stage. Please contact our team for support.",
+  approved:
+    "Your request has been approved. Our team will contact you with the next steps.",
+  unknown:
+    "Thank you. Your booking request is being reviewed by our team.",
+};
+
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -42,6 +57,40 @@ async function parseJsonBody(request) {
   } catch {
     return {};
   }
+}
+
+function normalizeStatusForMessage(status) {
+  const normalized = String(status || "").trim().toLowerCase();
+
+  if (!normalized) {
+    return "unknown";
+  }
+
+  if (normalized === "pending" || normalized === "pending_verification") {
+    return "pending_verification";
+  }
+
+  if (normalized === "verified") {
+    return "verified";
+  }
+
+  if (normalized === "requires_input") {
+    return "requires_input";
+  }
+
+  if (normalized === "rejected") {
+    return "rejected";
+  }
+
+  if (normalized === "approved") {
+    return "approved";
+  }
+
+  return "unknown";
+}
+
+function getStatusMessage(status) {
+  return STATUS_MESSAGES[normalizeStatusForMessage(status)] || STATUS_MESSAGES.unknown;
 }
 
 async function handleAvailability(request, env) {
@@ -97,6 +146,71 @@ async function handleGetBooking(request, env) {
   }
 
   return jsonResponse(JSON.parse(bookingRaw));
+}
+
+async function handleBookingStatus(request, env) {
+  const url = new URL(request.url);
+  const requestId = (url.searchParams.get("requestId") || "").trim();
+
+  if (!requestId) {
+    return jsonResponse({
+      ok: false,
+      status: "missing_request_id",
+      message:
+        "We received your verification return, but could not locate your booking request.",
+    });
+  }
+
+  let bookingRaw;
+  try {
+    bookingRaw = await env.BOOKINGS.get(requestId);
+  } catch (error) {
+    console.error("Booking status lookup error:", error);
+    return jsonResponse(
+      {
+        ok: false,
+        status: "fatal_error",
+        message: "We hit an unexpected error while loading your booking status.",
+      },
+      500
+    );
+  }
+
+  if (!bookingRaw) {
+    return jsonResponse({
+      ok: true,
+      status: "pending_verification",
+      message: STATUS_MESSAGES.pending_verification,
+    });
+  }
+
+  let booking = {};
+  try {
+    booking = JSON.parse(bookingRaw);
+  } catch (error) {
+    console.error("Booking status parse error:", error);
+    booking = {};
+  }
+
+  const existingStatus = String(booking.status || "unknown").trim().toLowerCase() || "unknown";
+
+  return jsonResponse({
+    ok: true,
+    status: existingStatus,
+    message: getStatusMessage(existingStatus),
+    requestId,
+    checkin: booking.checkin || booking.checkIn || booking.check_in || null,
+    checkout: booking.checkout || booking.checkOut || booking.check_out || null,
+  });
+}
+
+function isBookingStatusPath(pathname) {
+  return (
+    pathname === "/booking-status" ||
+    pathname === "/api/booking-status" ||
+    pathname === "/status" ||
+    pathname === "/verification-status"
+  );
 }
 
 async function handleCreateVerificationSession(request, env) {
@@ -208,6 +322,10 @@ export default {
 
     if (pathname.includes("get-booking") && method === "GET") {
       return handleGetBooking(request, env);
+    }
+
+    if (method === "GET" && isBookingStatusPath(pathname)) {
+      return handleBookingStatus(request, env);
     }
 
     return textResponse("Not found", 404);

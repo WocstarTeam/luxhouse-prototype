@@ -113,8 +113,24 @@
   <script>
     (function () {
       const API_BASE_URL = "https://restless-waterfall-a71b.tech-e7b.workers.dev";
+      const STATUS_PATH = "/booking-status";
       const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
       const POLL_INTERVAL_MS = 5000;
+      const REQUEST_TIMEOUT_MS = 10000;
+      const PENDING_REVIEW_MESSAGE =
+        "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.";
+      const STATUS_MESSAGES = {
+        pending_verification: PENDING_REVIEW_MESSAGE,
+        verified:
+          "Your identity verification was successful. You may continue with your booking request.",
+        requires_input:
+          "We could not complete the verification. Please try again or contact our team.",
+        rejected:
+          "We could not approve the verification at this stage. Please contact our team for support.",
+        approved:
+          "Your request has been approved. Our team will contact you with the next steps.",
+        default: "Thank you. Your booking request is being reviewed by our team.",
+      };
 
       const datesEl = document.getElementById("dates");
       const statusEl = document.getElementById("statusMessage");
@@ -144,10 +160,40 @@
         return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString();
       }
 
-      if (!requestId) {
-        datesEl.textContent = "--";
-        setStatus("Request ID is missing", "rejected");
-        return;
+      function getStatusMessage(status, providedMessage) {
+        if (typeof providedMessage === "string" && providedMessage.trim()) {
+          return providedMessage.trim();
+        }
+
+        if (status === "pending") {
+          return STATUS_MESSAGES.pending_verification;
+        }
+
+        return STATUS_MESSAGES[status] || STATUS_MESSAGES.default;
+      }
+
+      function getStatusClass(status) {
+        if (status === "approved" || status === "verified") {
+          return "approved";
+        }
+
+        if (status === "rejected" || status === "requires_input") {
+          return "rejected";
+        }
+
+        if (status === "missing_request_id") {
+          return "default";
+        }
+
+        return "pending";
+      }
+
+      function createStatusUrl() {
+        const endpoint = new URL(API_BASE_URL + STATUS_PATH);
+        if (requestId) {
+          endpoint.searchParams.set("requestId", requestId);
+        }
+        return endpoint.toString();
       }
 
       let pollTimer = null;
@@ -164,44 +210,88 @@
         pollTimer = setTimeout(loadStatus, POLL_INTERVAL_MS);
       }
 
-      function loadStatus() {
-        fetch(
-          API_BASE_URL + "/get-booking?requestId=" + encodeURIComponent(requestId)
-        )
-          .then(function (response) {
-            if (!response.ok) {
-              throw new Error("Request failed with status " + response.status);
-            }
-            return response.json();
-          })
-          .then(function (data) {
-            const checkin = data.checkin || data.checkIn || data.check_in;
-            const checkout = data.checkout || data.checkOut || data.check_out;
-            const status = String(data.status || "").toLowerCase();
+      async function fetchBookingStatus() {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function () {
+          controller.abort();
+        }, REQUEST_TIMEOUT_MS);
 
-            datesEl.textContent = resolveDate(checkin) + " \u2192 " + resolveDate(checkout);
-
-            if (status === "approved") {
-              setStatus("Approved \u2014 ready to book", "approved");
-              paymentButton.style.display = "inline-block";
-              stopPolling();
-              return;
-            }
-
-            if (status === "rejected") {
-              setStatus("Verification failed", "rejected");
-              stopPolling();
-              return;
-            }
-
-            paymentButton.style.display = "none";
-            setStatus("Verification in process...", "pending");
-            schedulePoll();
-          })
-          .catch(function () {
-            setStatus("Unable to load booking status. Retrying...", "rejected");
-            schedulePoll();
+        try {
+          const response = await fetch(createStatusUrl(), {
+            method: "GET",
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
           });
+
+          let data = null;
+          try {
+            data = await response.json();
+          } catch (_) {
+            throw new Error("Invalid JSON response");
+          }
+
+          if (!response.ok && (!data || typeof data !== "object")) {
+            throw new Error("Request failed with status " + response.status);
+          }
+
+          return data || {};
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      async function loadStatus() {
+        try {
+          const data = await fetchBookingStatus();
+          const checkin =
+            data.checkin || data.checkIn || data.check_in || (latestBooking && latestBooking.checkin);
+          const checkout =
+            data.checkout || data.checkOut || data.check_out || (latestBooking && latestBooking.checkout);
+          const status = String(data.status || "").toLowerCase();
+          const message = getStatusMessage(status, data.message);
+          const statusClass = getStatusClass(status);
+
+          datesEl.textContent = resolveDate(checkin) + " \u2192 " + resolveDate(checkout);
+          paymentButton.style.display = "none";
+
+          if (status === "approved") {
+            setStatus(message, statusClass);
+            paymentButton.style.display = "inline-block";
+            stopPolling();
+            return;
+          }
+
+          if (
+            status === "verified" ||
+            status === "requires_input" ||
+            status === "rejected" ||
+            status === "missing_request_id"
+          ) {
+            setStatus(message, statusClass);
+            stopPolling();
+            return;
+          }
+
+          setStatus(message, statusClass);
+          if (requestId) {
+            schedulePoll();
+          }
+        } catch (error) {
+          console.error("Booking status load failed:", error);
+          paymentButton.style.display = "none";
+          setStatus(PENDING_REVIEW_MESSAGE, "pending");
+          if (requestId) {
+            schedulePoll();
+          }
+        }
+      }
+
+      const initialCheckin = latestBooking && latestBooking.checkin;
+      const initialCheckout = latestBooking && latestBooking.checkout;
+      if (initialCheckin || initialCheckout) {
+        datesEl.textContent = resolveDate(initialCheckin) + " \u2192 " + resolveDate(initialCheckout);
+      } else {
+        datesEl.textContent = "--";
       }
 
       loadStatus();
