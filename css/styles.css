@@ -1707,6 +1707,10 @@ body.modal-open {
   display: none;
 }
 
+.lux-booking-modal.is-unavailable-suggested .lux-booking-form {
+  display: none;
+}
+
 .lux-availability-suggestions {
   margin-top: 0.75rem;
   border: 1px solid #ddccba;
@@ -1745,6 +1749,22 @@ body.modal-open {
 }
 
 .lux-suggestion-btn:hover {
+  background: #f8efe4;
+}
+
+.lux-suggestion-custom-btn {
+  margin-top: 0.65rem;
+  border: 1px solid #d6c4ae;
+  border-radius: 999px;
+  background: transparent;
+  color: #413327;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.58rem 0.84rem;
+  cursor: pointer;
+}
+
+.lux-suggestion-custom-btn:hover {
   background: #f8efe4;
 }
 

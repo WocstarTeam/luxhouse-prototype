@@ -336,11 +336,12 @@ function initBookingModal() {
     (form ? form.querySelector('button[type="submit"]') : null);
   const offerTitleEl = document.getElementById("availabilityOfferTitle");
   const offerCopyEl = document.getElementById("availabilityOfferCopy");
+  const headerSubtitleEl = modal.querySelector(".lux-booking-header > p:last-child");
   const availabilitySuggestionsEl = document.createElement("section");
   availabilitySuggestionsEl.className = "lux-availability-suggestions";
   availabilitySuggestionsEl.hidden = true;
-  if (availabilityResult && availabilityResult.parentNode) {
-    availabilityResult.insertAdjacentElement("afterend", availabilitySuggestionsEl);
+  if (form && form.parentNode) {
+    form.insertAdjacentElement("afterend", availabilitySuggestionsEl);
   }
 
   if (!form || !destinationInput || !checkinInput || !checkoutInput || !guestsInput || !stepTwoEl || !continueBtn) {
@@ -355,11 +356,32 @@ function initBookingModal() {
     isAvailable: false
   };
   const defaultTitle = modalTitleEl ? modalTitleEl.textContent : "Start Your Booking";
+  const defaultSubtitle = headerSubtitleEl ? headerSubtitleEl.textContent : "";
 
   function setConfirmedLayout(enabled) {
     modal.classList.toggle("is-availability-confirmed", Boolean(enabled));
     if (modalTitleEl) {
       modalTitleEl.textContent = enabled ? "Your Stay Is Ready" : defaultTitle;
+    }
+    if (enabled) {
+      modal.classList.remove("is-unavailable-suggested");
+    }
+  }
+
+  function setUnavailableLayout(enabled) {
+    modal.classList.toggle("is-unavailable-suggested", Boolean(enabled));
+    if (enabled) {
+      modal.classList.remove("is-availability-confirmed");
+    }
+    if (modalTitleEl) {
+      modalTitleEl.textContent = enabled
+        ? "Alternative Dates Available"
+        : defaultTitle;
+    }
+    if (headerSubtitleEl) {
+      headerSubtitleEl.textContent = enabled
+        ? "Our apologies, these dates have already been booked. Please choose an available alternative below, or select your own new dates."
+        : defaultSubtitle;
     }
   }
 
@@ -452,6 +474,7 @@ function initBookingModal() {
   function resetModalState() {
     state.isAvailable = false;
     setConfirmedLayout(false);
+    setUnavailableLayout(false);
     stepTwoEl.hidden = true;
     continueBtn.disabled = true;
     setAvailabilityResult(availabilityResult, "", "");
@@ -527,6 +550,9 @@ function initBookingModal() {
   function clearSuggestions() {
     availabilitySuggestionsEl.hidden = true;
     availabilitySuggestionsEl.innerHTML = "";
+    if (modal.classList.contains("is-unavailable-suggested")) {
+      setUnavailableLayout(false);
+    }
   }
 
   async function findAlternativeDateOptions(destination, checkin, nights, limit) {
@@ -598,6 +624,7 @@ function initBookingModal() {
     availabilitySuggestionsEl.innerHTML = `
       <p class="lux-availability-suggestions-title">Our apologies, these dates have already been booked. Please select one of the available alternatives below, or choose new dates.</p>
       <div class="lux-availability-suggestions-actions">${buttonsMarkup}</div>
+      <button type="button" class="lux-suggestion-custom-btn">Choose Your Own New Dates</button>
     `;
 
     const suggestionButtons = availabilitySuggestionsEl.querySelectorAll(".lux-suggestion-btn");
@@ -614,6 +641,16 @@ function initBookingModal() {
         form.requestSubmit();
       });
     });
+
+    const customDateButton = availabilitySuggestionsEl.querySelector(".lux-suggestion-custom-btn");
+    if (customDateButton) {
+      customDateButton.addEventListener("click", () => {
+        setUnavailableLayout(false);
+        clearSuggestions();
+        setAvailabilityResult(availabilityResult, "", "");
+        setStatusMessage(statusEl, "Choose your preferred dates and check availability again.", "");
+      });
+    }
   }
 
   async function handleAvailabilityCheck(event) {
@@ -624,6 +661,7 @@ function initBookingModal() {
     if (validationMessage) {
       state.isAvailable = false;
       setConfirmedLayout(false);
+      setUnavailableLayout(false);
       stepTwoEl.hidden = true;
       continueBtn.disabled = true;
       clearSuggestions();
@@ -651,6 +689,7 @@ function initBookingModal() {
 
       if (available) {
         setConfirmedLayout(true);
+        setUnavailableLayout(false);
         stepTwoEl.hidden = false;
         continueBtn.disabled = false;
         clearSuggestions();
@@ -665,6 +704,7 @@ function initBookingModal() {
         updateAvailabilityOfferCopy();
       } else {
         setConfirmedLayout(false);
+        setUnavailableLayout(true);
         stepTwoEl.hidden = true;
         continueBtn.disabled = true;
         setAvailabilityResult(availabilityResult, "", "");
@@ -678,6 +718,7 @@ function initBookingModal() {
     } catch (error) {
       state.isAvailable = false;
       setConfirmedLayout(false);
+      setUnavailableLayout(false);
       stepTwoEl.hidden = true;
       continueBtn.disabled = true;
       clearSuggestions();
@@ -808,6 +849,7 @@ function initBookingModal() {
 
   destinationInput.addEventListener("change", () => {
     state.isAvailable = false;
+    setUnavailableLayout(false);
     stepTwoEl.hidden = true;
     continueBtn.disabled = true;
     showDestinationAddons(destinationInput.value);
@@ -818,6 +860,7 @@ function initBookingModal() {
 
   checkinInput.addEventListener("change", () => {
     state.isAvailable = false;
+    setUnavailableLayout(false);
     stepTwoEl.hidden = true;
     continueBtn.disabled = true;
     enforceDateOrder(checkinInput, checkoutInput);
@@ -829,6 +872,7 @@ function initBookingModal() {
 
   checkoutInput.addEventListener("change", () => {
     state.isAvailable = false;
+    setUnavailableLayout(false);
     stepTwoEl.hidden = true;
     continueBtn.disabled = true;
     syncPricingUI();
