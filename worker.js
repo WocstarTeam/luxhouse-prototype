@@ -296,7 +296,7 @@ async function handleCreateVerificationSession(request, env) {
   const configuredReturnUrl =
     typeof env.IDENTITY_RETURN_URL === "string" ? env.IDENTITY_RETURN_URL.trim() : "";
   const fallbackReturnUrl = `${url.origin}/booking-status.html`;
-  const returnUrl = new URL(configuredReturnUrl || bodyReturnUrl || fallbackReturnUrl, request.url);
+  const returnUrl = new URL(bodyReturnUrl || configuredReturnUrl || fallbackReturnUrl, request.url);
   if (!returnUrl.searchParams.get("requestId")) {
     returnUrl.searchParams.set("requestId", requestId);
   }

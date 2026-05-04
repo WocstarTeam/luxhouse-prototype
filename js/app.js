@@ -543,7 +543,7 @@ function initBookingModal() {
         guests: modalData.guests,
         addonsTotal: modalData.addonsTotal,
         total: modalData.total,
-        returnUrl: `${window.location.origin}/booking-status.html`
+        returnUrl: new URL("booking-status.html", window.location.href).toString()
       });
 
       if (verificationData.url) {
