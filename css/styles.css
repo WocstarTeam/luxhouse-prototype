@@ -1994,12 +1994,18 @@ body.modal-open {
 }
 
 .lux-home-page .hero-content h1 {
-  max-width: 11.5ch;
+  max-width: 100%;
+  width: max-content;
   margin-inline: auto;
   color: #fffefb;
   text-wrap: balance;
   font-size: clamp(2.25rem, 6vw, 4.45rem);
   text-shadow: 0 10px 34px rgba(15, 9, 6, 0.62);
+}
+
+.lux-home-page .hero-content h1 .hero-line {
+  display: block;
+  white-space: nowrap;
 }
 
 .lux-home-page .hero-summary {
@@ -2043,6 +2049,10 @@ body.modal-open {
 
   .lux-home-page .hero-content {
     margin-top: clamp(8vh, 11vh, 13vh);
+  }
+
+  .lux-home-page .hero-content h1 {
+    font-size: clamp(1.95rem, 10.5vw, 3.2rem);
   }
 
   .collection-nav {
