@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --ink: #2b231e;
   --ink-soft: #68584a;
   --cream: #f7f2ea;
@@ -333,7 +333,7 @@ main {
 }
 
 .destination-rotator-image--zoom.is-active {
-  animation: destination-zoom-in 5400ms ease-out forwards;
+  animation: destination-zoom-in 3800ms ease-out forwards;
 }
 
 .destination-slide img {

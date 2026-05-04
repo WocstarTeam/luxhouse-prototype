@@ -424,7 +424,7 @@ function initFeaturedDestinationImageRotator() {
 
   let activeIndex = 0;
   let timer = null;
-  const dwellMs = 5400;
+  const dwellMs = 3800;
 
   function showFrame(index) {
     activeIndex = (index + frames.length) % frames.length;
