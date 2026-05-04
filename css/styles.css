@@ -427,17 +427,17 @@ main {
   padding-top: 1rem;
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.72rem, 1.2vw, 1rem);
+  grid-template-columns: repeat(4, minmax(72px, 1fr));
+  gap: clamp(0.42rem, 0.9vw, 0.82rem);
   border-top: 1px solid rgba(31, 64, 57, 0.18);
-  max-width: 430px;
+  max-width: none;
   justify-items: center;
 }
 
 .destination-slide-detail {
-  width: clamp(126px, 10.8vw, 164px);
+  width: min(100%, clamp(96px, 8.7vw, 144px));
   aspect-ratio: 1 / 1;
-  padding: clamp(0.66rem, 0.95vw, 0.88rem);
+  padding: clamp(0.52rem, 0.82vw, 0.8rem);
   border: 1px solid rgba(31, 64, 57, 0.14);
   border-radius: 999px;
   background: linear-gradient(170deg, rgba(255, 255, 255, 0.7) 0%, rgba(247, 236, 221, 0.9) 100%);
@@ -953,7 +953,7 @@ main {
   }
 
   .destination-slide-detail {
-    width: clamp(116px, 23vw, 148px);
+    width: min(100%, clamp(86px, 18vw, 122px));
   }
 
   .booking-bar {
@@ -2360,6 +2360,15 @@ body.modal-open {
   .lux-home-page .destination-slide-details {
     gap: 0.48rem;
     max-width: 100%;
+  }
+
+  .lux-home-page .destination-slide-detail {
+    width: min(100%, clamp(78px, 22vw, 102px));
+  }
+
+  .lux-home-page .destination-slide-detail-label {
+    font-size: 0.54rem;
+    letter-spacing: 0.08em;
   }
 
   .lux-home-page .destination-carousel-nav {
