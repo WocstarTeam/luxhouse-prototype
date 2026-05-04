@@ -160,7 +160,7 @@ async function handleBookingStatus(request, env) {
 
   try {
     const url = new URL(request.url);
-    const requestId = url.searchParams.get("requestId");
+    const requestId = url.searchParams?.get("requestId");
     const safeRequestId = typeof requestId === "string" ? requestId.trim() : "";
 
     if (!safeRequestId) {
@@ -172,8 +172,31 @@ async function handleBookingStatus(request, env) {
       });
     }
 
-    const booking = BOOKINGS && typeof BOOKINGS === "object" ? BOOKINGS[safeRequestId] : null;
-    if (!booking || typeof booking !== "object") {
+    let booking = null;
+
+    try {
+      const memoryStore = BOOKINGS && typeof BOOKINGS === "object" ? BOOKINGS : null;
+      if (memoryStore && memoryStore[safeRequestId] && typeof memoryStore[safeRequestId] === "object") {
+        booking = memoryStore[safeRequestId];
+      } else {
+        const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.get === "function" ? env.BOOKINGS : null;
+        const bookingRaw = kvStore ? await kvStore.get(safeRequestId) : null;
+        if (typeof bookingRaw === "string" && bookingRaw) {
+          try {
+            const parsed = JSON.parse(bookingRaw);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+              booking = parsed;
+            }
+          } catch (parseError) {
+            console.error("Storage read failed", parseError);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Storage read failed", e);
+    }
+
+    if (!booking) {
       return jsonResponse(pendingVerificationResponse);
     }
 
