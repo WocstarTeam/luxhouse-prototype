@@ -547,10 +547,10 @@ function initBookingModal() {
     document.body.classList.remove("modal-open");
   }
 
-  function clearSuggestions() {
+  function clearSuggestions(resetUnavailableLayout = true) {
     availabilitySuggestionsEl.hidden = true;
     availabilitySuggestionsEl.innerHTML = "";
-    if (modal.classList.contains("is-unavailable-suggested")) {
+    if (resetUnavailableLayout && modal.classList.contains("is-unavailable-suggested")) {
       setUnavailableLayout(false);
     }
   }
@@ -587,7 +587,7 @@ function initBookingModal() {
   }
 
   async function showAlternativeSuggestions(modalData) {
-    clearSuggestions();
+    clearSuggestions(false);
     const destinationLabel = getDestinationLabel(modalData.destination) || "this destination";
     const nightsText = modalData.nights === 1 ? "night" : "nights";
 
@@ -708,11 +708,7 @@ function initBookingModal() {
         stepTwoEl.hidden = true;
         continueBtn.disabled = true;
         setAvailabilityResult(availabilityResult, "", "");
-        setStatusMessage(
-          statusEl,
-          "Our apologies, these dates have already been booked. Please select an alternative below or choose new dates.",
-          ""
-        );
+        setStatusMessage(statusEl, "", "");
         await showAlternativeSuggestions(modalData);
       }
     } catch (error) {
