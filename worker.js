@@ -19,6 +19,8 @@ const STATUS_MESSAGES = {
     "Thank you. Your booking request is being reviewed by our team.",
 };
 
+let BOOKINGS = {};
+
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -278,34 +280,47 @@ async function handleCreateVerificationSession(request, env) {
   return jsonResponse({ url: stripeData.url });
 }
 
-async function handleWebhook(request, env) {
+async function handleWebhook(request) {
+  let event;
   try {
-    const event = await request.json();
-
-    if (event.type === "identity.verification_session.verified") {
-      const requestId = event.data?.object?.metadata?.requestId;
-      if (requestId) {
-        const existingRaw = await env.BOOKINGS.get(requestId);
-        const booking = existingRaw ? JSON.parse(existingRaw) : { requestId };
-        booking.status = "approved";
-        await env.BOOKINGS.put(requestId, JSON.stringify(booking));
-      }
-    }
-
-    if (event.type === "identity.verification_session.requires_input") {
-      const requestId = event.data?.object?.metadata?.requestId;
-      if (requestId) {
-        const existingRaw = await env.BOOKINGS.get(requestId);
-        const booking = existingRaw ? JSON.parse(existingRaw) : { requestId };
-        booking.status = "rejected";
-        await env.BOOKINGS.put(requestId, JSON.stringify(booking));
-      }
-    }
+    event = await request.json();
   } catch (error) {
-    console.error("Webhook handler error:", error);
+    console.error("Webhook JSON parse error:", error);
+    return new Response("Invalid payload", { status: 400 });
   }
 
-  return new Response("ok", { status: 200 });
+  const eventType = event && typeof event.type === "string" ? event.type : "";
+
+  if (
+    eventType !== "identity.verification_session.verified" &&
+    eventType !== "identity.verification_session.requires_input" &&
+    eventType !== "identity.verification_session.canceled"
+  ) {
+    return new Response("Webhook received", { status: 200 });
+  }
+
+  const session = event && event.data ? event.data.object : null;
+  const requestId = session?.metadata?.requestId;
+
+  console.log(eventType, requestId);
+
+  if (!requestId) {
+    return new Response("Missing requestId", { status: 400 });
+  }
+
+  if (eventType === "identity.verification_session.verified") {
+    BOOKINGS[requestId] = { status: "verified" };
+  }
+
+  if (eventType === "identity.verification_session.requires_input") {
+    BOOKINGS[requestId] = { status: "requires_input" };
+  }
+
+  if (eventType === "identity.verification_session.canceled") {
+    BOOKINGS[requestId] = { status: "rejected" };
+  }
+
+  return new Response("Webhook received", { status: 200 });
 }
 
 export default {
@@ -318,8 +333,12 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
+    if (pathname === "/webhook" && method === "POST") {
+      return handleWebhook(request);
+    }
+
     if (pathname.includes("webhook") && method === "POST") {
-      return handleWebhook(request, env);
+      return handleWebhook(request);
     }
 
     if (pathname.includes("availability") && method === "POST") {
