@@ -542,7 +542,8 @@ function initBookingModal() {
         destination: modalData.destination,
         guests: modalData.guests,
         addonsTotal: modalData.addonsTotal,
-        total: modalData.total
+        total: modalData.total,
+        returnUrl: `${window.location.origin}/booking-status.html`
       });
 
       if (verificationData.url) {
