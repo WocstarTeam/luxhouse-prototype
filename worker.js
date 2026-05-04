@@ -22,6 +22,8 @@ const STATUS_MESSAGES = {
 };
 
 let BOOKINGS = globalThis.BOOKINGS;
+globalThis.ICAL_EVENTS_CACHE = globalThis.ICAL_EVENTS_CACHE || {};
+const ICAL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -47,12 +49,230 @@ function createRequestId() {
   return `LUX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
-function datesOverlap(startA, endA, startB, endB) {
-  const aStart = new Date(startA);
-  const aEnd = new Date(endA);
-  const bStart = new Date(startB);
-  const bEnd = new Date(endB);
-  return aStart <= bEnd && bStart <= aEnd;
+function parseIsoDateToUtcMs(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return NaN;
+  }
+  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function parseIcalDateValueToUtcMs(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return NaN;
+  }
+
+  const dateOnly = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (dateOnly) {
+    return Date.UTC(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
+  }
+
+  const utcDateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  if (utcDateTime) {
+    return Date.UTC(
+      Number(utcDateTime[1]),
+      Number(utcDateTime[2]) - 1,
+      Number(utcDateTime[3]),
+      Number(utcDateTime[4]),
+      Number(utcDateTime[5]),
+      Number(utcDateTime[6])
+    );
+  }
+
+  const localDateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/);
+  if (localDateTime) {
+    return Date.UTC(
+      Number(localDateTime[1]),
+      Number(localDateTime[2]) - 1,
+      Number(localDateTime[3]),
+      Number(localDateTime[4]),
+      Number(localDateTime[5]),
+      Number(localDateTime[6])
+    );
+  }
+
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function rangesOverlapExclusive(startA, endA, startB, endB) {
+  return startA < endB && startB < endA;
+}
+
+function normalizeAvailabilityDestination(value) {
+  const raw = String(value || "").toLowerCase().trim();
+  if (raw.includes("pine")) {
+    return "pine";
+  }
+  if (raw.includes("cactus")) {
+    return "cactus";
+  }
+  return "";
+}
+
+function unfoldIcalLines(text) {
+  return String(text || "")
+    .replace(/\r?\n[ \t]/g, "")
+    .split(/\r?\n/);
+}
+
+function getIcalPropertyValue(line, propertyName) {
+  if (!line || !propertyName) {
+    return "";
+  }
+  const startsWithName = line.startsWith(propertyName + ":") || line.startsWith(propertyName + ";");
+  if (!startsWithName) {
+    return "";
+  }
+  const separatorIndex = line.indexOf(":");
+  if (separatorIndex < 0) {
+    return "";
+  }
+  return line.slice(separatorIndex + 1).trim();
+}
+
+function parseFreebusyPeriods(rawValue) {
+  const periods = [];
+  const chunks = String(rawValue || "")
+    .split(",")
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  for (const period of chunks) {
+    const parts = period.split("/");
+    if (parts.length !== 2) {
+      continue;
+    }
+    const startMs = parseIcalDateValueToUtcMs(parts[0]);
+    const endMs = parseIcalDateValueToUtcMs(parts[1]);
+    if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs) {
+      periods.push({ startMs, endMs });
+    }
+  }
+
+  return periods;
+}
+
+function parseIcalBusyRanges(icalText) {
+  const lines = unfoldIcalLines(icalText);
+  const ranges = [];
+  let currentEventStart = "";
+  let currentEventEnd = "";
+  let inEvent = false;
+
+  for (const line of lines) {
+    if (line === "BEGIN:VEVENT") {
+      inEvent = true;
+      currentEventStart = "";
+      currentEventEnd = "";
+      continue;
+    }
+
+    if (line === "END:VEVENT") {
+      if (inEvent) {
+        const startMs = parseIcalDateValueToUtcMs(currentEventStart);
+        const endMsRaw = parseIcalDateValueToUtcMs(currentEventEnd);
+        const endMs = Number.isFinite(endMsRaw) ? endMsRaw : startMs + 24 * 60 * 60 * 1000;
+        if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs) {
+          ranges.push({ startMs, endMs });
+        }
+      }
+      inEvent = false;
+      continue;
+    }
+
+    if (inEvent) {
+      const dtstartValue = getIcalPropertyValue(line, "DTSTART");
+      if (dtstartValue) {
+        currentEventStart = dtstartValue;
+        continue;
+      }
+
+      const dtendValue = getIcalPropertyValue(line, "DTEND");
+      if (dtendValue) {
+        currentEventEnd = dtendValue;
+      }
+      continue;
+    }
+
+    const freebusyValue = getIcalPropertyValue(line, "FREEBUSY");
+    if (freebusyValue) {
+      ranges.push(...parseFreebusyPeriods(freebusyValue));
+    }
+  }
+
+  return ranges;
+}
+
+function collectIcalUrls(env, destination) {
+  const values = [];
+
+  const pushValue = (value) => {
+    if (typeof value !== "string") {
+      return;
+    }
+    const trimmed = value.trim();
+    if (trimmed) {
+      values.push(trimmed);
+    }
+  };
+
+  const destinationKey = normalizeAvailabilityDestination(destination);
+  if (destinationKey === "pine") {
+    pushValue(env.HOSPITABLE_ICAL_URL_PINE);
+    pushValue(env.PINE_ICAL_URL);
+    pushValue(env.ICAL_URL_PINE);
+  } else if (destinationKey === "cactus") {
+    pushValue(env.HOSPITABLE_ICAL_URL_CACTUS);
+    pushValue(env.CACTUS_ICAL_URL);
+    pushValue(env.ICAL_URL_CACTUS);
+  }
+
+  pushValue(env.HOSPITABLE_ICAL_URL);
+  pushValue(env.HOSPITABLE_ICAL);
+  pushValue(env.ICAL_URL);
+
+  if (typeof env.HOSPITABLE_ICAL_URLS === "string") {
+    env.HOSPITABLE_ICAL_URLS
+      .split(/[,\n]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((url) => values.push(url));
+  }
+
+  return Array.from(new Set(values));
+}
+
+async function getBusyRangesFromIcalUrl(url) {
+  const cacheKey = String(url || "").trim();
+  if (!cacheKey) {
+    return [];
+  }
+
+  const now = Date.now();
+  const cached = globalThis.ICAL_EVENTS_CACHE[cacheKey];
+  if (cached && Array.isArray(cached.ranges) && cached.expiresAt > now) {
+    return cached.ranges;
+  }
+
+  const response = await fetch(cacheKey, {
+    headers: { Accept: "text/calendar,text/plain;q=0.9,*/*;q=0.8" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`iCal fetch failed (${response.status})`);
+  }
+
+  const text = await response.text();
+  const ranges = parseIcalBusyRanges(text);
+  globalThis.ICAL_EVENTS_CACHE[cacheKey] = {
+    ranges,
+    expiresAt: now + ICAL_CACHE_TTL_MS,
+  };
+
+  return ranges;
 }
 
 async function parseJsonBody(request) {
@@ -99,19 +319,60 @@ function getStatusMessage(status) {
 
 async function handleAvailability(request, env) {
   const body = await parseJsonBody(request);
-  const checkin = body.checkin;
-  const checkout = body.checkout;
+  const checkin = String(body.checkin || "").trim();
+  const checkout = String(body.checkout || "").trim();
+  const destination = String(body.destination || body.property || "").trim();
 
   if (!checkin || !checkout) {
     return jsonResponse({ available: false, error: "Missing dates" }, 400);
   }
 
-  let available = true;
-  if (env.BLOCKED_START && env.BLOCKED_END) {
-    available = !datesOverlap(checkin, checkout, env.BLOCKED_START, env.BLOCKED_END);
+  const requestedStartMs = parseIsoDateToUtcMs(checkin);
+  const requestedEndMs = parseIsoDateToUtcMs(checkout);
+  if (!Number.isFinite(requestedStartMs) || !Number.isFinite(requestedEndMs) || requestedEndMs <= requestedStartMs) {
+    return jsonResponse({ available: false, error: "Invalid date range" }, 400);
   }
 
-  return jsonResponse({ available });
+  const blockedRanges = [];
+
+  if (env.BLOCKED_START && env.BLOCKED_END) {
+    const legacyStart = parseIsoDateToUtcMs(env.BLOCKED_START);
+    const legacyEndInclusive = parseIsoDateToUtcMs(env.BLOCKED_END);
+    if (Number.isFinite(legacyStart) && Number.isFinite(legacyEndInclusive)) {
+      blockedRanges.push({
+        startMs: legacyStart,
+        endMs: legacyEndInclusive + 24 * 60 * 60 * 1000,
+      });
+    }
+  }
+
+  const icalUrls = collectIcalUrls(env, destination);
+  for (const icalUrl of icalUrls) {
+    try {
+      const ranges = await getBusyRangesFromIcalUrl(icalUrl);
+      blockedRanges.push(...ranges);
+    } catch (error) {
+      console.error(`iCal sync failed for ${icalUrl}:`, error);
+    }
+  }
+
+  let available = true;
+  for (const range of blockedRanges) {
+    if (
+      range &&
+      Number.isFinite(range.startMs) &&
+      Number.isFinite(range.endMs) &&
+      rangesOverlapExclusive(requestedStartMs, requestedEndMs, range.startMs, range.endMs)
+    ) {
+      available = false;
+      break;
+    }
+  }
+
+  return jsonResponse({
+    available,
+    source: icalUrls.length > 0 ? "hospitable_ical" : "local_rules",
+  });
 }
 
 async function handleCreateBooking(request, env) {

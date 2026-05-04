@@ -242,6 +242,7 @@ function initHeroBookingBar() {
 
     try {
       const data = await postJson("/availability", {
+        destination: payload.destination,
         checkin: payload.checkin,
         checkout: payload.checkout
       });
@@ -443,6 +444,7 @@ function initBookingModal() {
 
     try {
       const data = await postJson("/availability", {
+        destination: modalData.destination,
         checkin: modalData.checkin,
         checkout: modalData.checkout
       });
@@ -696,6 +698,7 @@ function initPropertyForms() {
 
       try {
         const data = await postJson("/availability", {
+          destination: item.destination,
           checkin: payload.checkin,
           checkout: payload.checkout
         });
