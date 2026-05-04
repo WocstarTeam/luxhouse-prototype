@@ -1967,6 +1967,14 @@ body.modal-open {
   background-position: center 44%;
 }
 
+.lux-home-page .hero-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 11, 8, 0.24);
+  pointer-events: none;
+}
+
 .lux-home-page .top-nav {
   padding-top: 0.25rem;
   text-shadow: 0 2px 18px rgba(17, 9, 5, 0.34);
