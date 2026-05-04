@@ -421,6 +421,41 @@ main {
   font-size: 1rem;
 }
 
+.destination-slide-details {
+  margin-top: 1rem;
+  padding-top: 0.88rem;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.56rem;
+  border-top: 1px solid rgba(31, 64, 57, 0.18);
+}
+
+.destination-slide-detail {
+  padding: 0.62rem 0.54rem;
+  border: 1px solid rgba(31, 64, 57, 0.14);
+  border-radius: 0.6rem;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.7) 0%, rgba(247, 236, 221, 0.9) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.destination-slide-detail-value {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.22rem, 2vw, 1.6rem);
+  line-height: 1;
+  color: #1f4039;
+}
+
+.destination-slide-detail-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgba(31, 24, 18, 0.82);
+  line-height: 1.35;
+}
+
 .destination-slide-cta {
   margin-top: 1.1rem;
   align-self: flex-start;
@@ -906,6 +941,10 @@ main {
 
   .destination-slide-copy--with-logo {
     grid-template-columns: minmax(0, 1fr) clamp(78px, 18vw, 102px);
+  }
+
+  .destination-slide-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .booking-bar {
@@ -2238,6 +2277,14 @@ body.modal-open {
   align-items: flex-start;
 }
 
+.lux-home-page .destination-slide-details {
+  border-top-color: rgba(31, 64, 57, 0.22);
+}
+
+.lux-home-page .destination-slide-detail {
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.74) 0%, rgba(245, 231, 214, 0.92) 100%);
+}
+
 .lux-home-page .destination-slide-cta {
   border-color: rgba(31, 64, 57, 0.2);
   background: #fffdf8;
@@ -2282,6 +2329,10 @@ body.modal-open {
   .lux-home-page .destination-slide-logo-wrap {
     justify-self: start;
     width: clamp(70px, 21vw, 92px);
+  }
+
+  .lux-home-page .destination-slide-details {
+    gap: 0.48rem;
   }
 
   .lux-home-page .destination-carousel-nav {
