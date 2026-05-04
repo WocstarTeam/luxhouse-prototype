@@ -336,7 +336,7 @@ main {
   animation: destination-zoom-in 3800ms ease-out forwards;
 }
 
-.destination-slide img {
+.destination-slide-media > img {
   height: 100%;
   min-height: 430px;
 }
@@ -356,6 +356,40 @@ main {
   flex-direction: column;
   justify-content: center;
   background: linear-gradient(135deg, #fffaf3 0%, #f7ecdd 100%);
+}
+
+.destination-slide-copy--with-logo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: clamp(0.95rem, 1.8vw, 1.5rem);
+  align-items: start;
+}
+
+.destination-slide-copy-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.destination-slide-logo-wrap {
+  justify-self: end;
+  align-self: start;
+  width: clamp(84px, 8vw, 124px);
+  aspect-ratio: 1 / 1;
+  border-radius: 0.9rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.86) 0%, rgba(245, 233, 218, 0.94) 100%);
+  border: 1px solid rgba(31, 64, 57, 0.14);
+  box-shadow: 0 10px 24px rgba(43, 31, 21, 0.12);
+  padding: clamp(0.42rem, 0.8vw, 0.62rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.destination-slide-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .destination-slide-kicker {
@@ -380,7 +414,8 @@ main {
   font-weight: 700;
 }
 
-.destination-slide-copy > p:last-of-type {
+.destination-slide-copy > p:last-of-type,
+.destination-slide-copy-main > p:last-of-type {
   margin-top: 0.65rem;
   color: var(--ink-soft);
   font-size: 1rem;
@@ -865,8 +900,12 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .destination-slide img {
+  .destination-slide-media {
     min-height: 290px;
+  }
+
+  .destination-slide-copy--with-logo {
+    grid-template-columns: minmax(0, 1fr) clamp(78px, 18vw, 102px);
   }
 
   .booking-bar {
@@ -2188,7 +2227,7 @@ body.modal-open {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
 }
 
-.lux-home-page .destination-slide img {
+.lux-home-page .destination-slide-media > img {
   min-height: 100%;
 }
 
@@ -2227,12 +2266,22 @@ body.modal-open {
     min-height: auto;
   }
 
-  .lux-home-page .destination-slide img {
+  .lux-home-page .destination-slide-media {
     min-height: 260px;
   }
 
   .lux-home-page .destination-slide-copy {
     padding: 1.1rem;
+  }
+
+  .lux-home-page .destination-slide-copy--with-logo {
+    grid-template-columns: 1fr;
+    row-gap: 0.9rem;
+  }
+
+  .lux-home-page .destination-slide-logo-wrap {
+    justify-self: start;
+    width: clamp(70px, 21vw, 92px);
   }
 
   .lux-home-page .destination-carousel-nav {
