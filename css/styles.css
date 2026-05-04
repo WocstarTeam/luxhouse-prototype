@@ -422,6 +422,17 @@ main {
   font-size: 1rem;
 }
 
+.destination-slide-description {
+  margin-top: 0.68rem;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.64;
+}
+
+.destination-slide-description + .destination-slide-description {
+  margin-top: 1.15rem;
+}
+
 .destination-slide-details {
   margin-top: clamp(1.9rem, 2.6vw, 2.5rem);
   padding-top: 0;
