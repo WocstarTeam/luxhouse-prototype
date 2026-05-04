@@ -1707,6 +1707,47 @@ body.modal-open {
   display: none;
 }
 
+.lux-availability-suggestions {
+  margin-top: 0.75rem;
+  border: 1px solid #ddccba;
+  border-radius: 0.8rem;
+  background: #fffcf8;
+  padding: 0.8rem;
+}
+
+.lux-availability-suggestions-title {
+  margin: 0;
+  font-weight: 700;
+  color: #5f281d;
+}
+
+.lux-availability-suggestions-subtitle {
+  margin: 0.35rem 0 0;
+  color: #675646;
+}
+
+.lux-availability-suggestions-actions {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.lux-suggestion-btn {
+  border: 1px solid #d8c8b2;
+  border-radius: 999px;
+  background: #fff;
+  color: #2a2119;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.62rem 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lux-suggestion-btn:hover {
+  background: #f8efe4;
+}
+
 .lux-booking-status.is-error {
   color: #8d2d21;
 }

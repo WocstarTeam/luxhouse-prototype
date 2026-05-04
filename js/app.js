@@ -66,6 +66,18 @@ function formatCurrency(amount) {
   });
 }
 
+function formatShortDate(isoDate) {
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
 function setAvailabilityResult(resultEl, message, kind) {
   if (!resultEl) {
     return;
@@ -270,7 +282,10 @@ function initHeroBookingBar() {
       } else {
         setAvailabilityResult(resultEl, "Not available for these dates.", "error");
         if (feedbackEl) {
-          feedbackEl.textContent = "Try different dates, then recheck availability.";
+          feedbackEl.textContent = "Those dates are unavailable. Opening suggested alternatives now.";
+        }
+        if (bookingModalController && bookingModalController.open) {
+          bookingModalController.open(payload, { autoCheck: true });
         }
       }
     } catch (error) {
@@ -305,6 +320,12 @@ function initBookingModal() {
     (form ? form.querySelector('button[type="submit"]') : null);
   const offerTitleEl = document.getElementById("availabilityOfferTitle");
   const offerCopyEl = document.getElementById("availabilityOfferCopy");
+  const availabilitySuggestionsEl = document.createElement("section");
+  availabilitySuggestionsEl.className = "lux-availability-suggestions";
+  availabilitySuggestionsEl.hidden = true;
+  if (availabilityResult && availabilityResult.parentNode) {
+    availabilityResult.insertAdjacentElement("afterend", availabilitySuggestionsEl);
+  }
 
   if (!form || !destinationInput || !checkinInput || !checkoutInput || !guestsInput || !stepTwoEl || !continueBtn) {
     return;
@@ -419,6 +440,7 @@ function initBookingModal() {
     continueBtn.disabled = true;
     setAvailabilityResult(availabilityResult, "", "");
     setStatusMessage(statusEl, "", "");
+    clearSuggestions();
     addonCheckboxes.forEach((checkbox) => {
       checkbox.checked = false;
     });
@@ -463,12 +485,20 @@ function initBookingModal() {
       stepTwoEl.hidden = false;
       continueBtn.disabled = false;
       setAvailabilityResult(availabilityResult, "Available for your selected dates.", "success");
+      clearSuggestions();
       setStatusMessage(
         statusEl,
         "Great news. Personalize your stay below, then proceed to verification.",
         "success"
       );
       updateAvailabilityOfferCopy();
+      return;
+    }
+
+    if (modalOptions.autoCheck) {
+      setTimeout(() => {
+        form.requestSubmit();
+      }, 0);
     }
   }
 
@@ -478,6 +508,98 @@ function initBookingModal() {
     document.body.classList.remove("modal-open");
   }
 
+  function clearSuggestions() {
+    availabilitySuggestionsEl.hidden = true;
+    availabilitySuggestionsEl.innerHTML = "";
+  }
+
+  async function findAlternativeDateOptions(destination, checkin, nights, limit) {
+    const normalizedDestination = normalizeDestination(destination);
+    const normalizedNights = Number.isFinite(nights) && nights > 0 ? nights : 1;
+    const maxOptions = Number.isFinite(limit) && limit > 0 ? Math.round(limit) : 3;
+    const maxSearchDays = 120;
+    const options = [];
+
+    for (let dayOffset = 1; dayOffset <= maxSearchDays && options.length < maxOptions; dayOffset += 1) {
+      const suggestedCheckin = addDays(checkin, dayOffset);
+      const suggestedCheckout = addDays(suggestedCheckin, normalizedNights);
+      try {
+        const data = await postJson("/availability", {
+          destination: normalizedDestination,
+          checkin: suggestedCheckin,
+          checkout: suggestedCheckout
+        });
+        if (data && data.available === true) {
+          options.push({
+            checkin: suggestedCheckin,
+            checkout: suggestedCheckout,
+            nights: normalizedNights
+          });
+        }
+      } catch (error) {
+        console.error("Alternative date lookup failed:", error);
+      }
+    }
+
+    return options;
+  }
+
+  async function showAlternativeSuggestions(modalData) {
+    clearSuggestions();
+    const destinationLabel = getDestinationLabel(modalData.destination) || "this destination";
+    const nightsText = modalData.nights === 1 ? "night" : "nights";
+
+    availabilitySuggestionsEl.hidden = false;
+    availabilitySuggestionsEl.innerHTML = `
+      <p class="lux-availability-suggestions-title">Those dates are booked. Looking for alternatives...</p>
+      <p class="lux-availability-suggestions-subtitle">Searching for nearby ${modalData.nights} ${nightsText} options at ${destinationLabel}.</p>
+    `;
+
+    const options = await findAlternativeDateOptions(
+      modalData.destination,
+      modalData.checkin,
+      modalData.nights,
+      4
+    );
+
+    if (!options.length) {
+      availabilitySuggestionsEl.innerHTML = `
+        <p class="lux-availability-suggestions-title">No nearby options found yet.</p>
+        <p class="lux-availability-suggestions-subtitle">Try adjusting your check-in date or stay length, then check again.</p>
+      `;
+      return;
+    }
+
+    const buttonsMarkup = options
+      .map((option, index) => {
+        const optionNightsText = option.nights === 1 ? "night" : "nights";
+        return `<button type="button" class="lux-suggestion-btn" data-suggest-checkin="${option.checkin}" data-suggest-checkout="${option.checkout}">
+          Option ${index + 1}: ${formatShortDate(option.checkin)} - ${formatShortDate(option.checkout)} (${option.nights} ${optionNightsText})
+        </button>`;
+      })
+      .join("");
+
+    availabilitySuggestionsEl.innerHTML = `
+      <p class="lux-availability-suggestions-title">Those dates are unavailable. Choose one of these available alternatives:</p>
+      <div class="lux-availability-suggestions-actions">${buttonsMarkup}</div>
+    `;
+
+    const suggestionButtons = availabilitySuggestionsEl.querySelectorAll(".lux-suggestion-btn");
+    suggestionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const suggestedCheckin = button.getAttribute("data-suggest-checkin") || "";
+        const suggestedCheckout = button.getAttribute("data-suggest-checkout") || "";
+        if (!suggestedCheckin || !suggestedCheckout) {
+          return;
+        }
+        checkinInput.value = suggestedCheckin;
+        checkoutInput.value = suggestedCheckout;
+        clearSuggestions();
+        form.requestSubmit();
+      });
+    });
+  }
+
   async function handleAvailabilityCheck(event) {
     event.preventDefault();
     const modalData = getCurrentModalData();
@@ -485,8 +607,10 @@ function initBookingModal() {
 
     if (validationMessage) {
       state.isAvailable = false;
+      setConfirmedLayout(false);
       stepTwoEl.hidden = true;
       continueBtn.disabled = true;
+      clearSuggestions();
       setAvailabilityResult(availabilityResult, validationMessage, "error");
       setStatusMessage(statusEl, validationMessage, "error");
       return;
@@ -513,6 +637,7 @@ function initBookingModal() {
         setConfirmedLayout(true);
         stepTwoEl.hidden = false;
         continueBtn.disabled = false;
+        clearSuggestions();
         showDestinationAddons(modalData.destination);
         syncPricingUI();
         setAvailabilityResult(availabilityResult, "Great news. Your dates are available.", "success");
@@ -529,15 +654,17 @@ function initBookingModal() {
         setAvailabilityResult(availabilityResult, "Not available for these dates", "error");
         setStatusMessage(
           statusEl,
-          "Those dates are unavailable. Try different dates.",
+          "Those dates are unavailable. Choose one of the suggested available options below.",
           "error"
         );
+        await showAlternativeSuggestions(modalData);
       }
     } catch (error) {
       state.isAvailable = false;
       setConfirmedLayout(false);
       stepTwoEl.hidden = true;
       continueBtn.disabled = true;
+      clearSuggestions();
       setAvailabilityResult(
         availabilityResult,
         error.message || "Unable to check availability right now.",
@@ -669,6 +796,7 @@ function initBookingModal() {
     continueBtn.disabled = true;
     showDestinationAddons(destinationInput.value);
     setAvailabilityResult(availabilityResult, "", "");
+    clearSuggestions();
     setStatusMessage(statusEl, "", "");
   });
 
@@ -679,6 +807,7 @@ function initBookingModal() {
     enforceDateOrder(checkinInput, checkoutInput);
     syncPricingUI();
     setAvailabilityResult(availabilityResult, "", "");
+    clearSuggestions();
     setStatusMessage(statusEl, "", "");
   });
 
@@ -688,6 +817,7 @@ function initBookingModal() {
     continueBtn.disabled = true;
     syncPricingUI();
     setAvailabilityResult(availabilityResult, "", "");
+    clearSuggestions();
     setStatusMessage(statusEl, "", "");
   });
 
@@ -774,7 +904,10 @@ function initPropertyForms() {
             bookingModalController.open(payload, { availabilityConfirmed: true });
           }
         } else {
-          setAvailabilityResult(resultEl, "Not available for these dates.", "error");
+          setAvailabilityResult(resultEl, "Not available for these dates. Opening alternatives...", "error");
+          if (bookingModalController && bookingModalController.open) {
+            bookingModalController.open(payload, { autoCheck: true });
+          }
         }
       } catch (error) {
         setAvailabilityResult(
