@@ -1148,8 +1148,8 @@ function initBookingModal() {
 }
 
 function initCactusBedroomLightbox() {
-  const trigger = document.querySelector(
-    '.lux-cactus-category-item[data-bedroom-gallery="bedroom-1"]'
+  const triggers = Array.from(
+    document.querySelectorAll(".lux-cactus-category-item[data-bedroom-gallery]")
   );
   const lightbox = document.getElementById("cactusLightbox");
   const imageEl = document.getElementById("cactusLightboxImage");
@@ -1157,34 +1157,42 @@ function initCactusBedroomLightbox() {
   const nextBtn = document.getElementById("cactusNextBtn");
   const thumbStrip = document.getElementById("cactusThumbStrip");
 
-  if (!trigger || !lightbox || !imageEl || !prevBtn || !nextBtn || !thumbStrip) {
-    return;
-  }
-
-  const imageSources = (trigger.getAttribute("data-bedroom-gallery-images") || "")
-    .split("|")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const imageAlts = (trigger.getAttribute("data-bedroom-gallery-alts") || "")
-    .split("|")
-    .map((value) => value.trim());
-
-  if (!imageSources.length) {
+  if (!triggers.length || !lightbox || !imageEl || !prevBtn || !nextBtn || !thumbStrip) {
     return;
   }
 
   let activeIndex = 0;
-  const thumbButtons = [];
+  let activeSources = [];
+  let activeAlts = [];
+  let activeLabel = "Bedroom";
+  let thumbButtons = [];
+
+  function buildFallbackLabel(rawToken) {
+    const cleaned = String(rawToken || "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!cleaned) {
+      return "Bedroom";
+    }
+    return cleaned
+      .split(" ")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }
 
   function getAlt(index) {
-    if (imageAlts[index]) {
-      return imageAlts[index];
+    if (activeAlts[index]) {
+      return activeAlts[index];
     }
-    return `Cactus and Chill bedroom 1 photo ${index + 1}`;
+    return `${activeLabel} photo ${index + 1}`;
   }
 
   function renderImage() {
-    imageEl.src = imageSources[activeIndex];
+    if (!activeSources.length) {
+      return;
+    }
+    imageEl.src = activeSources[activeIndex];
     imageEl.alt = getAlt(activeIndex);
     thumbButtons.forEach((button, index) => {
       const isActive = index === activeIndex;
@@ -1194,12 +1202,14 @@ function initCactusBedroomLightbox() {
   }
 
   function showIndex(index) {
-    activeIndex = (index + imageSources.length) % imageSources.length;
+    if (!activeSources.length) {
+      return;
+    }
+    activeIndex = (index + activeSources.length) % activeSources.length;
     renderImage();
   }
 
-  function openLightbox(startIndex = 0) {
-    showIndex(startIndex);
+  function openLightbox() {
     lightbox.classList.add("is-open");
     lightbox.setAttribute("aria-hidden", "false");
   }
@@ -1209,43 +1219,72 @@ function initCactusBedroomLightbox() {
     lightbox.setAttribute("aria-hidden", "true");
   }
 
-  thumbStrip.innerHTML = "";
-  imageSources.forEach((source, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "lux-cactus-thumb";
-    button.setAttribute("aria-label", `Show bedroom 1 photo ${index + 1}`);
+  function renderThumbs() {
+    thumbButtons = [];
+    thumbStrip.innerHTML = "";
 
-    const thumbImage = document.createElement("img");
-    thumbImage.src = source;
-    thumbImage.alt = getAlt(index);
-    thumbImage.onerror = () => {
-      thumbImage.onerror = null;
-      thumbImage.src = "assets/images/placeholders/placeholder-800x600.svg";
-    };
+    activeSources.forEach((source, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "lux-cactus-thumb";
+      button.setAttribute("aria-label", `Show ${activeLabel} photo ${index + 1}`);
 
-    button.appendChild(thumbImage);
-    button.addEventListener("click", () => {
-      showIndex(index);
+      const thumbImage = document.createElement("img");
+      thumbImage.src = source;
+      thumbImage.alt = getAlt(index);
+      thumbImage.onerror = () => {
+        thumbImage.onerror = null;
+        thumbImage.src = "assets/images/placeholders/placeholder-800x600.svg";
+      };
+
+      button.appendChild(thumbImage);
+      button.addEventListener("click", () => {
+        showIndex(index);
+      });
+
+      thumbStrip.appendChild(button);
+      thumbButtons.push(button);
     });
+  }
 
-    thumbStrip.appendChild(button);
-    thumbButtons.push(button);
-  });
+  function openGallery(trigger, startIndex = 0) {
+    const sources = (trigger.getAttribute("data-bedroom-gallery-images") || "")
+      .split("|")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (!sources.length) {
+      return;
+    }
+
+    activeSources = sources;
+    activeAlts = (trigger.getAttribute("data-bedroom-gallery-alts") || "")
+      .split("|")
+      .map((value) => value.trim());
+    activeLabel =
+      trigger.getAttribute("data-bedroom-gallery-label") ||
+      buildFallbackLabel(trigger.getAttribute("data-bedroom-gallery"));
+
+    activeIndex = 0;
+    renderThumbs();
+    openLightbox();
+    showIndex(startIndex);
+  }
 
   imageEl.onerror = () => {
     imageEl.onerror = null;
     imageEl.src = "assets/images/placeholders/placeholder-800x600.svg";
   };
 
-  trigger.addEventListener("click", () => {
-    openLightbox(0);
-  });
-  trigger.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openLightbox(0);
-    }
+  triggers.forEach((trigger) => {
+    trigger.addEventListener("click", () => {
+      openGallery(trigger, 0);
+    });
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openGallery(trigger, 0);
+      }
+    });
   });
 
   prevBtn.addEventListener("click", () => {
