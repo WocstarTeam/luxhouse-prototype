@@ -3102,3 +3102,365 @@ body.modal-open {
     height: 86svh;
   }
 }
+
+/* =========================================================
+   LUXHOUSE: Responsive Premium Standards (2026-05-06)
+   ========================================================= */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+:where(
+  .booking-submit,
+  .lux-booking-primary,
+  .lux-cactus-btn,
+  .lux-pine-btn,
+  .destination-slide-cta,
+  .collection-nav,
+  .destination-carousel-nav,
+  .lux-cactus-lightbox-nav,
+  .lux-pine-lightbox-nav,
+  .lux-cactus-lightbox-close,
+  .lux-pine-lightbox-close
+) {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+:where(
+  .booking-field input,
+  .booking-field select,
+  .lux-cactus-booking-form input,
+  .lux-cactus-booking-form select,
+  .lux-pine-booking-form input,
+  .lux-pine-booking-form select,
+  .lux-booking-form input,
+  .lux-booking-form select,
+  .guest-controls button
+) {
+  min-height: 44px;
+}
+
+:where(
+  .destination-slide-media,
+  .collection-media,
+  .lux-cactus-gallery-item,
+  .lux-pine-gallery-item
+) {
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+.collection-media {
+  aspect-ratio: 16 / 10;
+}
+
+.collection-hero img {
+  max-height: none;
+  height: 100%;
+}
+
+@media (max-width: 1100px) {
+  .lux-home-page .destination-slide {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .lux-home-page .destination-slide-media {
+    min-height: clamp(260px, 44vw, 420px);
+  }
+
+  .lux-home-page .destination-rotator {
+    min-height: clamp(260px, 44vw, 420px);
+  }
+
+  .lux-home-page .destination-slide-copy {
+    padding: clamp(1.1rem, 2.6vw, 1.6rem);
+  }
+
+  .lux-home-page .destination-slide-details {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+
+  .lux-home-page .destination-slide-detail {
+    width: clamp(92px, 20vw, 118px);
+  }
+
+  .lux-home-page .booking-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .lux-home-page .booking-submit {
+    grid-column: 1 / -1;
+    padding-block: 0.72rem;
+  }
+}
+
+@media (max-width: 860px) {
+  main {
+    padding: 2.7rem 1rem;
+  }
+
+  .intro,
+  .collections,
+  .homes,
+  .social-proof,
+  .inquire {
+    margin-top: 3.1rem;
+  }
+
+  .lux-home-page .top-nav {
+    padding-inline: 0;
+  }
+
+  .lux-home-page .hero-shell {
+    min-height: 100svh;
+    padding-inline: 0.9rem;
+    padding-bottom: 2.2rem;
+    background-position: center 42%;
+  }
+
+  .lux-home-page .hero-content {
+    margin-top: clamp(10vh, 13vh, 15vh);
+  }
+
+  .lux-home-page .hero-content h1 .hero-line {
+    white-space: normal;
+  }
+
+  .lux-home-page .booking-bar {
+    grid-template-columns: 1fr;
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  .booking-field {
+    padding: 0.66rem 0.72rem;
+  }
+
+  .booking-submit {
+    width: 100%;
+    padding: 0.82rem 1rem;
+  }
+
+  .guest-controls {
+    justify-content: space-between;
+  }
+
+  .guest-controls input {
+    width: 3rem;
+  }
+
+  .destination-slide-media {
+    min-height: clamp(240px, 56vw, 320px);
+  }
+
+  .destination-rotator {
+    min-height: clamp(240px, 56vw, 320px);
+  }
+
+  .collection-media {
+    aspect-ratio: 4 / 3;
+  }
+
+  .collection-copy {
+    padding: 1rem;
+  }
+
+  .lux-booking-page-main {
+    padding: 2.3rem 0.95rem 3.1rem;
+  }
+
+  .lux-booking-page-card {
+    padding: 1rem;
+  }
+
+  .lux-booking-page-actions {
+    padding: 0.84rem;
+  }
+
+  .lux-booking-panel {
+    width: min(96vw, 620px);
+    max-height: 94svh;
+    border-radius: 0.95rem;
+    padding: 1rem;
+  }
+
+  .lux-price-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-cactus-hero-image,
+  .lux-cactus-hero,
+  .lux-pine-hero-image,
+  .lux-pine-hero {
+    min-height: 78svh;
+    height: 78svh;
+  }
+
+  .lux-cactus-main,
+  .lux-pine-main {
+    padding: 2.4rem 0.95rem 3rem;
+  }
+
+  .lux-cactus-section,
+  .lux-pine-section {
+    padding: 1rem;
+  }
+
+  .lux-cactus-booking,
+  .lux-pine-booking {
+    padding: 1rem;
+  }
+
+  .lux-cactus-gallery-item img,
+  .lux-pine-gallery-item img {
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .lux-cactus-top-gallery,
+  .lux-pine-top-gallery {
+    grid-auto-rows: 128px;
+  }
+
+  .lux-cactus-lightbox-panel,
+  .lux-pine-lightbox-panel {
+    inset: 3vh 3vw;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-nav {
+    align-items: flex-start;
+  }
+
+  .menu-toggle {
+    min-height: 42px;
+  }
+
+  .brand {
+    max-width: 16ch;
+    line-height: 1.25;
+  }
+
+  .destination-slide-copy {
+    padding: 0.95rem;
+  }
+
+  .destination-slide h3 {
+    font-size: clamp(1.65rem, 8vw, 2.1rem);
+  }
+
+  .destination-slide-description {
+    font-size: 0.95rem;
+    line-height: 1.58;
+  }
+
+  .destination-slide-details {
+    justify-content: center;
+    gap: 0.52rem;
+  }
+
+  .destination-slide-detail {
+    width: clamp(90px, 26vw, 110px);
+  }
+
+  .lux-home-page .destination-carousel-controls {
+    margin-top: 0.82rem;
+  }
+
+  .lux-home-page .destination-carousel-nav {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .social-proof,
+  .inquire {
+    padding: 1.05rem;
+  }
+
+  .lux-cactus-summary,
+  .lux-pine-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-cactus-hero-copy h1,
+  .lux-pine-hero-copy h1 {
+    font-size: clamp(2.1rem, 10vw, 2.9rem);
+    line-height: 1.03;
+  }
+
+  .lux-cactus-hero-copy > p,
+  .lux-pine-hero-copy > p {
+    font-size: 0.98rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-shell {
+    padding-inline: 0.8rem;
+  }
+
+  .hero-kicker {
+    letter-spacing: 0.11em;
+    font-size: 0.66rem;
+  }
+
+  .booking-bar {
+    padding: 0.62rem;
+    gap: 0.52rem;
+  }
+
+  .field-label {
+    font-size: 0.61rem;
+  }
+
+  .collection-nav.prev {
+    left: 0.45rem;
+  }
+
+  .collection-nav.next {
+    right: 0.45rem;
+  }
+
+  .collection-copy h3 {
+    font-size: clamp(1.5rem, 8.5vw, 1.9rem);
+  }
+
+  .destination-slide-cta,
+  .lux-cactus-btn,
+  .lux-pine-btn,
+  .lux-booking-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lux-booking-header h2 {
+    font-size: clamp(1.45rem, 8vw, 1.9rem);
+  }
+
+  .lux-booking-page-hero h1 {
+    font-size: clamp(1.9rem, 11vw, 2.8rem);
+  }
+
+  .lux-cactus-lightbox-nav,
+  .lux-pine-lightbox-nav {
+    bottom: 68px;
+  }
+
+  .lux-cactus-thumb,
+  .lux-pine-thumb {
+    width: 68px;
+    min-width: 68px;
+    height: 52px;
+  }
+}
