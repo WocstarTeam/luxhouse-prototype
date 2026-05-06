@@ -143,6 +143,7 @@ a {
   box-shadow: var(--shadow);
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 0.8fr auto;
+  align-items: center;
   gap: 0.55rem;
   padding: 0.6rem;
   text-align: left;
@@ -224,6 +225,15 @@ a {
   margin-top: 12px;
   font-size: 14px;
   transition: all 0.3s ease;
+}
+
+#homeAvailabilityResult {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
+#homeAvailabilityResult:empty {
+  display: none;
 }
 
 .availability-result.loading {
