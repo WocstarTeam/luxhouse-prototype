@@ -1568,18 +1568,9 @@ body.property-page .cactus-booking-form button {
 }
 
 .lux-cactus-category-head h3 {
-  margin-top: 0.22rem;
+  margin: 0;
   font-size: 1.2rem;
   line-height: 1.12;
-}
-
-.lux-cactus-category-kicker {
-  margin: 0;
-  font-size: 0.64rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #86654d;
-  font-weight: 800;
 }
 
 .lux-cactus-category-head > p:last-child {
