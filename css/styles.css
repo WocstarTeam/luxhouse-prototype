@@ -3811,3 +3811,438 @@ body {
     max-height: 88svh;
   }
 }
+
+/* =========================================================
+   LUXHOUSE: Cactus Page Premium Rhythm Refresh (May 2026)
+   ========================================================= */
+
+.lux-cactus-page {
+  --lux-cactus-bg: #f4eee6;
+  --lux-cactus-surface: #fffaf2;
+  --lux-cactus-surface-alt: #f9efe2;
+  --lux-cactus-line: #d7c5b2;
+  --lux-cactus-text: #1f1914;
+  --lux-cactus-text-soft: #55483c;
+  --lux-cactus-shadow: 0 18px 42px rgba(24, 17, 12, 0.11);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(176, 117, 82, 0.08) 0%, transparent 46%),
+    radial-gradient(circle at 86% 6%, rgba(45, 79, 66, 0.09) 0%, transparent 42%),
+    linear-gradient(180deg, #f8f3eb 0%, #f5eee4 42%, #f8f3ec 100%);
+  color: var(--lux-cactus-text);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+.lux-cactus-page h1,
+.lux-cactus-page h2,
+.lux-cactus-page h3 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+
+.lux-cactus-page p {
+  line-height: 1.72;
+}
+
+.lux-cactus-hero {
+  min-height: min(100svh, 920px);
+}
+
+.lux-cactus-hero-image {
+  min-height: min(100svh, 920px);
+  height: min(100svh, 920px);
+  object-position: center 62%;
+}
+
+.lux-cactus-hero-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  padding: clamp(1.2rem, 2.5vw, 2.3rem);
+  background:
+    linear-gradient(180deg, rgba(14, 10, 8, 0.28) 6%, rgba(14, 10, 8, 0.42) 52%, rgba(14, 10, 8, 0.64) 100%);
+}
+
+.lux-cactus-back {
+  top: clamp(0.95rem, 2vw, 1.65rem);
+  left: clamp(0.95rem, 2vw, 1.65rem);
+  background: rgba(255, 250, 242, 0.96);
+  border-color: rgba(210, 191, 172, 0.95);
+  color: #221b15;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 220ms ease, transform 220ms ease;
+}
+
+.lux-cactus-back:hover {
+  background: #fff4e4;
+  transform: translateY(-1px);
+}
+
+.lux-cactus-hero-copy {
+  max-width: min(92vw, 820px);
+  margin: auto 0 clamp(1.2rem, 2.3vh, 1.8rem);
+}
+
+.lux-cactus-eyebrow {
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: rgba(255, 246, 232, 0.92);
+}
+
+.lux-cactus-hero-copy h1 {
+  margin-top: clamp(0.7rem, 1.2vh, 1rem);
+  font-size: clamp(2.85rem, 7.2vw, 6rem);
+  font-weight: 700;
+  color: #fff8ef;
+  text-shadow: 0 12px 34px rgba(8, 6, 5, 0.42);
+}
+
+.lux-cactus-hero-copy > p {
+  margin: clamp(0.95rem, 1.6vh, 1.3rem) 0 0;
+  max-width: 56ch;
+  color: rgba(255, 244, 226, 0.94);
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+}
+
+.lux-cactus-hero-actions {
+  margin-top: clamp(1.35rem, 2.2vh, 2rem);
+  justify-content: flex-start;
+}
+
+.lux-cactus-btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.86rem 1.35rem;
+  font-size: 0.79rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lux-cactus-btn-primary {
+  background: linear-gradient(140deg, #fff8ea 0%, #f5e3ca 100%);
+  color: #261e18;
+  box-shadow: 0 14px 28px rgba(18, 12, 8, 0.24);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.lux-cactus-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(18, 12, 8, 0.28);
+}
+
+.lux-cactus-main {
+  max-width: 1320px;
+  padding: clamp(3.4rem, 6.2vw, 5.25rem) clamp(1rem, 2.6vw, 2.35rem) clamp(4rem, 7vw, 6rem);
+}
+
+.lux-cactus-shell {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 348px);
+  gap: clamp(1.4rem, 2.8vw, 2.8rem);
+}
+
+.lux-cactus-content {
+  gap: clamp(1.4rem, 2.2vw, 2.35rem);
+}
+
+.lux-cactus-summary {
+  border-radius: 1.12rem;
+  padding: clamp(0.75rem, 1vw, 1rem);
+  gap: clamp(0.62rem, 1.1vw, 0.95rem);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lux-cactus-summary p {
+  background: rgba(255, 254, 251, 0.95);
+  border: 1px solid rgba(173, 148, 124, 0.28);
+  border-radius: 0.84rem;
+  padding: 0.82rem 0.92rem;
+  color: var(--lux-cactus-text-soft);
+  font-size: 0.93rem;
+  line-height: 1.48;
+}
+
+.lux-cactus-summary p strong {
+  display: block;
+  margin-bottom: 0.28rem;
+  color: #3a2f26;
+  font-size: 0.67rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lux-cactus-section {
+  border-radius: 1.12rem;
+  padding: clamp(1.5rem, 2.4vw, 2.2rem);
+  box-shadow: 0 14px 30px rgba(20, 14, 10, 0.07);
+}
+
+.lux-cactus-section h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.65rem);
+  margin: 0;
+}
+
+.lux-cactus-section p {
+  margin-top: 0.85rem;
+  max-width: 68ch;
+  color: var(--lux-cactus-text-soft);
+  font-size: clamp(0.96rem, 1.05vw, 1.05rem);
+}
+
+.lux-cactus-highlight {
+  margin-top: 0.75rem;
+  color: #2c231b;
+}
+
+.lux-cactus-perfect-grid {
+  margin-top: clamp(1.2rem, 1.8vw, 1.55rem);
+  gap: clamp(0.85rem, 1.4vw, 1.15rem);
+}
+
+.lux-cactus-perfect-grid article {
+  border-radius: 0.98rem;
+  padding: clamp(1.02rem, 1.7vw, 1.35rem);
+  box-shadow: 0 10px 20px rgba(28, 20, 13, 0.07);
+}
+
+.lux-cactus-perfect-grid h3 {
+  font-size: clamp(1.28rem, 1.9vw, 1.6rem);
+}
+
+.lux-cactus-perfect-grid p {
+  margin-top: 0.58rem;
+  font-size: 0.95rem;
+}
+
+.lux-cactus-tour {
+  gap: clamp(1.05rem, 1.7vw, 1.45rem);
+}
+
+.lux-cactus-category-stack {
+  gap: clamp(0.95rem, 1.4vw, 1.2rem);
+}
+
+.lux-cactus-category-card {
+  border-radius: 1rem;
+  padding: clamp(1rem, 1.5vw, 1.35rem);
+  box-shadow: 0 12px 26px rgba(24, 17, 11, 0.09);
+}
+
+.lux-cactus-category-head > p:last-child {
+  margin-top: 0.42rem;
+  font-size: 0.9rem;
+}
+
+.lux-cactus-category-grid {
+  margin-top: 0.88rem;
+  gap: 0.82rem;
+}
+
+.lux-cactus-category-item {
+  border-radius: 0.9rem;
+}
+
+.lux-cactus-category-item p {
+  padding: 0.62rem 0.72rem 0.7rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.lux-cactus-category-item p span {
+  width: 1.45rem;
+  height: 1.45rem;
+  font-size: 0.62rem;
+}
+
+.lux-cactus-amenities-grid {
+  margin-top: 1.2rem;
+  gap: 0.78rem;
+}
+
+.lux-cactus-amenities-grid li {
+  align-items: flex-start;
+  padding: 0.82rem 0.9rem;
+  border-radius: 0.9rem;
+  font-size: 0.94rem;
+}
+
+.lux-cactus-booking {
+  top: clamp(1rem, 2.2vh, 1.5rem);
+  border-radius: 1.12rem;
+  padding: clamp(1.2rem, 1.8vw, 1.55rem);
+}
+
+.lux-cactus-rate {
+  font-size: 0.76rem;
+  letter-spacing: 0.11em;
+}
+
+.lux-cactus-booking h2 {
+  margin-top: 0.5rem;
+  font-size: clamp(1.65rem, 2.7vw, 2rem);
+}
+
+.lux-cactus-booking-form {
+  margin-top: 0.96rem;
+  gap: 0.62rem;
+}
+
+.lux-cactus-booking-form label {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+.lux-cactus-booking-form input,
+.lux-cactus-booking-form select {
+  border-radius: 0.78rem;
+  padding: 0.8rem 0.82rem;
+}
+
+.lux-cactus-booking-form button {
+  margin-top: 0.56rem;
+  padding: 0.9rem 1rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.lux-cactus-booking-note {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.58;
+}
+
+.lux-cactus-final-cta {
+  border-radius: 1.12rem;
+  padding: clamp(1.6rem, 2.6vw, 2.35rem);
+}
+
+.lux-cactus-final-cta h2 {
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+}
+
+.lux-cactus-final-cta p {
+  margin-top: 0.65rem;
+  max-width: 50ch;
+}
+
+.lux-cactus-final-cta .lux-cactus-btn {
+  margin-top: 1.25rem;
+}
+
+#cactusBooking {
+  scroll-margin-top: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .lux-cactus-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lux-cactus-perfect-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lux-cactus-perfect-grid article:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1040px) {
+  .lux-cactus-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-cactus-booking {
+    position: static;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 860px) {
+  .lux-cactus-hero,
+  .lux-cactus-hero-image {
+    min-height: 88svh;
+    height: 88svh;
+  }
+
+  .lux-cactus-hero-copy {
+    max-width: 100%;
+    margin-bottom: 0.8rem;
+  }
+
+  .lux-cactus-hero-copy h1 {
+    font-size: clamp(2.3rem, 10vw, 3.45rem);
+  }
+
+  .lux-cactus-main {
+    padding: 2.65rem 0.95rem 3.25rem;
+  }
+
+  .lux-cactus-content {
+    gap: 1.2rem;
+  }
+
+  .lux-cactus-summary,
+  .lux-cactus-perfect-grid,
+  .lux-cactus-amenities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-cactus-section {
+    padding: 1.15rem;
+  }
+
+  .lux-cactus-category-grid--exteriors,
+  .lux-cactus-category-grid--bedrooms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lux-cactus-category-grid--living,
+  .lux-cactus-category-grid--hosting,
+  .lux-cactus-category-grid--essentials {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .lux-cactus-hero-overlay {
+    padding: 1rem;
+  }
+
+  .lux-cactus-back {
+    font-size: 0.66rem;
+    padding: 0.42rem 0.75rem;
+  }
+
+  .lux-cactus-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lux-cactus-category-card {
+    padding: 0.85rem;
+  }
+
+  .lux-cactus-category-grid--exteriors,
+  .lux-cactus-category-grid--bedrooms,
+  .lux-cactus-category-grid--living,
+  .lux-cactus-category-grid--hosting,
+  .lux-cactus-category-grid--essentials {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  .lux-cactus-hero,
+  .lux-cactus-hero-image {
+    min-height: 116svh;
+    height: 116svh;
+  }
+}
