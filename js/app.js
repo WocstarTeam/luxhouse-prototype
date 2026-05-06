@@ -418,10 +418,6 @@ function initFeaturedDestinationImageRotator() {
     return;
   }
 
-  const prefersReducedMotion =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   let activeIndex = 0;
   let timer = null;
   const dwellMs = 3800;
@@ -443,24 +439,11 @@ function initFeaturedDestinationImageRotator() {
   }
 
   function start() {
-    if (prefersReducedMotion) {
-      return;
-    }
     stop();
     timer = window.setInterval(() => {
       showFrame(activeIndex + 1);
     }, dwellMs);
   }
-
-  rotator.addEventListener("mouseenter", stop);
-  rotator.addEventListener("mouseleave", start);
-  rotator.addEventListener("focusin", stop);
-  rotator.addEventListener("focusout", (event) => {
-    if (rotator.contains(event.relatedTarget)) {
-      return;
-    }
-    start();
-  });
 
   showFrame(0);
   start();
