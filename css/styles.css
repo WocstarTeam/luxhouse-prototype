@@ -4043,6 +4043,15 @@ body {
   border-radius: 0.9rem;
 }
 
+.lux-cactus-category-item[data-bedroom-gallery] {
+  cursor: pointer;
+}
+
+.lux-cactus-category-item[data-bedroom-gallery]:focus-visible {
+  outline: 2px solid rgba(38, 30, 24, 0.65);
+  outline-offset: 2px;
+}
+
 .lux-cactus-category-item p {
   padding: 0.62rem 0.72rem 0.7rem;
   font-size: 0.9rem;

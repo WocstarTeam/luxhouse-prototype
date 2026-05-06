@@ -1147,6 +1147,134 @@ function initBookingModal() {
   };
 }
 
+function initCactusBedroomLightbox() {
+  const trigger = document.querySelector(
+    '.lux-cactus-category-item[data-bedroom-gallery="bedroom-1"]'
+  );
+  const lightbox = document.getElementById("cactusLightbox");
+  const imageEl = document.getElementById("cactusLightboxImage");
+  const prevBtn = document.getElementById("cactusPrevBtn");
+  const nextBtn = document.getElementById("cactusNextBtn");
+  const thumbStrip = document.getElementById("cactusThumbStrip");
+
+  if (!trigger || !lightbox || !imageEl || !prevBtn || !nextBtn || !thumbStrip) {
+    return;
+  }
+
+  const imageSources = (trigger.getAttribute("data-bedroom-gallery-images") || "")
+    .split("|")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const imageAlts = (trigger.getAttribute("data-bedroom-gallery-alts") || "")
+    .split("|")
+    .map((value) => value.trim());
+
+  if (!imageSources.length) {
+    return;
+  }
+
+  let activeIndex = 0;
+  const thumbButtons = [];
+
+  function getAlt(index) {
+    if (imageAlts[index]) {
+      return imageAlts[index];
+    }
+    return `Cactus and Chill bedroom 1 photo ${index + 1}`;
+  }
+
+  function renderImage() {
+    imageEl.src = imageSources[activeIndex];
+    imageEl.alt = getAlt(activeIndex);
+    thumbButtons.forEach((button, index) => {
+      const isActive = index === activeIndex;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-current", isActive ? "true" : "false");
+    });
+  }
+
+  function showIndex(index) {
+    activeIndex = (index + imageSources.length) % imageSources.length;
+    renderImage();
+  }
+
+  function openLightbox(startIndex = 0) {
+    showIndex(startIndex);
+    lightbox.classList.add("is-open");
+    lightbox.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+  }
+
+  thumbStrip.innerHTML = "";
+  imageSources.forEach((source, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lux-cactus-thumb";
+    button.setAttribute("aria-label", `Show bedroom 1 photo ${index + 1}`);
+
+    const thumbImage = document.createElement("img");
+    thumbImage.src = source;
+    thumbImage.alt = getAlt(index);
+    thumbImage.onerror = () => {
+      thumbImage.onerror = null;
+      thumbImage.src = "assets/images/placeholders/placeholder-800x600.svg";
+    };
+
+    button.appendChild(thumbImage);
+    button.addEventListener("click", () => {
+      showIndex(index);
+    });
+
+    thumbStrip.appendChild(button);
+    thumbButtons.push(button);
+  });
+
+  imageEl.onerror = () => {
+    imageEl.onerror = null;
+    imageEl.src = "assets/images/placeholders/placeholder-800x600.svg";
+  };
+
+  trigger.addEventListener("click", () => {
+    openLightbox(0);
+  });
+  trigger.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openLightbox(0);
+    }
+  });
+
+  prevBtn.addEventListener("click", () => {
+    showIndex(activeIndex - 1);
+  });
+  nextBtn.addEventListener("click", () => {
+    showIndex(activeIndex + 1);
+  });
+
+  lightbox.querySelectorAll("[data-cactus-close-lightbox]").forEach((element) => {
+    element.addEventListener("click", closeLightbox);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (!lightbox.classList.contains("is-open")) {
+      return;
+    }
+    if (event.key === "Escape") {
+      closeLightbox();
+    }
+    if (event.key === "ArrowLeft") {
+      showIndex(activeIndex - 1);
+    }
+    if (event.key === "ArrowRight") {
+      showIndex(activeIndex + 1);
+    }
+  });
+}
+
 function initPropertyForms() {
   const forms = [
     { id: "pineBookingForm", destination: "pine" },
@@ -1396,6 +1524,7 @@ function init() {
   initFeaturedDestinationImageRotator();
   initHeroBookingBar();
   initDestinationCarousel();
+  initCactusBedroomLightbox();
   initBookingModal();
   initPropertyForms();
   initBookingSummaryPage();
