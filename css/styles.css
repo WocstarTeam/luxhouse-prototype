@@ -2316,7 +2316,7 @@ body.modal-open {
 }
 
 .lux-home-page .destination-slide-copy {
-  padding: clamp(1.45rem, 2.4vw, 2.7rem);
+  padding: clamp(1.9rem, 2.8vw, 3.2rem);
   background: linear-gradient(138deg, #fffaf2 0%, #f2e2cf 100%);
   justify-content: flex-start;
   align-items: flex-start;
@@ -2336,11 +2336,35 @@ body.modal-open {
 
 .lux-home-page .destination-slide-copy--with-logo {
   height: 100%;
+  column-gap: clamp(1.15rem, 2.2vw, 1.95rem);
   align-items: stretch;
 }
 
 .lux-home-page .destination-slide-copy-main {
   justify-content: flex-start;
+  gap: clamp(0.42rem, 0.8vw, 0.76rem);
+}
+
+.lux-home-page .destination-slide h3 {
+  line-height: 1.04;
+}
+
+.lux-home-page .destination-slide .location {
+  margin-top: 0.38rem;
+}
+
+.lux-home-page .destination-slide-description {
+  max-width: 52ch;
+  font-size: clamp(1.01rem, 1.15vw, 1.08rem);
+  line-height: 1.72;
+}
+
+.lux-home-page .destination-slide .location + .destination-slide-description {
+  margin-top: 0.9rem;
+}
+
+.lux-home-page .destination-slide-description + .destination-slide-description {
+  margin-top: 0.82rem;
 }
 
 .lux-home-page .destination-slide-cta {
@@ -2356,6 +2380,11 @@ body.modal-open {
 
 .lux-home-page .destination-slide-cta:hover {
   background: #f5ebde;
+}
+
+.lux-home-page .destination-slide[data-destination-index="0"] .destination-slide-details {
+  margin-top: clamp(2.35rem, 3.1vw, 3.1rem);
+  padding-top: clamp(1.75rem, 2.35vw, 2.25rem);
 }
 
 @media (max-width: 860px) {
