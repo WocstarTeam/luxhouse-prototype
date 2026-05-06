@@ -3212,10 +3212,25 @@ body {
     padding: clamp(1.1rem, 2.6vw, 1.6rem);
   }
 
+  .lux-home-page .destination-slide-copy-main {
+    gap: clamp(0.34rem, 0.65vw, 0.56rem);
+  }
+
+  .lux-home-page .destination-slide-description {
+    max-width: none;
+    font-size: 1rem;
+    line-height: 1.66;
+  }
+
   .lux-home-page .destination-slide-details {
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.55rem;
+  }
+
+  .lux-home-page .destination-slide[data-destination-index="0"] .destination-slide-details {
+    margin-top: clamp(1.65rem, 3.8vw, 2.2rem);
+    padding-top: clamp(1.25rem, 2.8vw, 1.65rem);
   }
 
   .lux-home-page .destination-slide-detail {
@@ -3392,6 +3407,15 @@ body {
   .destination-slide-description {
     font-size: 0.95rem;
     line-height: 1.58;
+  }
+
+  .lux-home-page .destination-slide-copy-main {
+    gap: 0.36rem;
+  }
+
+  .lux-home-page .destination-slide[data-destination-index="0"] .destination-slide-details {
+    margin-top: 1.35rem;
+    padding-top: 1rem;
   }
 
   .destination-slide-details {
