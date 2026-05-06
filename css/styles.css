@@ -3817,17 +3817,14 @@ body {
    ========================================================= */
 
 .lux-cactus-page {
-  --lux-cactus-bg: #f4eee6;
+  --lux-cactus-bg: #ffffff;
   --lux-cactus-surface: #fffaf2;
   --lux-cactus-surface-alt: #f9efe2;
   --lux-cactus-line: #d7c5b2;
   --lux-cactus-text: #1f1914;
   --lux-cactus-text-soft: #55483c;
   --lux-cactus-shadow: 0 18px 42px rgba(24, 17, 12, 0.11);
-  background:
-    radial-gradient(circle at 12% 10%, rgba(176, 117, 82, 0.08) 0%, transparent 46%),
-    radial-gradient(circle at 86% 6%, rgba(45, 79, 66, 0.09) 0%, transparent 42%),
-    linear-gradient(180deg, #f8f3eb 0%, #f5eee4 42%, #f8f3ec 100%);
+  background: var(--lux-cactus-bg);
   color: var(--lux-cactus-text);
   font-family: "Manrope", "Segoe UI", sans-serif;
 }
