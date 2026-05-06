@@ -3464,3 +3464,172 @@ body {
     height: 52px;
   }
 }
+
+/* Mobile Matrix: 601-767px (large phones / foldables portrait) */
+@media (min-width: 601px) and (max-width: 767px) {
+  .lux-home-page .hero-content {
+    max-width: 92vw;
+  }
+
+  .lux-home-page .hero-content h1 {
+    font-size: clamp(2.15rem, 7.8vw, 3rem);
+  }
+
+  .lux-home-page .booking-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lux-home-page .destination-slide-media,
+  .lux-home-page .destination-rotator {
+    min-height: clamp(280px, 46vw, 360px);
+  }
+
+  .lux-home-page .destination-slide-detail {
+    width: clamp(98px, 15.5vw, 118px);
+  }
+}
+
+/* Mobile Matrix: 415-600px (plus-size phones) */
+@media (min-width: 415px) and (max-width: 600px) {
+  .lux-home-page .hero-content h1 {
+    font-size: clamp(2rem, 9vw, 2.75rem);
+  }
+
+  .lux-home-page .booking-bar {
+    gap: 0.58rem;
+  }
+
+  .destination-slide-details {
+    gap: 0.48rem;
+  }
+
+  .lux-cactus-gallery-item img,
+  .lux-pine-gallery-item img {
+    aspect-ratio: 16 / 11;
+  }
+}
+
+/* Mobile Matrix: 375-414px (most modern phones) */
+@media (min-width: 375px) and (max-width: 414px) {
+  .lux-home-page .hero-shell {
+    padding-inline: 0.82rem;
+  }
+
+  .lux-home-page .hero-content h1 {
+    font-size: clamp(1.9rem, 10.4vw, 2.55rem);
+  }
+
+  .lux-home-page .hero-summary {
+    font-size: 0.96rem;
+  }
+
+  .destination-slide-detail {
+    width: clamp(88px, 24vw, 102px);
+  }
+
+  .destination-slide-detail-label {
+    letter-spacing: 0.07em;
+  }
+}
+
+/* Mobile Matrix: <=374px (SE / compact phones) */
+@media (max-width: 374px) {
+  .hero-shell {
+    padding-inline: 0.68rem;
+  }
+
+  .brand {
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+  }
+
+  .lux-home-page .hero-content {
+    margin-top: clamp(9vh, 11vh, 13vh);
+  }
+
+  .lux-home-page .hero-content h1 {
+    font-size: clamp(1.72rem, 11vw, 2.2rem);
+  }
+
+  .lux-home-page .hero-summary {
+    font-size: 0.92rem;
+  }
+
+  .booking-bar {
+    padding: 0.56rem;
+  }
+
+  .booking-field {
+    padding: 0.58rem 0.62rem;
+  }
+
+  .booking-field input,
+  .booking-field select {
+    font-size: 0.95rem;
+  }
+
+  .destination-slide-copy {
+    padding: 0.82rem;
+  }
+
+  .destination-slide h3 {
+    font-size: clamp(1.46rem, 7.8vw, 1.82rem);
+  }
+
+  .destination-slide-description {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .destination-slide-detail {
+    width: clamp(82px, 24vw, 95px);
+  }
+
+  .destination-slide-detail-value {
+    font-size: clamp(1.52rem, 6.1vw, 1.9rem);
+  }
+
+  .destination-slide-detail-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+    max-width: 10.8ch;
+  }
+
+  .lux-home-page .destination-carousel-nav {
+    width: 1.88rem;
+    height: 1.88rem;
+  }
+
+  .lux-cactus-top-gallery,
+  .lux-pine-top-gallery {
+    grid-auto-rows: 112px;
+  }
+}
+
+/* Short landscape phones */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .lux-home-page .hero-shell {
+    min-height: 128vh;
+    padding-bottom: 1.5rem;
+  }
+
+  .lux-home-page .hero-content {
+    margin-top: 0.8rem;
+  }
+
+  .lux-home-page .booking-bar {
+    margin-top: 1rem;
+  }
+
+  .lux-cactus-hero-image,
+  .lux-cactus-hero,
+  .lux-pine-hero-image,
+  .lux-pine-hero {
+    min-height: 130vh;
+    height: 130vh;
+  }
+
+  .lux-booking-panel {
+    max-height: 88svh;
+  }
+}
