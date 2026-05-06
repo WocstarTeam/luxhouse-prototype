@@ -1548,6 +1548,107 @@ body.property-page .cactus-booking-form button {
   font-size: 0.9rem;
 }
 
+/* Guided Tour Sequence */
+.lux-cactus-tour {
+  display: grid;
+  gap: 1rem;
+}
+
+.lux-cactus-tour-steps {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.44rem;
+}
+
+.lux-cactus-tour-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--lux-cactus-surface-alt);
+  border: 1px solid var(--lux-cactus-line);
+  border-radius: 999px;
+  padding: 0.36rem 0.58rem;
+  color: #46392f;
+  font-size: 0.77rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lux-cactus-tour-steps span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.42rem;
+  height: 1.42rem;
+  border-radius: 999px;
+  background: #fff7eb;
+  border: 1px solid rgba(56, 44, 35, 0.16);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: #2a2018;
+}
+
+.lux-cactus-tour-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.86rem;
+  margin-top: 0.1rem;
+}
+
+.lux-cactus-tour-card {
+  border: 1px solid var(--lux-cactus-line);
+  border-radius: 0.94rem;
+  overflow: hidden;
+  background: #fffefb;
+  box-shadow: 0 12px 26px rgba(27, 19, 12, 0.08);
+}
+
+.lux-cactus-tour-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.lux-cactus-tour-card.is-wide {
+  grid-column: span 2;
+}
+
+.lux-cactus-tour-card.is-wide img {
+  aspect-ratio: 16 / 9;
+}
+
+.lux-cactus-tour-card.is-tall img {
+  aspect-ratio: 4 / 5;
+}
+
+.lux-cactus-tour-card-copy {
+  padding: 0.76rem 0.84rem 0.88rem;
+}
+
+.lux-cactus-tour-index {
+  margin: 0;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #88664d;
+  font-weight: 800;
+}
+
+.lux-cactus-tour-card h3 {
+  margin-top: 0.22rem;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.lux-cactus-tour-card p {
+  margin-top: 0.42rem;
+  font-size: 0.87rem;
+  color: var(--lux-cactus-text-soft);
+  line-height: 1.5;
+}
+
 /* Gallery */
 .lux-cactus-gallery {
   margin-top: 1rem;
@@ -1702,6 +1803,10 @@ body.property-page .cactus-booking-form button {
   .lux-cactus-booking {
     position: static;
   }
+
+  .lux-cactus-tour-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 860px) {
@@ -1714,6 +1819,26 @@ body.property-page .cactus-booking-form button {
   .lux-cactus-gallery,
   .lux-cactus-amenities-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lux-cactus-tour-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lux-cactus-tour-card.is-wide {
+    grid-column: span 1;
+  }
+
+  .lux-cactus-tour-steps {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.16rem;
+  }
+
+  .lux-cactus-tour-card img,
+  .lux-cactus-tour-card.is-wide img,
+  .lux-cactus-tour-card.is-tall img {
+    aspect-ratio: 4 / 3;
   }
 
   .lux-cactus-gallery-item img {
@@ -3516,6 +3641,25 @@ body {
     min-width: 68px;
     height: 52px;
   }
+
+  .lux-cactus-tour-steps li {
+    font-size: 0.69rem;
+    padding: 0.32rem 0.5rem;
+  }
+
+  .lux-cactus-tour-steps span {
+    width: 1.28rem;
+    height: 1.28rem;
+    font-size: 0.6rem;
+  }
+
+  .lux-cactus-tour-card-copy {
+    padding: 0.68rem 0.72rem 0.8rem;
+  }
+
+  .lux-cactus-tour-card h3 {
+    font-size: 0.98rem;
+  }
 }
 
 /* Mobile Matrix: 601-767px (large phones / foldables portrait) */
@@ -3656,6 +3800,11 @@ body {
   .lux-cactus-top-gallery,
   .lux-pine-top-gallery {
     grid-auto-rows: 112px;
+  }
+
+  .lux-cactus-tour-card p {
+    font-size: 0.82rem;
+    line-height: 1.44;
   }
 }
 

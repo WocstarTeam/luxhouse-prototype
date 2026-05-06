@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20260506-5">
+  <link rel="stylesheet" href="css/styles.css?v=20260506-6">
 </head>
 <body class="lux-cactus-page">
   <header class="lux-cactus-hero" id="top">
@@ -59,45 +59,140 @@
           </div>
         </section>
 
-        <section class="lux-cactus-section">
-          <h2>Home Gallery</h2>
-          <p>Visual overview inspired by modern direct-booking experiences. Select any image to open the full gallery.</p>
-          <div class="lux-cactus-top-gallery" id="cactusTopGallery" aria-live="polite"></div>
-        </section>
+        <section class="lux-cactus-section lux-cactus-tour" id="guidedTour">
+          <h2>Guided Photo Tour</h2>
+          <p class="lux-cactus-highlight">Ordered for conversion: we lead with lifestyle wow moments, move through sleeping capacity, then finish with practical confidence points that help guests book faster.</p>
+          <ol class="lux-cactus-tour-steps" aria-label="Cactus and Chill photo order">
+            <li><span>01</span>Patio</li>
+            <li><span>02</span>Pool</li>
+            <li><span>03</span>Dining Area</li>
+            <li><span>04</span>Bedroom 1</li>
+            <li><span>05</span>Bedroom 2</li>
+            <li><span>06</span>Bedroom 3</li>
+            <li><span>07</span>Bedroom 4</li>
+            <li><span>08</span>Bedroom 5 / Game Room</li>
+            <li><span>09</span>Living Room 1</li>
+            <li><span>10</span>Living Room 2</li>
+            <li><span>11</span>Full Kitchen</li>
+            <li><span>12</span>Bathrooms</li>
+            <li><span>13</span>Laundry Area</li>
+            <li><span>14</span>Exterior</li>
+          </ol>
 
-        <section class="lux-cactus-section" id="gallery-indoor">
-          <h2>Indoor Spaces</h2>
-          <div class="lux-cactus-gallery" id="luxCactusIndoorGallery" aria-live="polite"></div>
-        </section>
-
-        <section class="lux-cactus-section">
-          <h2>Living Spaces</h2>
-          <p>
-            Two living rooms, generous dining zones, and relaxed lounge flow make hosting feel natural from morning coffee to movie and game-night wind-downs.
-          </p>
-        </section>
-
-        <section class="lux-cactus-section">
-          <h2>Kitchen</h2>
-          <p class="lux-cactus-highlight">A social culinary hub for shared meals and chef-led moments.</p>
-          <p>
-            Built for group rhythm, the kitchen offers spacious prep zones, easy circulation, and a chef-friendly setup for celebratory dinners.
-          </p>
-        </section>
-
-        <section class="lux-cactus-section">
-          <h2>Bedrooms</h2>
-          <p>
-            Five thoughtfully designed bedrooms provide privacy, comfort, and flexibility across couples, families, and larger mixed groups.
-          </p>
-        </section>
-
-        <section class="lux-cactus-section" id="gallery-outdoor">
-          <h2>Outdoor Experience</h2>
-          <p>
-            A private backyard resort atmosphere with pool time, fire pit evenings, open-air dining, and barbecue-centered gathering.
-          </p>
-          <div class="lux-cactus-gallery" id="luxCactusOutdoorGallery" aria-live="polite"></div>
+          <div class="lux-cactus-tour-grid" aria-live="polite">
+            <article class="lux-cactus-tour-card is-wide">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill patio area">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">01</p>
+                <h3>Patio</h3>
+                <p>Set the tone with an open-air welcome zone made for first-night drinks and effortless conversation.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card is-tall">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill pool area">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">02</p>
+                <h3>Pool</h3>
+                <p>The visual centerpiece that immediately signals vacation mode and premium group leisure.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill dining area">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">03</p>
+                <h3>Dining Area</h3>
+                <p>A true gather point where everyone can sit, share meals, and stay connected.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill bedroom 1">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">04</p>
+                <h3>Bedroom 1</h3>
+                <p>Comfort-first layout with restful tone and easy access for couples or early sleepers.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill bedroom 2">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">05</p>
+                <h3>Bedroom 2</h3>
+                <p>Balanced design for guest flexibility while preserving privacy across groups.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill bedroom 3">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">06</p>
+                <h3>Bedroom 3</h3>
+                <p>Another high-comfort room that expands sleeping capacity without crowding the flow.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill bedroom 4">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">07</p>
+                <h3>Bedroom 4</h3>
+                <p>Built to support multi-family stays, retreats, and mixed traveler preferences.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card is-wide">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill bedroom 5 and game room">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">08</p>
+                <h3>Bedroom 5 / Game Room</h3>
+                <p>A high-value flex zone combining extra sleep capacity with built-in fun.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill living room 1">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">09</p>
+                <h3>Living Room 1</h3>
+                <p>Main social lounge for conversation, movie nights, and relaxed group hangouts.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill living room 2">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">10</p>
+                <h3>Living Room 2</h3>
+                <p>Secondary lounge keeps large groups comfortable and avoids single-space bottlenecks.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card is-wide">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill full kitchen">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">11</p>
+                <h3>Full Kitchen</h3>
+                <p>Chef-friendly setup that supports hosting, meal prep, and smooth indoor/outdoor dining service.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill bathrooms">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">12</p>
+                <h3>Bathrooms</h3>
+                <p>Practical comfort with group-ready flow for easy mornings and event prep.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill laundry area">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">13</p>
+                <h3>Laundry Area</h3>
+                <p>A key confidence builder for longer stays, family travel, and active itineraries.</p>
+              </div>
+            </article>
+            <article class="lux-cactus-tour-card">
+              <img src="assets/images/placeholders/placeholder-800x600.svg" alt="Cactus and Chill exterior view">
+              <div class="lux-cactus-tour-card-copy">
+                <p class="lux-cactus-tour-index">14</p>
+                <h3>Exterior</h3>
+                <p>Close the tour with curb appeal and arrival confidence that reinforces booking intent.</p>
+              </div>
+            </article>
+          </div>
         </section>
 
         <section class="lux-cactus-section">
