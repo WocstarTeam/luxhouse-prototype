@@ -698,7 +698,7 @@ main {
   overflow: hidden;
   background: linear-gradient(140deg, #f8f1e8 0%, #fff9f0 55%, #f2eadf 100%);
   border: 1px solid rgba(188, 169, 142, 0.52);
-  padding: clamp(1.5rem, 3vw, 2.4rem);
+  padding: clamp(1.15rem, 2.2vw, 1.85rem);
   box-shadow: 0 20px 46px rgba(43, 31, 21, 0.08);
 }
 
@@ -721,9 +721,9 @@ main {
 
 .testimonials-editorial h2 {
   text-align: left;
-  max-width: 15ch;
-  font-size: clamp(2.2rem, 4.8vw, 3.7rem);
-  line-height: 1.02;
+  max-width: 14ch;
+  font-size: clamp(1.9rem, 3.8vw, 2.95rem);
+  line-height: 1.04;
 }
 
 .testimonials-credibility {
@@ -731,8 +731,8 @@ main {
   grid-template-columns: max-content max-content minmax(0, 1fr);
   align-items: center;
   gap: 0.7rem 1rem;
-  margin-bottom: 1.45rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.72rem;
   border-bottom: 1px solid rgba(47, 90, 82, 0.22);
 }
 
@@ -767,7 +767,7 @@ main {
 }
 
 .editorial-testimonial-carousel {
-  margin-top: 1.65rem;
+  margin-top: 1.05rem;
   overflow: hidden;
 }
 
@@ -788,7 +788,7 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.03fr) minmax(0, 0.97fr);
   align-items: stretch;
-  gap: clamp(1.3rem, 2.8vw, 2.4rem);
+  gap: clamp(0.95rem, 2vw, 1.8rem);
   opacity: 0.45;
   transition: opacity 760ms ease;
 }
@@ -800,9 +800,9 @@ main {
 .editorial-testimonial-copy {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.95rem;
-  padding: clamp(0.8rem, 2.2vw, 1.4rem) 0;
+  justify-content: flex-start;
+  gap: 0.7rem;
+  padding: clamp(0.24rem, 1.3vw, 0.65rem) 0;
   opacity: 0.6;
   transform: translateY(10px);
   transition: opacity 680ms ease, transform 760ms ease;
@@ -818,7 +818,7 @@ main {
   color: var(--pine-deep);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 700;
 }
 
@@ -826,15 +826,15 @@ main {
   margin: 0;
   font-family: "Cormorant Garamond", Georgia, serif;
   color: #2c241f;
-  font-size: clamp(1.9rem, 3.2vw, 3.05rem);
-  line-height: 1.15;
+  font-size: clamp(1.45rem, 2.2vw, 2.2rem);
+  line-height: 1.18;
   letter-spacing: 0.005em;
   text-wrap: balance;
 }
 
 .editorial-testimonial-media {
   margin: 0;
-  min-height: clamp(320px, 42vw, 520px);
+  min-height: clamp(260px, 33vw, 430px);
   border-radius: 0.95rem;
   overflow: hidden;
   background: #d8cebf;
@@ -865,7 +865,7 @@ main {
 }
 
 .editorial-testimonial-controls {
-  margin-top: 1.25rem;
+  margin-top: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -945,7 +945,7 @@ main {
   }
 
   .testimonials-editorial h2 {
-    font-size: clamp(2rem, 9vw, 2.75rem);
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
   }
 
   .editorial-testimonial-slide {
@@ -958,7 +958,7 @@ main {
   }
 
   .editorial-testimonial-copy blockquote {
-    font-size: clamp(1.75rem, 7.1vw, 2.45rem);
+    font-size: clamp(1.35rem, 6.2vw, 1.95rem);
   }
 
   .editorial-testimonial-media {
