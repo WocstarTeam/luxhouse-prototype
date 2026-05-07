@@ -570,6 +570,8 @@ function initEditorialTestimonials() {
   const track = document.getElementById("testimonialCarouselTrack");
   const prevBtn = document.getElementById("testimonialPrevBtn");
   const nextBtn = document.getElementById("testimonialNextBtn");
+  const currentIndexEl = document.getElementById("testimonialCurrentIndex");
+  const totalCountEl = document.getElementById("testimonialTotalCount");
   const controls = root ? root.querySelector(".editorial-testimonial-controls") : null;
   if (!root || !track || !prevBtn || !nextBtn) {
     return;
@@ -581,6 +583,14 @@ function initEditorialTestimonials() {
     return;
   }
 
+  function formatIndex(index) {
+    return String(index).padStart(2, "0");
+  }
+
+  if (totalCountEl) {
+    totalCountEl.textContent = formatIndex(slides.length);
+  }
+
   if (slides.length < 2) {
     if (controls) {
       controls.hidden = true;
@@ -588,6 +598,9 @@ function initEditorialTestimonials() {
     track.style.transform = "translateX(0)";
     slides[0].classList.add("is-active");
     slides[0].setAttribute("aria-hidden", "false");
+    if (currentIndexEl) {
+      currentIndexEl.textContent = "01";
+    }
     return;
   }
 
@@ -601,6 +614,9 @@ function initEditorialTestimonials() {
   function renderSlide(index) {
     currentIndex = (index + slides.length) % slides.length;
     track.style.transform = `translateX(-${currentIndex * 100}%)`;
+    if (currentIndexEl) {
+      currentIndexEl.textContent = formatIndex(currentIndex + 1);
+    }
 
     slides.forEach((slide, slideIndex) => {
       const isActive = slideIndex === currentIndex;

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20260507-1">
+  <link rel="stylesheet" href="css/styles.css?v=20260507-2">
 </head>
 <body class="lux-home-page">
   <header class="hero-shell" id="top">
@@ -193,7 +193,12 @@
         <p class="testimonials-credibility-note">Thoughtful hosting and elevated group experiences shape every LuxHouse stay.</p>
       </div>
 
-      <h2>What Guests Remember Most</h2>
+      <div class="testimonials-heading">
+        <h2>What Guests Remember Most</h2>
+        <p class="testimonials-intro">
+          A few moments guests mention again and again: thoughtful hosting, seamless group stays, and indoor-outdoor spaces that bring everyone together.
+        </p>
+      </div>
 
       <div class="editorial-testimonial-carousel" id="testimonialCarousel" aria-label="Rotating guest testimonials" tabindex="0">
         <div class="editorial-testimonial-track" id="testimonialCarouselTrack">
@@ -259,16 +264,29 @@
         </div>
 
         <div class="editorial-testimonial-controls">
-          <button class="editorial-testimonial-nav prev" id="testimonialPrevBtn" type="button" aria-label="Previous guest quote">&#10094;</button>
-          <div class="editorial-testimonial-dots" role="tablist" aria-label="Select guest quote">
-            <button class="editorial-testimonial-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show quote 1" data-testimonial-index="0"></button>
-            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 2" data-testimonial-index="1"></button>
-            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 3" data-testimonial-index="2"></button>
-            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 4" data-testimonial-index="3"></button>
-            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 5" data-testimonial-index="4"></button>
-            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 6" data-testimonial-index="5"></button>
+          <button class="editorial-testimonial-nav prev" id="testimonialPrevBtn" type="button" aria-label="Previous guest quote">
+            <span aria-hidden="true">&#10094;</span>
+            <span>Previous</span>
+          </button>
+          <div class="editorial-testimonial-meta">
+            <p class="editorial-testimonial-count">
+              <span id="testimonialCurrentIndex">01</span>
+              <span class="editorial-testimonial-count-divider">/</span>
+              <span id="testimonialTotalCount">06</span>
+            </p>
+            <div class="editorial-testimonial-dots" role="tablist" aria-label="Select guest quote">
+              <button class="editorial-testimonial-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show quote 1" data-testimonial-index="0"></button>
+              <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 2" data-testimonial-index="1"></button>
+              <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 3" data-testimonial-index="2"></button>
+              <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 4" data-testimonial-index="3"></button>
+              <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 5" data-testimonial-index="4"></button>
+              <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 6" data-testimonial-index="5"></button>
+            </div>
           </div>
-          <button class="editorial-testimonial-nav next" id="testimonialNextBtn" type="button" aria-label="Next guest quote">&#10095;</button>
+          <button class="editorial-testimonial-nav next" id="testimonialNextBtn" type="button" aria-label="Next guest quote">
+            <span>Next</span>
+            <span aria-hidden="true">&#10095;</span>
+          </button>
         </div>
       </div>
     </section>
@@ -384,6 +402,6 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=20260507-1"></script>
+  <script src="js/app.js?v=20260507-2"></script>
 </body>
 </html>
