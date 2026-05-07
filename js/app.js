@@ -606,7 +606,7 @@ function initEditorialTestimonials() {
 
   let currentIndex = 0;
   let autoTimer = null;
-  const dwellMs = 8200;
+  const dwellMs = 5600;
   const prefersReducedMotion =
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -684,8 +684,6 @@ function initEditorialTestimonials() {
     }
   });
 
-  root.addEventListener("mouseenter", stopAutoRotate);
-  root.addEventListener("mouseleave", startAutoRotate);
   root.addEventListener("focusin", stopAutoRotate);
   root.addEventListener("focusout", (event) => {
     if (root.contains(event.relatedTarget)) {
