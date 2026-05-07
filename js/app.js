@@ -565,6 +565,123 @@ function initDestinationCarousel() {
   startAutoRotate();
 }
 
+function initEditorialTestimonials() {
+  const root = document.getElementById("testimonialCarousel");
+  const track = document.getElementById("testimonialCarouselTrack");
+  const prevBtn = document.getElementById("testimonialPrevBtn");
+  const nextBtn = document.getElementById("testimonialNextBtn");
+  const controls = root ? root.querySelector(".editorial-testimonial-controls") : null;
+  if (!root || !track || !prevBtn || !nextBtn) {
+    return;
+  }
+
+  const slides = Array.from(track.querySelectorAll(".editorial-testimonial-slide"));
+  const dots = Array.from(root.querySelectorAll(".editorial-testimonial-dot"));
+  if (!slides.length) {
+    return;
+  }
+
+  if (slides.length < 2) {
+    if (controls) {
+      controls.hidden = true;
+    }
+    track.style.transform = "translateX(0)";
+    slides[0].classList.add("is-active");
+    slides[0].setAttribute("aria-hidden", "false");
+    return;
+  }
+
+  let currentIndex = 0;
+  let autoTimer = null;
+  const dwellMs = 8200;
+  const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function renderSlide(index) {
+    currentIndex = (index + slides.length) % slides.length;
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    slides.forEach((slide, slideIndex) => {
+      const isActive = slideIndex === currentIndex;
+      slide.classList.toggle("is-active", isActive);
+      slide.setAttribute("aria-hidden", String(!isActive));
+    });
+
+    dots.forEach((dot, dotIndex) => {
+      const isActive = dotIndex === currentIndex;
+      dot.classList.toggle("is-active", isActive);
+      dot.setAttribute("aria-selected", String(isActive));
+      dot.setAttribute("tabindex", isActive ? "0" : "-1");
+    });
+  }
+
+  function stopAutoRotate() {
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+  }
+
+  function startAutoRotate() {
+    if (prefersReducedMotion || slides.length < 2) {
+      return;
+    }
+    stopAutoRotate();
+    autoTimer = window.setInterval(() => {
+      renderSlide(currentIndex + 1);
+    }, dwellMs);
+  }
+
+  function goToRelativeSlide(step) {
+    renderSlide(currentIndex + step);
+    startAutoRotate();
+  }
+
+  prevBtn.addEventListener("click", () => {
+    goToRelativeSlide(-1);
+  });
+
+  nextBtn.addEventListener("click", () => {
+    goToRelativeSlide(1);
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      const nextIndex = Number(dot.getAttribute("data-testimonial-index"));
+      if (!Number.isFinite(nextIndex)) {
+        return;
+      }
+      renderSlide(nextIndex);
+      startAutoRotate();
+    });
+  });
+
+  root.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      goToRelativeSlide(-1);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      goToRelativeSlide(1);
+    }
+  });
+
+  root.addEventListener("mouseenter", stopAutoRotate);
+  root.addEventListener("mouseleave", startAutoRotate);
+  root.addEventListener("focusin", stopAutoRotate);
+  root.addEventListener("focusout", (event) => {
+    if (root.contains(event.relatedTarget)) {
+      return;
+    }
+    startAutoRotate();
+  });
+
+  renderSlide(0);
+  startAutoRotate();
+}
+
 function initBookingModal() {
   const modal = document.getElementById("bookingModal");
   if (!modal) {
@@ -1563,6 +1680,7 @@ function init() {
   initFeaturedDestinationImageRotator();
   initHeroBookingBar();
   initDestinationCarousel();
+  initEditorialTestimonials();
   initCactusBedroomLightbox();
   initBookingModal();
   initPropertyForms();

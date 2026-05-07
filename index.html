@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20260506-6">
+  <link rel="stylesheet" href="css/styles.css?v=20260507-1">
 </head>
 <body class="lux-home-page">
   <header class="hero-shell" id="top">
@@ -186,12 +186,91 @@
       </div>
     </section>
 
-    <section class="social-proof">
-      <h2>What guests are saying</h2>
-      <blockquote>
-        "The home felt luxurious but still familiar. Every room had personality and the flow was perfect for our group."
-      </blockquote>
-      <p class="quote-by">Guest Review - Cactus and Chill</p>
+    <section class="social-proof testimonials-editorial" id="guest-stories" aria-label="Guest testimonial highlights">
+      <div class="testimonials-credibility" aria-label="Guest credibility highlights">
+        <p class="testimonials-credibility-item"><span>5.0</span> Guest Favorite</p>
+        <p class="testimonials-credibility-item"><span>Top 5%</span> rated stay</p>
+        <p class="testimonials-credibility-note">Thoughtful hosting and elevated group experiences shape every LuxHouse stay.</p>
+      </div>
+
+      <h2>What Guests Remember Most</h2>
+
+      <div class="editorial-testimonial-carousel" id="testimonialCarousel" aria-label="Rotating guest testimonials" tabindex="0">
+        <div class="editorial-testimonial-track" id="testimonialCarouselTrack">
+          <article class="editorial-testimonial-slide is-active" data-testimonial-index="0" aria-hidden="false">
+            <div class="editorial-testimonial-copy">
+              <p class="editorial-testimonial-kicker">Thoughtful hosting</p>
+              <blockquote>"The hosts left personal touches for us when we arrived and the home felt instantly welcoming."</blockquote>
+            </div>
+            <figure class="editorial-testimonial-media">
+              <img src="living1.png" alt="Welcoming living room prepared for guest arrival" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </figure>
+          </article>
+
+          <article class="editorial-testimonial-slide" data-testimonial-index="1" aria-hidden="true">
+            <div class="editorial-testimonial-copy">
+              <p class="editorial-testimonial-kicker">Better than expected</p>
+              <blockquote>"Better than the pictures. Thoughtful details everywhere."</blockquote>
+            </div>
+            <figure class="editorial-testimonial-media">
+              <img src="exterior.png" alt="Boutique-style exterior view at golden hour" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </figure>
+          </article>
+
+          <article class="editorial-testimonial-slide" data-testimonial-index="2" aria-hidden="true">
+            <div class="editorial-testimonial-copy">
+              <p class="editorial-testimonial-kicker">Personalized experience</p>
+              <blockquote>"One of the most thoughtful hosting experiences we've had."</blockquote>
+            </div>
+            <figure class="editorial-testimonial-media">
+              <img src="kitchen1.png" alt="Refined kitchen setup with styled hosting details" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </figure>
+          </article>
+
+          <article class="editorial-testimonial-slide" data-testimonial-index="3" aria-hidden="true">
+            <div class="editorial-testimonial-copy">
+              <p class="editorial-testimonial-kicker">Group connection</p>
+              <blockquote>"The perfect house for our group to relax, gather, and enjoy time together."</blockquote>
+            </div>
+            <figure class="editorial-testimonial-media">
+              <img src="pool.png" alt="Group-friendly poolside setting for shared moments" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </figure>
+          </article>
+
+          <article class="editorial-testimonial-slide" data-testimonial-index="4" aria-hidden="true">
+            <div class="editorial-testimonial-copy">
+              <p class="editorial-testimonial-kicker">Indoor-outdoor flow</p>
+              <blockquote>"Beautiful indoor and outdoor spaces that made the stay feel special."</blockquote>
+            </div>
+            <figure class="editorial-testimonial-media">
+              <img src="patio1.png" alt="Outdoor dining and gathering patio designed for shared stays" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </figure>
+          </article>
+
+          <article class="editorial-testimonial-slide" data-testimonial-index="5" aria-hidden="true">
+            <div class="editorial-testimonial-copy">
+              <p class="editorial-testimonial-kicker">Soft luxury comfort</p>
+              <blockquote>"The home felt luxurious while still feeling warm and comfortable."</blockquote>
+            </div>
+            <figure class="editorial-testimonial-media">
+              <img src="salon1.png" alt="Elegant salon lounge with warm, comfortable atmosphere" onerror="this.onerror=null;this.src='assets/images/placeholders/placeholder-600x400.svg';">
+            </figure>
+          </article>
+        </div>
+
+        <div class="editorial-testimonial-controls">
+          <button class="editorial-testimonial-nav prev" id="testimonialPrevBtn" type="button" aria-label="Previous guest quote">&#10094;</button>
+          <div class="editorial-testimonial-dots" role="tablist" aria-label="Select guest quote">
+            <button class="editorial-testimonial-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show quote 1" data-testimonial-index="0"></button>
+            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 2" data-testimonial-index="1"></button>
+            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 3" data-testimonial-index="2"></button>
+            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 4" data-testimonial-index="3"></button>
+            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 5" data-testimonial-index="4"></button>
+            <button class="editorial-testimonial-dot" type="button" role="tab" aria-selected="false" aria-label="Show quote 6" data-testimonial-index="5"></button>
+          </div>
+          <button class="editorial-testimonial-nav next" id="testimonialNextBtn" type="button" aria-label="Next guest quote">&#10095;</button>
+        </div>
+      </div>
     </section>
 
     <section class="inquire" id="inquire">
@@ -305,6 +384,6 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=20260506-3"></script>
+  <script src="js/app.js?v=20260507-1"></script>
 </body>
 </html>
