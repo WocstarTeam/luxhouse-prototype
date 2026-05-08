@@ -391,9 +391,257 @@ function maskStripeKey(key) {
   return `${raw.slice(0, 7)}...${raw.slice(-4)}`;
 }
 
+function getStripeSecretKey(env) {
+  return typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+}
+
+function parseStripeSignatureHeader(signatureHeader) {
+  const parsed = {
+    timestamp: NaN,
+    signatures: [],
+  };
+  const raw = String(signatureHeader || "").trim();
+  if (!raw) {
+    return parsed;
+  }
+
+  const chunks = raw.split(",");
+  for (const chunk of chunks) {
+    const separatorIndex = chunk.indexOf("=");
+    if (separatorIndex <= 0) {
+      continue;
+    }
+    const key = chunk.slice(0, separatorIndex).trim();
+    const value = chunk.slice(separatorIndex + 1).trim();
+    if (!value) {
+      continue;
+    }
+
+    if (key === "t" && !Number.isFinite(parsed.timestamp)) {
+      const timestamp = Number.parseInt(value, 10);
+      if (Number.isFinite(timestamp)) {
+        parsed.timestamp = timestamp;
+      }
+      continue;
+    }
+
+    if (key === "v1") {
+      parsed.signatures.push(value);
+    }
+  }
+
+  return parsed;
+}
+
+function timingSafeEqual(a, b) {
+  const left = String(a || "");
+  const right = String(b || "");
+  if (left.length !== right.length) {
+    return false;
+  }
+  let mismatch = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    mismatch |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return mismatch === 0;
+}
+
+function toHex(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let hex = "";
+  for (const byte of bytes) {
+    hex += byte.toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+async function computeHmacSha256Hex(secret, payload) {
+  const encoder = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(String(secret || "")),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBuffer = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    encoder.encode(String(payload || ""))
+  );
+  return toHex(signatureBuffer);
+}
+
+async function verifyStripeWebhookSignature({
+  rawBody,
+  signatureHeader,
+  endpointSecret,
+  toleranceSeconds = 300,
+}) {
+  const parsedSignature = parseStripeSignatureHeader(signatureHeader);
+  const hasTimestamp = Number.isFinite(parsedSignature.timestamp);
+  const hasSignatures = Array.isArray(parsedSignature.signatures) && parsedSignature.signatures.length > 0;
+  if (!hasTimestamp || !hasSignatures) {
+    return { ok: false, reason: "missing_header_components" };
+  }
+
+  if (!endpointSecret) {
+    return { ok: false, reason: "missing_webhook_secret" };
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const ageSeconds = Math.abs(nowSeconds - parsedSignature.timestamp);
+  if (ageSeconds > toleranceSeconds) {
+    return { ok: false, reason: "timestamp_out_of_tolerance", ageSeconds };
+  }
+
+  const signedPayload = `${parsedSignature.timestamp}.${String(rawBody || "")}`;
+  const expectedSignature = await computeHmacSha256Hex(endpointSecret, signedPayload);
+  const isValid = parsedSignature.signatures.some((candidate) =>
+    timingSafeEqual(candidate, expectedSignature)
+  );
+  if (!isValid) {
+    return { ok: false, reason: "signature_mismatch" };
+  }
+
+  return { ok: true };
+}
+
+function detectStripeModeFromEnv(env) {
+  const keyKind = detectStripeKeyKind(getStripeSecretKey(env));
+  return detectStripeModeFromKeyKind(keyKind);
+}
+
+function extractWebhookRequestId(eventDataObject) {
+  if (!eventDataObject || typeof eventDataObject !== "object") {
+    return "";
+  }
+
+  const metadataRequestId =
+    eventDataObject.metadata &&
+    typeof eventDataObject.metadata === "object" &&
+    typeof eventDataObject.metadata.requestId === "string"
+      ? eventDataObject.metadata.requestId.trim()
+      : "";
+  if (metadataRequestId) {
+    return metadataRequestId;
+  }
+
+  const clientReferenceId =
+    typeof eventDataObject.client_reference_id === "string"
+      ? eventDataObject.client_reference_id.trim()
+      : "";
+  if (clientReferenceId) {
+    return clientReferenceId;
+  }
+
+  return "";
+}
+
+function normalizeProcessedStripeEventKeys(rawKeys) {
+  const normalized = [];
+  const seen = new Set();
+  const input = Array.isArray(rawKeys) ? rawKeys : [];
+  for (const rawKey of input) {
+    const key = String(rawKey || "").trim();
+    if (!key || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    normalized.push(key);
+  }
+  const MAX_TRACKED_KEYS = 50;
+  if (normalized.length > MAX_TRACKED_KEYS) {
+    return normalized.slice(normalized.length - MAX_TRACKED_KEYS);
+  }
+  return normalized;
+}
+
+function buildStripeEventDedupKeys(event, eventType, eventDataObject) {
+  const dedupKeys = [];
+  const eventId =
+    event && typeof event.id === "string"
+      ? event.id.trim()
+      : "";
+  if (eventId) {
+    dedupKeys.push(`evt:${eventId}`);
+  }
+
+  const objectId =
+    eventDataObject && typeof eventDataObject.id === "string"
+      ? eventDataObject.id.trim()
+      : "";
+  if (eventType && objectId) {
+    dedupKeys.push(`obj:${eventType}:${objectId}`);
+  }
+
+  return dedupKeys;
+}
+
+async function loadExistingBooking(env, requestId) {
+  const existingMemory =
+    globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
+      ? globalThis.BOOKINGS[requestId]
+      : {};
+
+  const kvStore =
+    env &&
+    env.BOOKINGS &&
+    typeof env.BOOKINGS.get === "function" &&
+    typeof env.BOOKINGS.put === "function"
+      ? env.BOOKINGS
+      : null;
+  let existingKv = {};
+  if (kvStore) {
+    try {
+      const raw = await kvStore.get(requestId);
+      if (typeof raw === "string" && raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          existingKv = parsed;
+        }
+      }
+    } catch (error) {
+      console.error("Webhook KV read failed:", error);
+    }
+  }
+
+  return {
+    existingMemory,
+    existingKv,
+    kvStore,
+  };
+}
+
+async function persistBookingFromWebhook(env, requestId, patch) {
+  if (!requestId) {
+    return null;
+  }
+
+  const { existingMemory, existingKv, kvStore } = await loadExistingBooking(env, requestId);
+  const merged = {
+    ...existingKv,
+    ...existingMemory,
+    ...patch,
+    requestId,
+    updatedAt: Date.now(),
+  };
+
+  globalThis.BOOKINGS[requestId] = merged;
+
+  if (kvStore) {
+    try {
+      await kvStore.put(requestId, JSON.stringify(merged));
+    } catch (error) {
+      console.error("Webhook KV sync failed:", error);
+    }
+  }
+
+  return merged;
+}
+
 function buildIdentityKeyDiagnostics(env) {
-  const stripeSecretKey =
-    typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+  const stripeSecretKey = getStripeSecretKey(env);
   const selectedKey = stripeSecretKey;
   const selectedKeySource = stripeSecretKey
     ? "STRIPE_SECRET_KEY"
@@ -813,6 +1061,17 @@ async function handleBookingStatus(request, env) {
     }
 
     const normalizedStatus = String(booking.status || "").trim().toLowerCase();
+    if (normalizedStatus === "approved") {
+      return jsonResponse({
+        ok: true,
+        status: "approved",
+        message: STATUS_MESSAGES.approved,
+        requestId,
+        checkin: booking.checkin || null,
+        checkout: booking.checkout || null,
+      });
+    }
+
     if (normalizedStatus === "verified") {
       return jsonResponse({
         ok: true,
@@ -951,7 +1210,7 @@ async function handleCreateVerificationSession(request, env) {
   params.set("return_url", returnUrl.toString());
 
   const stripeIdentityKey =
-    typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+    getStripeSecretKey(env);
   if (!stripeIdentityKey) {
     console.error({
       event: "stripe_identity_request_failure",
@@ -1126,14 +1385,27 @@ async function handleCreatePaymentSession(request, env) {
     ? Math.round(totalNumber * 100)
     : 10000;
 
-  const memoryBooking = globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-    ? globalThis.BOOKINGS[requestId]
-    : {};
+  const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
+  const memoryBooking = {
+    ...existingKv,
+    ...existingMemory,
+  };
+  const existingStatus = String(memoryBooking.status || "").trim().toLowerCase();
+  const canRequestPayment = existingStatus === "verified" || existingStatus === "approved";
+  if (!canRequestPayment) {
+    return jsonResponse(
+      {
+        error: "Identity verification is required before payment.",
+        code: "payment_verification_required",
+      },
+      403
+    );
+  }
 
   globalThis.BOOKINGS[requestId] = {
     ...memoryBooking,
     requestId,
-    status: memoryBooking.status || "verified",
+    status: existingStatus === "approved" ? "approved" : "verified",
     bookingRequestStatus: "requested",
     bookingRequestedAt: new Date().toISOString(),
     guestName,
@@ -1186,9 +1458,9 @@ async function handleCreatePaymentSession(request, env) {
   if (guestEmail) {
     params.set("customer_email", guestEmail);
   }
+  params.set("client_reference_id", requestId);
 
-  const stripePaymentKey =
-    typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+  const stripePaymentKey = getStripeSecretKey(env);
   if (!stripePaymentKey) {
     return jsonResponse(
       {
@@ -1235,100 +1507,221 @@ async function handleCreatePaymentSession(request, env) {
 }
 
 async function handleWebhook(request, env) {
+  const webhookSecret =
+    typeof env.STRIPE_WEBHOOK_SECRET === "string" ? env.STRIPE_WEBHOOK_SECRET.trim() : "";
+  if (!webhookSecret) {
+    console.error("Missing STRIPE_WEBHOOK_SECRET");
+    return jsonResponse(
+      {
+        received: false,
+        error: "Webhook endpoint is not configured.",
+      },
+      500
+    );
+  }
+
+  const signatureHeader =
+    request.headers.get("Stripe-Signature") || request.headers.get("stripe-signature") || "";
+  const rawBody = await request.text();
+  let signatureResult = { ok: false, reason: "unknown" };
+  try {
+    signatureResult = await verifyStripeWebhookSignature({
+      rawBody,
+      signatureHeader,
+      endpointSecret: webhookSecret,
+      toleranceSeconds: 300,
+    });
+  } catch (error) {
+    console.error("Webhook signature verification threw:", error);
+    signatureResult = {
+      ok: false,
+      reason: "verification_runtime_error",
+    };
+  }
+
+  if (!signatureResult.ok) {
+    console.error("Rejected webhook: invalid Stripe signature", signatureResult.reason);
+    return jsonResponse(
+      {
+        received: false,
+        error: "Invalid Stripe webhook signature.",
+      },
+      400
+    );
+  }
+
   let event = {};
   try {
-    event = await request.json();
+    event = rawBody ? JSON.parse(rawBody) : {};
   } catch (error) {
     console.error("Webhook JSON parse error:", error);
-    event = {};
+    return jsonResponse(
+      {
+        received: false,
+        error: "Invalid webhook JSON payload.",
+      },
+      400
+    );
   }
 
   const eventType = event && typeof event.type === "string" ? event.type : "";
-  const session = event && event.data ? event.data.object : null;
-  const requestId = session?.metadata?.requestId;
+  const eventDataObject = event && event.data ? event.data.object : null;
+  const requestId = extractWebhookRequestId(eventDataObject);
+  const dedupKeys = buildStripeEventDedupKeys(event, eventType, eventDataObject);
+  const eventMode = typeof event.livemode === "boolean" ? (event.livemode ? "live" : "test") : "unknown";
+  const workerMode = detectStripeModeFromEnv(env);
+  if (eventMode !== "unknown" && workerMode !== "unknown" && eventMode !== workerMode) {
+    console.error({
+      event: "stripe_webhook_rejected_mode_mismatch",
+      requestId,
+      eventMode,
+      workerMode,
+      eventType,
+    });
+    return jsonResponse(
+      {
+        received: false,
+        error: "Webhook mode mismatch.",
+      },
+      400
+    );
+  }
 
-  console.log(eventType, requestId);
+  console.log({
+    event: "stripe_webhook_received",
+    eventType,
+    requestId,
+    eventId: event && typeof event.id === "string" ? event.id : null,
+    eventMode,
+    workerMode,
+  });
 
-  if (event.type === "identity.verification_session.verified" && requestId) {
-    const memoryBooking =
-      globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-        ? globalThis.BOOKINGS[requestId]
-        : {};
-    globalThis.BOOKINGS[requestId] = {
-      ...memoryBooking,
+  let dedupPatch = {};
+  if (requestId && dedupKeys.length > 0) {
+    const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
+    const existing = {
+      ...existingKv,
+      ...existingMemory,
+    };
+    const processedKeys = normalizeProcessedStripeEventKeys(existing.processedStripeEventKeys);
+    const isDuplicate = dedupKeys.some((key) => processedKeys.includes(key));
+    if (isDuplicate) {
+      return jsonResponse({
+        received: true,
+        duplicate: true,
+        event: eventType || null,
+        requestId,
+      });
+    }
+    dedupPatch = {
+      processedStripeEventKeys: normalizeProcessedStripeEventKeys([
+        ...processedKeys,
+        ...dedupKeys,
+      ]),
+    };
+  }
+
+  if (requestId && eventType === "identity.verification_session.verified") {
+    await persistBookingFromWebhook(env, requestId, {
       status: "verified",
-      updatedAt: Date.now()
-    };
-
-    console.log("Booking verified:", requestId);
+      identityStatus: "verified",
+      identityVerifiedAt: new Date().toISOString(),
+      stripeVerificationSessionId:
+        eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+      ...dedupPatch,
+    });
   }
 
-  if (eventType === "identity.verification_session.requires_input" && requestId) {
-    const memoryBooking =
-      globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-        ? globalThis.BOOKINGS[requestId]
-        : {};
-    globalThis.BOOKINGS[requestId] = {
-      ...memoryBooking,
-      status: "requires_input",
-      updatedAt: Date.now(),
+  if (
+    requestId &&
+    (eventType === "identity.verification_session.requires_input" ||
+      eventType === "identity.verification_session.canceled")
+  ) {
+    const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
+    const existing = {
+      ...existingKv,
+      ...existingMemory,
     };
-  }
+    const existingStatus = String(existing.status || "").trim().toLowerCase();
+    const existingPaymentStatus = String(existing.paymentStatus || "").trim().toLowerCase();
+    const shouldPreserveApprovedState =
+      existingStatus === "approved" || existingPaymentStatus === "paid";
 
-  if (eventType === "identity.verification_session.canceled" && requestId) {
-    const memoryBooking =
-      globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-        ? globalThis.BOOKINGS[requestId]
-        : {};
-    globalThis.BOOKINGS[requestId] = {
-      ...memoryBooking,
-      status: "rejected",
-      updatedAt: Date.now(),
-    };
-  }
-
-  if (requestId) {
-    const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.put === "function" ? env.BOOKINGS : null;
-    if (kvStore) {
-      try {
-        const existingRaw = await kvStore.get(requestId);
-        let existingBooking = {};
-        if (typeof existingRaw === "string" && existingRaw) {
-          const parsed = JSON.parse(existingRaw);
-          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-            existingBooking = parsed;
-          }
-        }
-
-        const memoryBooking =
-          globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-            ? globalThis.BOOKINGS[requestId]
-            : {};
-
-        await kvStore.put(
-          requestId,
-          JSON.stringify({
-            ...existingBooking,
-            ...memoryBooking,
-            requestId,
-          })
-        );
-      } catch (error) {
-        console.error("Webhook KV sync failed:", error);
-      }
+    if (!shouldPreserveApprovedState) {
+      const mappedStatus =
+        eventType === "identity.verification_session.requires_input" ? "requires_input" : "rejected";
+      await persistBookingFromWebhook(env, requestId, {
+        status: mappedStatus,
+        identityStatus: mappedStatus,
+        identityUpdatedAt: new Date().toISOString(),
+        stripeVerificationSessionId:
+          eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+        ...dedupPatch,
+      });
     }
   }
 
-  return new Response(
-    JSON.stringify({
-      received: true,
-      event: event.type,
-      requestId: requestId || null,
-    }),
-    {
-      headers: { "Content-Type": "application/json" },
+  if (
+    requestId &&
+    (eventType === "checkout.session.completed" ||
+      eventType === "checkout.session.async_payment_succeeded")
+  ) {
+    const checkoutPaymentStatus =
+      eventDataObject && typeof eventDataObject.payment_status === "string"
+        ? eventDataObject.payment_status.trim().toLowerCase()
+        : "";
+    const paidState =
+      checkoutPaymentStatus === "paid" || checkoutPaymentStatus === "no_payment_required";
+    await persistBookingFromWebhook(env, requestId, {
+      status: paidState ? "approved" : "verified",
+      bookingRequestStatus: paidState ? "approved" : "requested",
+      paymentStatus: paidState ? "paid" : checkoutPaymentStatus || "unpaid",
+      paymentCompletedAt: paidState ? new Date().toISOString() : null,
+      stripeCheckoutSessionId:
+        eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+      stripePaymentIntentId:
+        eventDataObject && typeof eventDataObject.payment_intent === "string"
+          ? eventDataObject.payment_intent
+          : null,
+      ...dedupPatch,
+    });
+  }
+
+  if (
+    requestId &&
+    (eventType === "checkout.session.expired" ||
+      eventType === "checkout.session.async_payment_failed")
+  ) {
+    const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
+    const existing = {
+      ...existingKv,
+      ...existingMemory,
+    };
+    const existingPaymentStatus = String(existing.paymentStatus || "").trim().toLowerCase();
+    const alreadyPaid = existingPaymentStatus === "paid";
+    if (!alreadyPaid) {
+      const expiredOrFailedStatus =
+        eventType === "checkout.session.async_payment_failed" ? "failed" : "expired";
+      const bookingRequestStatus =
+        eventType === "checkout.session.async_payment_failed"
+          ? "payment_failed"
+          : "payment_expired";
+      await persistBookingFromWebhook(env, requestId, {
+        bookingRequestStatus,
+        paymentStatus: expiredOrFailedStatus,
+        paymentExpiredAt: new Date().toISOString(),
+        stripeCheckoutSessionId:
+          eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+        ...dedupPatch,
+      });
     }
-  );
+  }
+
+  return jsonResponse({
+    received: true,
+    event: eventType || null,
+    requestId: requestId || null,
+  });
 }
 
 export default {
@@ -1341,11 +1734,7 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    if (pathname === "/webhook" && method === "POST") {
-      return handleWebhook(request, env);
-    }
-
-    if (pathname.includes("webhook") && method === "POST") {
+    if ((pathname === "/webhook" || pathname === "/webhook/") && method === "POST") {
       return handleWebhook(request, env);
     }
 
