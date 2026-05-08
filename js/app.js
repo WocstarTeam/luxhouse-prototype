@@ -279,6 +279,9 @@ async function postJson(path, payload) {
     if (data && typeof data.code === "string") {
       error.code = data.code;
     }
+    if (data && data.debug && typeof data.debug === "object") {
+      error.debug = data.debug;
+    }
     throw error;
   }
 
@@ -1186,8 +1189,21 @@ function initBookingModal() {
     } catch (error) {
       let userMessage = error.message || "Could not start verification. Please try again.";
       if (error && error.code === "identity_session_create_failed") {
-        userMessage =
-          "We could not launch identity verification right now. Please contact support to confirm Stripe Identity is active on the LuxHouse account.";
+        const stripeReqId =
+          error &&
+          error.debug &&
+          typeof error.debug.stripeRequestId === "string" &&
+          error.debug.stripeRequestId.trim()
+            ? error.debug.stripeRequestId.trim()
+            : "";
+        const flowMayBeRequired =
+          Boolean(error && error.debug && error.debug.flowMayBeRequired);
+        userMessage = flowMayBeRequired
+          ? "We could not launch identity verification because the LuxHouse Stripe account requires a configured Verification Flow. Please contact support."
+          : "We could not launch identity verification right now. Please contact support to confirm Stripe Identity is active on the LuxHouse account.";
+        if (stripeReqId) {
+          userMessage += ` Reference: ${stripeReqId}`;
+        }
       }
       setStatusMessage(
         statusEl,

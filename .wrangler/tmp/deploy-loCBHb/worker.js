@@ -1,59 +1,52 @@
-globalThis.BOOKINGS = globalThis.BOOKINGS || {};
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-const CORS_HEADERS = {
+// worker.js
+globalThis.BOOKINGS = globalThis.BOOKINGS || {};
+var CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
 };
-
-const STATUS_MESSAGES = {
-  pending_verification:
-    "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.",
-  verified:
-    "Your identity verification was successful. You may now continue with your booking.",
-  requires_input:
-    "We could not complete verification. Please try again.",
-  rejected:
-    "Verification could not be completed. Please contact support.",
-  approved:
-    "Your request has been approved. Our team will contact you with the next steps.",
-  unknown:
-    "Thank you. Your booking request is being reviewed by our team.",
+var STATUS_MESSAGES = {
+  pending_verification: "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.",
+  verified: "Your identity verification was successful. You may now continue with your booking.",
+  requires_input: "We could not complete verification. Please try again.",
+  rejected: "Verification could not be completed. Please contact support.",
+  approved: "Your request has been approved. Our team will contact you with the next steps.",
+  unknown: "Thank you. Your booking request is being reviewed by our team."
 };
-const MIN_STAY_NIGHTS = 2;
-const MAX_STAY_NIGHTS = 28;
-const PINE_ENABLED = false;
-const PINE_COMING_SOON_MESSAGE =
-  "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
-
-let BOOKINGS = globalThis.BOOKINGS;
+var MIN_STAY_NIGHTS = 2;
+var MAX_STAY_NIGHTS = 28;
+var PINE_ENABLED = false;
+var PINE_COMING_SOON_MESSAGE = "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
+var BOOKINGS = globalThis.BOOKINGS;
 globalThis.ICAL_EVENTS_CACHE = globalThis.ICAL_EVENTS_CACHE || {};
-const ICAL_CACHE_TTL_MS = 5 * 60 * 1000;
-
+var ICAL_CACHE_TTL_MS = 5 * 60 * 1e3;
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       ...CORS_HEADERS,
-      "Content-Type": "application/json",
-    },
+      "Content-Type": "application/json"
+    }
   });
 }
-
+__name(jsonResponse, "jsonResponse");
 function textResponse(text, status = 200) {
   return new Response(text, {
     status,
     headers: {
       ...CORS_HEADERS,
-      "Content-Type": "text/plain",
-    },
+      "Content-Type": "text/plain"
+    }
   });
 }
-
+__name(textResponse, "textResponse");
 function createRequestId() {
   return `LUX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
-
+__name(createRequestId, "createRequestId");
 function parseIsoDateToUtcMs(value) {
   const raw = String(value || "").trim();
   const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -62,16 +55,16 @@ function parseIsoDateToUtcMs(value) {
   }
   return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
-
+__name(parseIsoDateToUtcMs, "parseIsoDateToUtcMs");
 function calculateStayNights(checkin, checkout) {
   const startMs = parseIsoDateToUtcMs(checkin);
   const endMs = parseIsoDateToUtcMs(checkout);
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
     return NaN;
   }
-  return Math.round((endMs - startMs) / 86400000);
+  return Math.round((endMs - startMs) / 864e5);
 }
-
+__name(calculateStayNights, "calculateStayNights");
 function getStayRangeError(checkin, checkout) {
   const nights = calculateStayNights(checkin, checkout);
   if (!Number.isFinite(nights)) {
@@ -85,18 +78,16 @@ function getStayRangeError(checkin, checkout) {
   }
   return "";
 }
-
+__name(getStayRangeError, "getStayRangeError");
 function parseIcalDateValueToUtcMs(value) {
   const raw = String(value || "").trim();
   if (!raw) {
     return NaN;
   }
-
   const dateOnly = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
   if (dateOnly) {
     return Date.UTC(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
   }
-
   const utcDateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
   if (utcDateTime) {
     return Date.UTC(
@@ -108,7 +99,6 @@ function parseIcalDateValueToUtcMs(value) {
       Number(utcDateTime[6])
     );
   }
-
   const localDateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/);
   if (localDateTime) {
     return Date.UTC(
@@ -120,15 +110,14 @@ function parseIcalDateValueToUtcMs(value) {
       Number(localDateTime[6])
     );
   }
-
   const parsed = Date.parse(raw);
   return Number.isFinite(parsed) ? parsed : NaN;
 }
-
+__name(parseIcalDateValueToUtcMs, "parseIcalDateValueToUtcMs");
 function rangesOverlapExclusive(startA, endA, startB, endB) {
   return startA < endB && startB < endA;
 }
-
+__name(rangesOverlapExclusive, "rangesOverlapExclusive");
 function normalizeAvailabilityDestination(value) {
   const raw = String(value || "").toLowerCase().trim();
   if (raw.includes("pine")) {
@@ -139,18 +128,16 @@ function normalizeAvailabilityDestination(value) {
   }
   return "";
 }
-
+__name(normalizeAvailabilityDestination, "normalizeAvailabilityDestination");
 function isTemporarilyUnavailableDestination(value) {
   const normalized = normalizeAvailabilityDestination(value);
   return normalized === "pine" && !PINE_ENABLED;
 }
-
+__name(isTemporarilyUnavailableDestination, "isTemporarilyUnavailableDestination");
 function unfoldIcalLines(text) {
-  return String(text || "")
-    .replace(/\r?\n[ \t]/g, "")
-    .split(/\r?\n/);
+  return String(text || "").replace(/\r?\n[ \t]/g, "").split(/\r?\n/);
 }
-
+__name(unfoldIcalLines, "unfoldIcalLines");
 function getIcalPropertyValue(line, propertyName) {
   if (!line || !propertyName) {
     return "";
@@ -165,14 +152,10 @@ function getIcalPropertyValue(line, propertyName) {
   }
   return line.slice(separatorIndex + 1).trim();
 }
-
+__name(getIcalPropertyValue, "getIcalPropertyValue");
 function parseFreebusyPeriods(rawValue) {
   const periods = [];
-  const chunks = String(rawValue || "")
-    .split(",")
-    .map((chunk) => chunk.trim())
-    .filter(Boolean);
-
+  const chunks = String(rawValue || "").split(",").map((chunk) => chunk.trim()).filter(Boolean);
   for (const period of chunks) {
     const parts = period.split("/");
     if (parts.length !== 2) {
@@ -184,17 +167,15 @@ function parseFreebusyPeriods(rawValue) {
       periods.push({ startMs, endMs });
     }
   }
-
   return periods;
 }
-
+__name(parseFreebusyPeriods, "parseFreebusyPeriods");
 function parseIcalBusyRanges(icalText) {
   const lines = unfoldIcalLines(icalText);
   const ranges = [];
   let currentEventStart = "";
   let currentEventEnd = "";
   let inEvent = false;
-
   for (const line of lines) {
     if (line === "BEGIN:VEVENT") {
       inEvent = true;
@@ -202,12 +183,11 @@ function parseIcalBusyRanges(icalText) {
       currentEventEnd = "";
       continue;
     }
-
     if (line === "END:VEVENT") {
       if (inEvent) {
         const startMs = parseIcalDateValueToUtcMs(currentEventStart);
         const endMsRaw = parseIcalDateValueToUtcMs(currentEventEnd);
-        const endMs = Number.isFinite(endMsRaw) ? endMsRaw : startMs + 24 * 60 * 60 * 1000;
+        const endMs = Number.isFinite(endMsRaw) ? endMsRaw : startMs + 24 * 60 * 60 * 1e3;
         if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs) {
           ranges.push({ startMs, endMs });
         }
@@ -215,34 +195,29 @@ function parseIcalBusyRanges(icalText) {
       inEvent = false;
       continue;
     }
-
     if (inEvent) {
       const dtstartValue = getIcalPropertyValue(line, "DTSTART");
       if (dtstartValue) {
         currentEventStart = dtstartValue;
         continue;
       }
-
       const dtendValue = getIcalPropertyValue(line, "DTEND");
       if (dtendValue) {
         currentEventEnd = dtendValue;
       }
       continue;
     }
-
     const freebusyValue = getIcalPropertyValue(line, "FREEBUSY");
     if (freebusyValue) {
       ranges.push(...parseFreebusyPeriods(freebusyValue));
     }
   }
-
   return ranges;
 }
-
+__name(parseIcalBusyRanges, "parseIcalBusyRanges");
 function collectIcalUrls(env, destination) {
   const values = [];
-
-  const pushValue = (value) => {
+  const pushValue = /* @__PURE__ */ __name((value) => {
     if (typeof value !== "string") {
       return;
     }
@@ -250,8 +225,7 @@ function collectIcalUrls(env, destination) {
     if (trimmed) {
       values.push(trimmed);
     }
-  };
-
+  }, "pushValue");
   const destinationKey = normalizeAvailabilityDestination(destination);
   if (destinationKey === "pine") {
     pushValue(env.HOSPITABLE_ICAL_URL_PINE);
@@ -262,52 +236,40 @@ function collectIcalUrls(env, destination) {
     pushValue(env.CACTUS_ICAL_URL);
     pushValue(env.ICAL_URL_CACTUS);
   }
-
   pushValue(env.HOSPITABLE_ICAL_URL);
   pushValue(env.HOSPITABLE_ICAL);
   pushValue(env.ICAL_URL);
-
   if (typeof env.HOSPITABLE_ICAL_URLS === "string") {
-    env.HOSPITABLE_ICAL_URLS
-      .split(/[,\n]/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .forEach((url) => values.push(url));
+    env.HOSPITABLE_ICAL_URLS.split(/[,\n]/).map((item) => item.trim()).filter(Boolean).forEach((url) => values.push(url));
   }
-
   return Array.from(new Set(values));
 }
-
+__name(collectIcalUrls, "collectIcalUrls");
 async function getBusyRangesFromIcalUrl(url) {
   const cacheKey = String(url || "").trim();
   if (!cacheKey) {
     return [];
   }
-
   const now = Date.now();
   const cached = globalThis.ICAL_EVENTS_CACHE[cacheKey];
   if (cached && Array.isArray(cached.ranges) && cached.expiresAt > now) {
     return cached.ranges;
   }
-
   const response = await fetch(cacheKey, {
-    headers: { Accept: "text/calendar,text/plain;q=0.9,*/*;q=0.8" },
+    headers: { Accept: "text/calendar,text/plain;q=0.9,*/*;q=0.8" }
   });
-
   if (!response.ok) {
     throw new Error(`iCal fetch failed (${response.status})`);
   }
-
   const text = await response.text();
   const ranges = parseIcalBusyRanges(text);
   globalThis.ICAL_EVENTS_CACHE[cacheKey] = {
     ranges,
-    expiresAt: now + ICAL_CACHE_TTL_MS,
+    expiresAt: now + ICAL_CACHE_TTL_MS
   };
-
   return ranges;
 }
-
+__name(getBusyRangesFromIcalUrl, "getBusyRangesFromIcalUrl");
 async function parseJsonBody(request) {
   try {
     return await request.json();
@@ -315,7 +277,7 @@ async function parseJsonBody(request) {
     return {};
   }
 }
-
+__name(parseJsonBody, "parseJsonBody");
 async function parseStripeResponseBody(response) {
   const raw = await response.text();
   if (!raw) {
@@ -327,7 +289,7 @@ async function parseStripeResponseBody(response) {
     return { raw };
   }
 }
-
+__name(parseStripeResponseBody, "parseStripeResponseBody");
 function extractStripeErrorMessage(stripeData, fallbackMessage) {
   if (stripeData && stripeData.error && typeof stripeData.error.message === "string") {
     const message = stripeData.error.message.trim();
@@ -343,7 +305,7 @@ function extractStripeErrorMessage(stripeData, fallbackMessage) {
   }
   return fallbackMessage;
 }
-
+__name(extractStripeErrorMessage, "extractStripeErrorMessage");
 function detectStripeKeyKind(apiKey) {
   const key = String(apiKey || "").trim();
   if (!key) {
@@ -369,7 +331,7 @@ function detectStripeKeyKind(apiKey) {
   }
   return "unknown";
 }
-
+__name(detectStripeKeyKind, "detectStripeKeyKind");
 function detectStripeModeFromKeyKind(kind) {
   if (String(kind).endsWith("_live")) {
     return "live";
@@ -379,7 +341,7 @@ function detectStripeModeFromKeyKind(kind) {
   }
   return "unknown";
 }
-
+__name(detectStripeModeFromKeyKind, "detectStripeModeFromKeyKind");
 function maskStripeKey(key) {
   const raw = String(key || "").trim();
   if (!raw) {
@@ -390,7 +352,7 @@ function maskStripeKey(key) {
   }
   return `${raw.slice(0, 7)}...${raw.slice(-4)}`;
 }
-
+__name(maskStripeKey, "maskStripeKey");
 function maskIdentifier(value) {
   const raw = String(value || "").trim();
   if (!raw) {
@@ -401,21 +363,20 @@ function maskIdentifier(value) {
   }
   return `${raw.slice(0, 6)}...${raw.slice(-4)}`;
 }
-
+__name(maskIdentifier, "maskIdentifier");
 function getStripeSecretKey(env) {
   return typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
 }
-
+__name(getStripeSecretKey, "getStripeSecretKey");
 function parseStripeSignatureHeader(signatureHeader) {
   const parsed = {
     timestamp: NaN,
-    signatures: [],
+    signatures: []
   };
   const raw = String(signatureHeader || "").trim();
   if (!raw) {
     return parsed;
   }
-
   const chunks = raw.split(",");
   for (const chunk of chunks) {
     const separatorIndex = chunk.indexOf("=");
@@ -427,7 +388,6 @@ function parseStripeSignatureHeader(signatureHeader) {
     if (!value) {
       continue;
     }
-
     if (key === "t" && !Number.isFinite(parsed.timestamp)) {
       const timestamp = Number.parseInt(value, 10);
       if (Number.isFinite(timestamp)) {
@@ -435,15 +395,13 @@ function parseStripeSignatureHeader(signatureHeader) {
       }
       continue;
     }
-
     if (key === "v1") {
       parsed.signatures.push(value);
     }
   }
-
   return parsed;
 }
-
+__name(parseStripeSignatureHeader, "parseStripeSignatureHeader");
 function timingSafeEqual(a, b) {
   const left = String(a || "");
   const right = String(b || "");
@@ -456,7 +414,7 @@ function timingSafeEqual(a, b) {
   }
   return mismatch === 0;
 }
-
+__name(timingSafeEqual, "timingSafeEqual");
 function toHex(buffer) {
   const bytes = new Uint8Array(buffer);
   let hex = "";
@@ -465,7 +423,7 @@ function toHex(buffer) {
   }
   return hex;
 }
-
+__name(toHex, "toHex");
 async function computeHmacSha256Hex(secret, payload) {
   const encoder = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey(
@@ -482,12 +440,12 @@ async function computeHmacSha256Hex(secret, payload) {
   );
   return toHex(signatureBuffer);
 }
-
+__name(computeHmacSha256Hex, "computeHmacSha256Hex");
 async function verifyStripeWebhookSignature({
   rawBody,
   signatureHeader,
   endpointSecret,
-  toleranceSeconds = 300,
+  toleranceSeconds = 300
 }) {
   const parsedSignature = parseStripeSignatureHeader(signatureHeader);
   const hasTimestamp = Number.isFinite(parsedSignature.timestamp);
@@ -495,63 +453,48 @@ async function verifyStripeWebhookSignature({
   if (!hasTimestamp || !hasSignatures) {
     return { ok: false, reason: "missing_header_components" };
   }
-
   if (!endpointSecret) {
     return { ok: false, reason: "missing_webhook_secret" };
   }
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
+  const nowSeconds = Math.floor(Date.now() / 1e3);
   const ageSeconds = Math.abs(nowSeconds - parsedSignature.timestamp);
   if (ageSeconds > toleranceSeconds) {
     return { ok: false, reason: "timestamp_out_of_tolerance", ageSeconds };
   }
-
   const signedPayload = `${parsedSignature.timestamp}.${String(rawBody || "")}`;
   const expectedSignature = await computeHmacSha256Hex(endpointSecret, signedPayload);
-  const isValid = parsedSignature.signatures.some((candidate) =>
-    timingSafeEqual(candidate, expectedSignature)
+  const isValid = parsedSignature.signatures.some(
+    (candidate) => timingSafeEqual(candidate, expectedSignature)
   );
   if (!isValid) {
     return { ok: false, reason: "signature_mismatch" };
   }
-
   return { ok: true };
 }
-
+__name(verifyStripeWebhookSignature, "verifyStripeWebhookSignature");
 function detectStripeModeFromEnv(env) {
   const keyKind = detectStripeKeyKind(getStripeSecretKey(env));
   return detectStripeModeFromKeyKind(keyKind);
 }
-
+__name(detectStripeModeFromEnv, "detectStripeModeFromEnv");
 function extractWebhookRequestId(eventDataObject) {
   if (!eventDataObject || typeof eventDataObject !== "object") {
     return "";
   }
-
-  const metadataRequestId =
-    eventDataObject.metadata &&
-    typeof eventDataObject.metadata === "object" &&
-    typeof eventDataObject.metadata.requestId === "string"
-      ? eventDataObject.metadata.requestId.trim()
-      : "";
+  const metadataRequestId = eventDataObject.metadata && typeof eventDataObject.metadata === "object" && typeof eventDataObject.metadata.requestId === "string" ? eventDataObject.metadata.requestId.trim() : "";
   if (metadataRequestId) {
     return metadataRequestId;
   }
-
-  const clientReferenceId =
-    typeof eventDataObject.client_reference_id === "string"
-      ? eventDataObject.client_reference_id.trim()
-      : "";
+  const clientReferenceId = typeof eventDataObject.client_reference_id === "string" ? eventDataObject.client_reference_id.trim() : "";
   if (clientReferenceId) {
     return clientReferenceId;
   }
-
   return "";
 }
-
+__name(extractWebhookRequestId, "extractWebhookRequestId");
 function normalizeProcessedStripeEventKeys(rawKeys) {
   const normalized = [];
-  const seen = new Set();
+  const seen = /* @__PURE__ */ new Set();
   const input = Array.isArray(rawKeys) ? rawKeys : [];
   for (const rawKey of input) {
     const key = String(rawKey || "").trim();
@@ -567,41 +510,23 @@ function normalizeProcessedStripeEventKeys(rawKeys) {
   }
   return normalized;
 }
-
+__name(normalizeProcessedStripeEventKeys, "normalizeProcessedStripeEventKeys");
 function buildStripeEventDedupKeys(event, eventType, eventDataObject) {
   const dedupKeys = [];
-  const eventId =
-    event && typeof event.id === "string"
-      ? event.id.trim()
-      : "";
+  const eventId = event && typeof event.id === "string" ? event.id.trim() : "";
   if (eventId) {
     dedupKeys.push(`evt:${eventId}`);
   }
-
-  const objectId =
-    eventDataObject && typeof eventDataObject.id === "string"
-      ? eventDataObject.id.trim()
-      : "";
+  const objectId = eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id.trim() : "";
   if (eventType && objectId) {
     dedupKeys.push(`obj:${eventType}:${objectId}`);
   }
-
   return dedupKeys;
 }
-
+__name(buildStripeEventDedupKeys, "buildStripeEventDedupKeys");
 async function loadExistingBooking(env, requestId) {
-  const existingMemory =
-    globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-      ? globalThis.BOOKINGS[requestId]
-      : {};
-
-  const kvStore =
-    env &&
-    env.BOOKINGS &&
-    typeof env.BOOKINGS.get === "function" &&
-    typeof env.BOOKINGS.put === "function"
-      ? env.BOOKINGS
-      : null;
+  const existingMemory = globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object" ? globalThis.BOOKINGS[requestId] : {};
+  const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.get === "function" && typeof env.BOOKINGS.put === "function" ? env.BOOKINGS : null;
   let existingKv = {};
   if (kvStore) {
     try {
@@ -616,30 +541,26 @@ async function loadExistingBooking(env, requestId) {
       console.error("Webhook KV read failed:", error);
     }
   }
-
   return {
     existingMemory,
     existingKv,
-    kvStore,
+    kvStore
   };
 }
-
+__name(loadExistingBooking, "loadExistingBooking");
 async function persistBookingFromWebhook(env, requestId, patch) {
   if (!requestId) {
     return null;
   }
-
   const { existingMemory, existingKv, kvStore } = await loadExistingBooking(env, requestId);
   const merged = {
     ...existingKv,
     ...existingMemory,
     ...patch,
     requestId,
-    updatedAt: Date.now(),
+    updatedAt: Date.now()
   };
-
   globalThis.BOOKINGS[requestId] = merged;
-
   if (kvStore) {
     try {
       await kvStore.put(requestId, JSON.stringify(merged));
@@ -647,22 +568,17 @@ async function persistBookingFromWebhook(env, requestId, patch) {
       console.error("Webhook KV sync failed:", error);
     }
   }
-
   return merged;
 }
-
+__name(persistBookingFromWebhook, "persistBookingFromWebhook");
 function buildIdentityKeyDiagnostics(env) {
   const stripeSecretKey = getStripeSecretKey(env);
   const selectedKey = stripeSecretKey;
-  const selectedKeySource = stripeSecretKey
-    ? "STRIPE_SECRET_KEY"
-    : "none";
-
+  const selectedKeySource = stripeSecretKey ? "STRIPE_SECRET_KEY" : "none";
   const fallbackKeyKind = detectStripeKeyKind(stripeSecretKey);
   const selectedKeyKind = detectStripeKeyKind(selectedKey);
   const fallbackMode = detectStripeModeFromKeyKind(fallbackKeyKind);
   const selectedMode = detectStripeModeFromKeyKind(selectedKeyKind);
-
   return {
     hasStripeSecretKey: Boolean(stripeSecretKey),
     fallbackKeyKind,
@@ -670,44 +586,10 @@ function buildIdentityKeyDiagnostics(env) {
     selectedKeySource,
     selectedKeyKind,
     selectedMode,
-    selectedKeyPreview: maskStripeKey(selectedKey),
+    selectedKeyPreview: maskStripeKey(selectedKey)
   };
 }
-
-function normalizeStatusForMessage(status) {
-  const normalized = String(status || "").trim().toLowerCase();
-
-  if (!normalized) {
-    return "unknown";
-  }
-
-  if (normalized === "pending" || normalized === "pending_verification") {
-    return "pending_verification";
-  }
-
-  if (normalized === "verified") {
-    return "verified";
-  }
-
-  if (normalized === "requires_input") {
-    return "requires_input";
-  }
-
-  if (normalized === "rejected") {
-    return "rejected";
-  }
-
-  if (normalized === "approved") {
-    return "approved";
-  }
-
-  return "unknown";
-}
-
-function getStatusMessage(status) {
-  return STATUS_MESSAGES[normalizeStatusForMessage(status)] || STATUS_MESSAGES.unknown;
-}
-
+__name(buildIdentityKeyDiagnostics, "buildIdentityKeyDiagnostics");
 function formatUtcDateToIcalDate(value) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -718,60 +600,40 @@ function formatUtcDateToIcalDate(value) {
   const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}${month}${day}`;
 }
-
-function addDaysUtc(value, daysToAdd) {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-  date.setUTCDate(date.getUTCDate() + daysToAdd);
-  return date;
-}
-
+__name(formatUtcDateToIcalDate, "formatUtcDateToIcalDate");
 function escapeIcalText(value) {
-  return String(value || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/\n/g, "\\n")
-    .replace(/,/g, "\\,")
-    .replace(/;/g, "\\;");
+  return String(value || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 }
-
+__name(escapeIcalText, "escapeIcalText");
 function toSafeBookingRecord(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }
   return value;
 }
-
+__name(toSafeBookingRecord, "toSafeBookingRecord");
 function shouldIncludeInRequestCalendar(booking) {
   if (!booking) {
     return false;
   }
-
   const checkin = typeof booking.checkin === "string" ? booking.checkin.trim() : "";
   const checkout = typeof booking.checkout === "string" ? booking.checkout.trim() : "";
   if (!checkin || !checkout) {
     return false;
   }
-
   const status = String(booking.status || "").trim().toLowerCase();
   if (status === "rejected" || status === "requires_input") {
     return false;
   }
-
   const hasExplicitRequestMarker = Boolean(booking.bookingRequestedAt);
   const hasGuestDetails = Boolean(
-    (typeof booking.guestName === "string" && booking.guestName.trim()) ||
-      (typeof booking.guestEmail === "string" && booking.guestEmail.trim()) ||
-      (typeof booking.guestPhone === "string" && booking.guestPhone.trim())
+    typeof booking.guestName === "string" && booking.guestName.trim() || typeof booking.guestEmail === "string" && booking.guestEmail.trim() || typeof booking.guestPhone === "string" && booking.guestPhone.trim()
   );
-
   return hasExplicitRequestMarker || hasGuestDetails;
 }
-
+__name(shouldIncludeInRequestCalendar, "shouldIncludeInRequestCalendar");
 async function collectBookingsForCalendar(env) {
-  const byRequestId = new Map();
-
+  const byRequestId = /* @__PURE__ */ new Map();
   const memoryBookings = globalThis.BOOKINGS && typeof globalThis.BOOKINGS === "object" ? globalThis.BOOKINGS : {};
   for (const [requestId, value] of Object.entries(memoryBookings)) {
     const booking = toSafeBookingRecord(value);
@@ -784,25 +646,20 @@ async function collectBookingsForCalendar(env) {
     }
     byRequestId.set(resolvedId, { ...booking, requestId: resolvedId });
   }
-
-  const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.list === "function" && typeof env.BOOKINGS.get === "function"
-    ? env.BOOKINGS
-    : null;
+  const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.list === "function" && typeof env.BOOKINGS.get === "function" ? env.BOOKINGS : null;
   if (!kvStore) {
     return Array.from(byRequestId.values());
   }
-
   try {
-    let cursor = undefined;
+    let cursor = void 0;
     while (true) {
-      const listed = await kvStore.list({ cursor, limit: 1000 });
+      const listed = await kvStore.list({ cursor, limit: 1e3 });
       const keys = listed && Array.isArray(listed.keys) ? listed.keys : [];
       for (const keyInfo of keys) {
         const keyName = typeof keyInfo?.name === "string" ? keyInfo.name : "";
         if (!keyName) {
           continue;
         }
-
         try {
           const raw = await kvStore.get(keyName);
           if (typeof raw !== "string" || !raw) {
@@ -822,7 +679,6 @@ async function collectBookingsForCalendar(env) {
           console.error(`Skipping invalid booking record for key ${keyName}:`, error);
         }
       }
-
       if (!listed || listed.list_complete) {
         break;
       }
@@ -834,12 +690,11 @@ async function collectBookingsForCalendar(env) {
   } catch (error) {
     console.error("Unable to list BOOKINGS KV for calendar feed:", error);
   }
-
   return Array.from(byRequestId.values());
 }
-
+__name(collectBookingsForCalendar, "collectBookingsForCalendar");
 function buildBookingRequestsIcs(bookings) {
-  const nowStamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const nowStamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -847,20 +702,17 @@ function buildBookingRequestsIcs(bookings) {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:LuxHouse Booking Requests",
-    "X-WR-CALDESC:Requested bookings from the LuxHouse website.",
+    "X-WR-CALDESC:Requested bookings from the LuxHouse website."
   ];
-
   for (const booking of bookings) {
     if (!shouldIncludeInRequestCalendar(booking)) {
       continue;
     }
-
-    const checkinDate = new Date(`${booking.checkin}T00:00:00Z`);
-    const checkoutDate = new Date(`${booking.checkout}T00:00:00Z`);
+    const checkinDate = /* @__PURE__ */ new Date(`${booking.checkin}T00:00:00Z`);
+    const checkoutDate = /* @__PURE__ */ new Date(`${booking.checkout}T00:00:00Z`);
     if (Number.isNaN(checkinDate.getTime()) || Number.isNaN(checkoutDate.getTime()) || checkoutDate <= checkinDate) {
       continue;
     }
-
     const uid = `${escapeIcalText(String(booking.requestId || createRequestId()))}@luxhouse-worker`;
     const dtStart = formatUtcDateToIcalDate(checkinDate);
     const dtEnd = formatUtcDateToIcalDate(checkoutDate);
@@ -871,7 +723,7 @@ function buildBookingRequestsIcs(bookings) {
       `Request ID: ${booking.requestId || "N/A"}`,
       `Status: ${status || "requested"}`,
       `Check-in: ${booking.checkin || "N/A"}`,
-      `Check-out: ${booking.checkout || "N/A"}`,
+      `Check-out: ${booking.checkout || "N/A"}`
     ];
     if (booking.guestEmail) {
       descriptionParts.push(`Email: ${booking.guestEmail}`);
@@ -883,7 +735,6 @@ function buildBookingRequestsIcs(bookings) {
       descriptionParts.push(`Notes: ${booking.notes}`);
     }
     const description = descriptionParts.join("\n");
-
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${uid}`);
     lines.push(`DTSTAMP:${nowStamp}`);
@@ -895,11 +746,10 @@ function buildBookingRequestsIcs(bookings) {
     lines.push("TRANSP:TRANSPARENT");
     lines.push("END:VEVENT");
   }
-
   lines.push("END:VCALENDAR");
   return lines.join("\r\n");
 }
-
+__name(buildBookingRequestsIcs, "buildBookingRequestsIcs");
 async function handleBookingRequestsCalendar(env) {
   const bookings = await collectBookingsForCalendar(env);
   const ics = buildBookingRequestsIcs(bookings);
@@ -908,11 +758,11 @@ async function handleBookingRequestsCalendar(env) {
     headers: {
       ...CORS_HEADERS,
       "Content-Type": "text/calendar; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
+      "Cache-Control": "no-store"
+    }
   });
 }
-
+__name(handleBookingRequestsCalendar, "handleBookingRequestsCalendar");
 async function handleAvailability(request, env) {
   const body = await parseJsonBody(request);
   const checkin = String(body.checkin || "").trim();
@@ -921,35 +771,29 @@ async function handleAvailability(request, env) {
   if (isTemporarilyUnavailableDestination(destination)) {
     return jsonResponse({ available: false, error: PINE_COMING_SOON_MESSAGE });
   }
-
   if (!checkin || !checkout) {
     return jsonResponse({ available: false, error: "Missing dates" }, 400);
   }
-
   const stayRangeError = getStayRangeError(checkin, checkout);
   if (stayRangeError) {
     return jsonResponse({ available: false, error: stayRangeError }, 400);
   }
-
   const requestedStartMs = parseIsoDateToUtcMs(checkin);
   const requestedEndMs = parseIsoDateToUtcMs(checkout);
   if (!Number.isFinite(requestedStartMs) || !Number.isFinite(requestedEndMs) || requestedEndMs <= requestedStartMs) {
     return jsonResponse({ available: false, error: "Invalid date range" }, 400);
   }
-
   const blockedRanges = [];
-
   if (env.BLOCKED_START && env.BLOCKED_END) {
     const legacyStart = parseIsoDateToUtcMs(env.BLOCKED_START);
     const legacyEndInclusive = parseIsoDateToUtcMs(env.BLOCKED_END);
     if (Number.isFinite(legacyStart) && Number.isFinite(legacyEndInclusive)) {
       blockedRanges.push({
         startMs: legacyStart,
-        endMs: legacyEndInclusive + 24 * 60 * 60 * 1000,
+        endMs: legacyEndInclusive + 24 * 60 * 60 * 1e3
       });
     }
   }
-
   const icalUrls = collectIcalUrls(env, destination);
   for (const icalUrl of icalUrls) {
     try {
@@ -959,26 +803,19 @@ async function handleAvailability(request, env) {
       console.error(`iCal sync failed for ${icalUrl}:`, error);
     }
   }
-
   let available = true;
   for (const range of blockedRanges) {
-    if (
-      range &&
-      Number.isFinite(range.startMs) &&
-      Number.isFinite(range.endMs) &&
-      rangesOverlapExclusive(requestedStartMs, requestedEndMs, range.startMs, range.endMs)
-    ) {
+    if (range && Number.isFinite(range.startMs) && Number.isFinite(range.endMs) && rangesOverlapExclusive(requestedStartMs, requestedEndMs, range.startMs, range.endMs)) {
       available = false;
       break;
     }
   }
-
   return jsonResponse({
     available,
-    source: icalUrls.length > 0 ? "hospitable_ical" : "local_rules",
+    source: icalUrls.length > 0 ? "hospitable_ical" : "local_rules"
   });
 }
-
+__name(handleAvailability, "handleAvailability");
 async function handleCreateBooking(request, env) {
   const body = await parseJsonBody(request);
   const checkin = body.checkin;
@@ -987,7 +824,6 @@ async function handleCreateBooking(request, env) {
   if (isTemporarilyUnavailableDestination(destination)) {
     return jsonResponse({ error: PINE_COMING_SOON_MESSAGE }, 400);
   }
-
   if (!checkin || !checkout) {
     return jsonResponse({ error: "checkin and checkout are required" }, 400);
   }
@@ -995,61 +831,51 @@ async function handleCreateBooking(request, env) {
   if (stayRangeError) {
     return jsonResponse({ error: stayRangeError }, 400);
   }
-
   const requestId = createRequestId();
   const booking = {
     requestId,
     checkin,
     checkout,
     status: "pending",
-    createdAt: new Date().toISOString(),
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
   };
-
   await env.BOOKINGS.put(requestId, JSON.stringify(booking));
   return jsonResponse({ requestId });
 }
-
+__name(handleCreateBooking, "handleCreateBooking");
 async function handleGetBooking(request, env) {
   const url = new URL(request.url);
   const requestId = url.searchParams.get("requestId");
-
   if (!requestId) {
     return jsonResponse({ error: "requestId is required" }, 400);
   }
-
   const bookingRaw = await env.BOOKINGS.get(requestId);
   if (!bookingRaw) {
     return textResponse("Not found", 404);
   }
-
   return jsonResponse(JSON.parse(bookingRaw));
 }
-
+__name(handleGetBooking, "handleGetBooking");
 async function handleBookingStatus(request, env) {
   const pendingResponse = {
     ok: true,
     status: "pending_verification",
-    message: STATUS_MESSAGES.pending_verification,
+    message: STATUS_MESSAGES.pending_verification
   };
-
   try {
     const url = new URL(request.url);
     const requestId = (url.searchParams?.get("requestId") || "").trim();
-
     if (!requestId) {
       return jsonResponse({
         ok: false,
         status: "missing_request_id",
-        message:
-          "We received your verification return, but could not locate your booking request.",
+        message: "We received your verification return, but could not locate your booking request."
       });
     }
-
     let booking = null;
     if (globalThis.BOOKINGS && typeof globalThis.BOOKINGS[requestId] === "object") {
       booking = globalThis.BOOKINGS[requestId];
     }
-
     if (!booking) {
       const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.get === "function" ? env.BOOKINGS : null;
       if (kvStore) {
@@ -1066,11 +892,9 @@ async function handleBookingStatus(request, env) {
         }
       }
     }
-
     if (!booking) {
       return jsonResponse(pendingResponse);
     }
-
     const normalizedStatus = String(booking.status || "").trim().toLowerCase();
     if (normalizedStatus === "approved") {
       return jsonResponse({
@@ -1079,10 +903,9 @@ async function handleBookingStatus(request, env) {
         message: STATUS_MESSAGES.approved,
         requestId,
         checkin: booking.checkin || null,
-        checkout: booking.checkout || null,
+        checkout: booking.checkout || null
       });
     }
-
     if (normalizedStatus === "verified") {
       return jsonResponse({
         ok: true,
@@ -1090,10 +913,9 @@ async function handleBookingStatus(request, env) {
         message: STATUS_MESSAGES.verified,
         requestId,
         checkin: booking.checkin || null,
-        checkout: booking.checkout || null,
+        checkout: booking.checkout || null
       });
     }
-
     if (normalizedStatus === "requires_input" || normalizedStatus === "rejected") {
       return jsonResponse({
         ok: true,
@@ -1101,33 +923,27 @@ async function handleBookingStatus(request, env) {
         message: STATUS_MESSAGES[normalizedStatus],
         requestId,
         checkin: booking.checkin || null,
-        checkout: booking.checkout || null,
+        checkout: booking.checkout || null
       });
     }
-
     return jsonResponse({
       ok: true,
       status: "pending_verification",
       message: STATUS_MESSAGES.pending_verification,
       requestId,
       checkin: booking.checkin || null,
-      checkout: booking.checkout || null,
+      checkout: booking.checkout || null
     });
   } catch (error) {
     console.error("Booking status handler error:", error);
     return jsonResponse(pendingResponse);
   }
 }
-
+__name(handleBookingStatus, "handleBookingStatus");
 function isBookingStatusPath(pathname) {
-  return (
-    pathname === "/booking-status" ||
-    pathname === "/api/booking-status" ||
-    pathname === "/status" ||
-    pathname === "/verification-status"
-  );
+  return pathname === "/booking-status" || pathname === "/api/booking-status" || pathname === "/status" || pathname === "/verification-status";
 }
-
+__name(isBookingStatusPath, "isBookingStatusPath");
 async function handleCreateVerificationSession(request, env) {
   const url = new URL(request.url);
   const body = await parseJsonBody(request);
@@ -1144,7 +960,6 @@ async function handleCreateVerificationSession(request, env) {
   const bodyReturnUrl = typeof body.returnUrl === "string" ? body.returnUrl.trim() : "";
   const bodyGuestEmail = typeof body.guestEmail === "string" ? body.guestEmail.trim() : "";
   const bodyGuestPhone = typeof body.guestPhone === "string" ? body.guestPhone.trim() : "";
-
   if (!bodyCheckin || !bodyCheckout) {
     return jsonResponse({ error: "checkin and checkout are required" }, 400);
   }
@@ -1152,29 +967,16 @@ async function handleCreateVerificationSession(request, env) {
   if (verificationStayError) {
     return jsonResponse({ error: verificationStayError }, 400);
   }
-
-  // Try to get existing requestId from URL
   let requestId = (url.searchParams.get("requestId") || "").trim();
   if (!requestId && bodyRequestId) {
     requestId = bodyRequestId;
   }
-
-  // If missing, generate one
   if (!requestId) {
-    requestId = "LUX-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
+    requestId = "LUX-" + Date.now() + "-" + Math.floor(Math.random() * 1e4);
   }
-
   const keyDiagnostics = buildIdentityKeyDiagnostics(env);
-  const flowIdFromBody =
-    typeof body.verificationFlowId === "string" && body.verificationFlowId.trim()
-      ? body.verificationFlowId.trim()
-      : typeof body.verificationFlow === "string" && body.verificationFlow.trim()
-        ? body.verificationFlow.trim()
-        : "";
-  const flowIdFromEnv =
-    (typeof env.IDENTITY_VERIFICATION_FLOW_ID === "string" &&
-      env.IDENTITY_VERIFICATION_FLOW_ID.trim()) ||
-    "";
+  const flowIdFromBody = typeof body.verificationFlowId === "string" && body.verificationFlowId.trim() ? body.verificationFlowId.trim() : typeof body.verificationFlow === "string" && body.verificationFlow.trim() ? body.verificationFlow.trim() : "";
+  const flowIdFromEnv = typeof env.IDENTITY_VERIFICATION_FLOW_ID === "string" && env.IDENTITY_VERIFICATION_FLOW_ID.trim() || "";
   const verificationFlowId = flowIdFromBody || flowIdFromEnv;
   const usingVerificationFlow = Boolean(verificationFlowId);
   const identityCreationMode = usingVerificationFlow ? "verification_flow" : "type_document";
@@ -1194,15 +996,14 @@ async function handleCreateVerificationSession(request, env) {
     selectedKeyPreview: keyDiagnostics.selectedKeyPreview,
     identityCreationMode,
     hasVerificationFlowId: usingVerificationFlow,
-    verificationFlowIdPreview: maskIdentifier(verificationFlowId),
+    verificationFlowIdPreview: maskIdentifier(verificationFlowId)
   });
-
   const existingRaw = await env.BOOKINGS.get(requestId);
   if (!existingRaw) {
     const booking = {
       requestId,
       status: "pending",
-      createdAt: new Date().toISOString(),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     if (body.checkin) {
       booking.checkin = bodyCheckin;
@@ -1212,19 +1013,15 @@ async function handleCreateVerificationSession(request, env) {
     }
     await env.BOOKINGS.put(requestId, JSON.stringify(booking));
   }
-
-  const existingMemory = globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object"
-    ? globalThis.BOOKINGS[requestId]
-    : {};
+  const existingMemory = globalThis.BOOKINGS[requestId] && typeof globalThis.BOOKINGS[requestId] === "object" ? globalThis.BOOKINGS[requestId] : {};
   globalThis.BOOKINGS[requestId] = {
     ...existingMemory,
     requestId,
     status: "pending_verification",
     checkin: bodyCheckin || existingMemory.checkin || null,
     checkout: bodyCheckout || existingMemory.checkout || null,
-    updatedAt: Date.now(),
+    updatedAt: Date.now()
   };
-
   const params = new URLSearchParams();
   if (usingVerificationFlow) {
     params.set("verification_flow", verificationFlowId);
@@ -1244,24 +1041,20 @@ async function handleCreateVerificationSession(request, env) {
   if (bodyGuestPhone) {
     params.set("provided_details[phone]", bodyGuestPhone);
   }
-
-  const configuredReturnUrl =
-    typeof env.IDENTITY_RETURN_URL === "string" ? env.IDENTITY_RETURN_URL.trim() : "";
+  const configuredReturnUrl = typeof env.IDENTITY_RETURN_URL === "string" ? env.IDENTITY_RETURN_URL.trim() : "";
   const fallbackReturnUrl = `${url.origin}/booking-status.html`;
   const returnUrl = new URL(bodyReturnUrl || configuredReturnUrl || fallbackReturnUrl, request.url);
   if (!returnUrl.searchParams.get("requestId")) {
     returnUrl.searchParams.set("requestId", requestId);
   }
   params.set("return_url", returnUrl.toString());
-
-  const stripeIdentityKey =
-    getStripeSecretKey(env);
+  const stripeIdentityKey = getStripeSecretKey(env);
   if (!stripeIdentityKey) {
     console.error({
       event: "stripe_identity_request_failure",
       reason: "missing_api_key",
       requestId,
-      keyDiagnostics,
+      keyDiagnostics
     });
     return jsonResponse(
       {
@@ -1271,19 +1064,18 @@ async function handleCreateVerificationSession(request, env) {
         requestId,
         debug: {
           endpointReached: true,
-          keyDiagnostics,
-        },
+          keyDiagnostics
+        }
       },
       500
     );
   }
-
   if (keyDiagnostics.selectedKeyKind.startsWith("publishable_")) {
     console.error({
       event: "stripe_identity_request_failure",
       reason: "publishable_key_used_server_side",
       requestId,
-      keyDiagnostics,
+      keyDiagnostics
     });
     return jsonResponse(
       {
@@ -1293,13 +1085,12 @@ async function handleCreateVerificationSession(request, env) {
         requestId,
         debug: {
           endpointReached: true,
-          keyDiagnostics,
-        },
+          keyDiagnostics
+        }
       },
       500
     );
   }
-
   let stripeRes = null;
   let stripeData = {};
   const stripeIdentityEndpointUrl = "https://api.stripe.com/v1/identity/verification_sessions";
@@ -1316,16 +1107,16 @@ async function handleCreateVerificationSession(request, env) {
     hasProvidedEmail: Boolean(params.get("provided_details[email]")),
     hasProvidedPhone: Boolean(params.get("provided_details[phone]")),
     metadataKeys: ["requestId", "checkin", "checkout", destinationRaw ? "destination" : ""].filter(Boolean),
-    requestedType: params.get("type") || null,
+    requestedType: params.get("type") || null
   });
   try {
     stripeRes = await fetch(stripeIdentityEndpointUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${stripeIdentityKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: params.toString(),
+      body: params.toString()
     });
     stripeData = await parseStripeResponseBody(stripeRes);
     const hasStripeErrorObject = Boolean(stripeData && stripeData.error);
@@ -1334,18 +1125,15 @@ async function handleCreateVerificationSession(request, env) {
       requestId,
       stripeEndpoint,
       stripeStatus: stripeRes.status,
-      responseObjectType:
-        stripeData && typeof stripeData.object === "string" ? stripeData.object : null,
+      responseObjectType: stripeData && typeof stripeData.object === "string" ? stripeData.object : null,
       hasErrorObject: hasStripeErrorObject,
       hasUrl: Boolean(stripeData && stripeData.url),
-      responsePayload: hasStripeErrorObject
-        ? stripeData
-        : {
-            id: stripeData && typeof stripeData.id === "string" ? stripeData.id : null,
-            object: stripeData && typeof stripeData.object === "string" ? stripeData.object : null,
-            status: stripeData && typeof stripeData.status === "string" ? stripeData.status : null,
-            livemode: stripeData && typeof stripeData.livemode === "boolean" ? stripeData.livemode : null,
-          },
+      responsePayload: hasStripeErrorObject ? stripeData : {
+        id: stripeData && typeof stripeData.id === "string" ? stripeData.id : null,
+        object: stripeData && typeof stripeData.object === "string" ? stripeData.object : null,
+        status: stripeData && typeof stripeData.status === "string" ? stripeData.status : null,
+        livemode: stripeData && typeof stripeData.livemode === "boolean" ? stripeData.livemode : null
+      }
     });
   } catch (error) {
     console.error({
@@ -1353,7 +1141,7 @@ async function handleCreateVerificationSession(request, env) {
       reason: "network_or_runtime_error",
       requestId,
       keyDiagnostics,
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: error instanceof Error ? error.message : String(error)
     });
     return jsonResponse(
       {
@@ -1363,30 +1151,16 @@ async function handleCreateVerificationSession(request, env) {
         requestId,
         debug: {
           endpointReached: true,
-          keyDiagnostics,
-        },
+          keyDiagnostics
+        }
       },
       502
     );
   }
-
-  const stripeRequestId =
-    stripeRes.headers.get("request-id") ||
-    stripeRes.headers.get("Request-Id") ||
-    null;
-  const stripeErrorObj =
-    stripeData && stripeData.error && typeof stripeData.error === "object"
-      ? stripeData.error
-      : null;
-
+  const stripeRequestId = stripeRes.headers.get("request-id") || stripeRes.headers.get("Request-Id") || null;
+  const stripeErrorObj = stripeData && stripeData.error && typeof stripeData.error === "object" ? stripeData.error : null;
   if (!stripeRes.ok) {
-    const looksLikeFlowIsRequired =
-      identityCreationMode === "type_document" &&
-      stripeRes.status === 403 &&
-      stripeErrorObj &&
-      typeof stripeErrorObj.message === "string" &&
-      stripeErrorObj.message.includes("unable to perform this action");
-
+    const looksLikeFlowIsRequired = identityCreationMode === "type_document" && stripeRes.status === 403 && stripeErrorObj && typeof stripeErrorObj.message === "string" && stripeErrorObj.message.includes("unable to perform this action");
     console.error({
       event: "stripe_identity_request_failure",
       reason: "stripe_api_error",
@@ -1401,15 +1175,12 @@ async function handleCreateVerificationSession(request, env) {
       identityCreationMode,
       hasVerificationFlowId: usingVerificationFlow,
       verificationFlowIdPreview: maskIdentifier(verificationFlowId),
-      flowMayBeRequired: looksLikeFlowIsRequired,
+      flowMayBeRequired: looksLikeFlowIsRequired
     });
-
     return jsonResponse(
       {
         ok: false,
-        error: looksLikeFlowIsRequired
-          ? "Stripe Identity rejected direct document session creation for this account. Configure a Dashboard Verification Flow and set IDENTITY_VERIFICATION_FLOW_ID."
-          : "Unable to start identity verification at this time.",
+        error: looksLikeFlowIsRequired ? "Stripe Identity rejected direct document session creation for this account. Configure a Dashboard Verification Flow and set IDENTITY_VERIFICATION_FLOW_ID." : "Unable to start identity verification at this time.",
         code: "identity_session_create_failed",
         requestId,
         debug: {
@@ -1421,48 +1192,43 @@ async function handleCreateVerificationSession(request, env) {
             code: stripeErrorObj && stripeErrorObj.code ? stripeErrorObj.code : null,
             message: stripeErrorObj && stripeErrorObj.message ? stripeErrorObj.message : null,
             param: stripeErrorObj && stripeErrorObj.param ? stripeErrorObj.param : null,
-            doc_url: stripeErrorObj && stripeErrorObj.doc_url ? stripeErrorObj.doc_url : null,
+            doc_url: stripeErrorObj && stripeErrorObj.doc_url ? stripeErrorObj.doc_url : null
           },
           keyDiagnostics,
           identityCreationMode,
           hasVerificationFlowId: usingVerificationFlow,
           verificationFlowIdPreview: maskIdentifier(verificationFlowId),
           flowMayBeRequired: looksLikeFlowIsRequired,
-          stripeErrorPayload: stripeData,
-        },
+          stripeErrorPayload: stripeData
+        }
       },
       stripeRes.status >= 400 && stripeRes.status < 600 ? stripeRes.status : 500
     );
   }
-
   console.log({
     event: "stripe_identity_request_success",
     requestId,
     stripeStatus: stripeRes.status,
     stripeRequestId,
     hasVerificationUrl: Boolean(stripeData && stripeData.url),
-    keyDiagnostics,
+    keyDiagnostics
   });
-
   return jsonResponse({
     ok: true,
     url: stripeData.url,
-    requestId: requestId,
+    requestId
   });
 }
-
+__name(handleCreateVerificationSession, "handleCreateVerificationSession");
 async function handleCreatePaymentSession(request, env) {
   const body = await parseJsonBody(request);
-  const requestId =
-    (typeof body.requestId === "string" && body.requestId.trim()) ||
-    createRequestId();
+  const requestId = typeof body.requestId === "string" && body.requestId.trim() || createRequestId();
   const destinationRaw = String(
     body.destination || body.property || body.destinationLabel || ""
   ).trim();
   if (isTemporarilyUnavailableDestination(destinationRaw)) {
     return jsonResponse({ error: PINE_COMING_SOON_MESSAGE }, 400);
   }
-
   const guestName = typeof body.guestName === "string" ? body.guestName.trim() : "";
   const guestEmail = typeof body.guestEmail === "string" ? body.guestEmail.trim() : "";
   const guestPhone = typeof body.guestPhone === "string" ? body.guestPhone.trim() : "";
@@ -1478,14 +1244,11 @@ async function handleCreatePaymentSession(request, env) {
     return jsonResponse({ error: paymentStayError }, 400);
   }
   const totalNumber = Number(body.total);
-  const totalAmountCents = Number.isFinite(totalNumber) && totalNumber > 0
-    ? Math.round(totalNumber * 100)
-    : 10000;
-
+  const totalAmountCents = Number.isFinite(totalNumber) && totalNumber > 0 ? Math.round(totalNumber * 100) : 1e4;
   const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
   const memoryBooking = {
     ...existingKv,
-    ...existingMemory,
+    ...existingMemory
   };
   const existingStatus = String(memoryBooking.status || "").trim().toLowerCase();
   const canRequestPayment = existingStatus === "verified" || existingStatus === "approved";
@@ -1493,18 +1256,17 @@ async function handleCreatePaymentSession(request, env) {
     return jsonResponse(
       {
         error: "Identity verification is required before payment.",
-        code: "payment_verification_required",
+        code: "payment_verification_required"
       },
       403
     );
   }
-
   globalThis.BOOKINGS[requestId] = {
     ...memoryBooking,
     requestId,
     status: existingStatus === "approved" ? "approved" : "verified",
     bookingRequestStatus: "requested",
-    bookingRequestedAt: new Date().toISOString(),
+    bookingRequestedAt: (/* @__PURE__ */ new Date()).toISOString(),
     guestName,
     guestEmail,
     guestPhone,
@@ -1512,9 +1274,8 @@ async function handleCreatePaymentSession(request, env) {
     checkin: checkin || memoryBooking.checkin || null,
     checkout: checkout || memoryBooking.checkout || null,
     total: Number.isFinite(totalNumber) ? totalNumber : memoryBooking.total || null,
-    updatedAt: Date.now(),
+    updatedAt: Date.now()
   };
-
   const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.put === "function" ? env.BOOKINGS : null;
   if (kvStore) {
     try {
@@ -1523,11 +1284,9 @@ async function handleCreatePaymentSession(request, env) {
       console.error("Payment session KV write failed:", error);
     }
   }
-
   const origin = new URL(request.url).origin;
   const successUrl = env.PAYMENT_SUCCESS_URL || `${origin}/booking.html?payment=success&requestId=${encodeURIComponent(requestId)}`;
   const cancelUrl = env.PAYMENT_CANCEL_URL || `${origin}/booking.html?payment=cancelled&requestId=${encodeURIComponent(requestId)}`;
-
   const params = new URLSearchParams();
   params.set("mode", "payment");
   params.set("success_url", successUrl);
@@ -1556,38 +1315,34 @@ async function handleCreatePaymentSession(request, env) {
     params.set("customer_email", guestEmail);
   }
   params.set("client_reference_id", requestId);
-
   const stripePaymentKey = getStripeSecretKey(env);
   if (!stripePaymentKey) {
     return jsonResponse(
       {
         error: "Unable to start checkout at this time.",
-        code: "payment_missing_api_key",
+        code: "payment_missing_api_key"
       },
       500
     );
   }
-
   const paymentKeyKind = detectStripeKeyKind(stripePaymentKey);
   if (paymentKeyKind.startsWith("publishable_")) {
     return jsonResponse(
       {
         error: "Unable to start checkout at this time.",
-        code: "payment_invalid_key_type",
+        code: "payment_invalid_key_type"
       },
       500
     );
   }
-
   const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${stripePaymentKey}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/x-www-form-urlencoded"
     },
-    body: params.toString(),
+    body: params.toString()
   });
-
   const stripeData = await parseStripeResponseBody(stripeRes);
   if (!stripeRes.ok) {
     return jsonResponse(
@@ -1595,30 +1350,26 @@ async function handleCreatePaymentSession(request, env) {
       500
     );
   }
-
   return jsonResponse({
     url: stripeData.url,
     requestId,
-    sessionId: stripeData.id || null,
+    sessionId: stripeData.id || null
   });
 }
-
+__name(handleCreatePaymentSession, "handleCreatePaymentSession");
 async function handleWebhook(request, env) {
-  const webhookSecret =
-    typeof env.STRIPE_WEBHOOK_SECRET === "string" ? env.STRIPE_WEBHOOK_SECRET.trim() : "";
+  const webhookSecret = typeof env.STRIPE_WEBHOOK_SECRET === "string" ? env.STRIPE_WEBHOOK_SECRET.trim() : "";
   if (!webhookSecret) {
     console.error("Missing STRIPE_WEBHOOK_SECRET");
     return jsonResponse(
       {
         received: false,
-        error: "Webhook endpoint is not configured.",
+        error: "Webhook endpoint is not configured."
       },
       500
     );
   }
-
-  const signatureHeader =
-    request.headers.get("Stripe-Signature") || request.headers.get("stripe-signature") || "";
+  const signatureHeader = request.headers.get("Stripe-Signature") || request.headers.get("stripe-signature") || "";
   const rawBody = await request.text();
   let signatureResult = { ok: false, reason: "unknown" };
   try {
@@ -1626,27 +1377,25 @@ async function handleWebhook(request, env) {
       rawBody,
       signatureHeader,
       endpointSecret: webhookSecret,
-      toleranceSeconds: 300,
+      toleranceSeconds: 300
     });
   } catch (error) {
     console.error("Webhook signature verification threw:", error);
     signatureResult = {
       ok: false,
-      reason: "verification_runtime_error",
+      reason: "verification_runtime_error"
     };
   }
-
   if (!signatureResult.ok) {
     console.error("Rejected webhook: invalid Stripe signature", signatureResult.reason);
     return jsonResponse(
       {
         received: false,
-        error: "Invalid Stripe webhook signature.",
+        error: "Invalid Stripe webhook signature."
       },
       400
     );
   }
-
   let event = {};
   try {
     event = rawBody ? JSON.parse(rawBody) : {};
@@ -1655,17 +1404,16 @@ async function handleWebhook(request, env) {
     return jsonResponse(
       {
         received: false,
-        error: "Invalid webhook JSON payload.",
+        error: "Invalid webhook JSON payload."
       },
       400
     );
   }
-
   const eventType = event && typeof event.type === "string" ? event.type : "";
   const eventDataObject = event && event.data ? event.data.object : null;
   const requestId = extractWebhookRequestId(eventDataObject);
   const dedupKeys = buildStripeEventDedupKeys(event, eventType, eventDataObject);
-  const eventMode = typeof event.livemode === "boolean" ? (event.livemode ? "live" : "test") : "unknown";
+  const eventMode = typeof event.livemode === "boolean" ? event.livemode ? "live" : "test" : "unknown";
   const workerMode = detectStripeModeFromEnv(env);
   if (eventMode !== "unknown" && workerMode !== "unknown" && eventMode !== workerMode) {
     console.error({
@@ -1673,32 +1421,30 @@ async function handleWebhook(request, env) {
       requestId,
       eventMode,
       workerMode,
-      eventType,
+      eventType
     });
     return jsonResponse(
       {
         received: false,
-        error: "Webhook mode mismatch.",
+        error: "Webhook mode mismatch."
       },
       400
     );
   }
-
   console.log({
     event: "stripe_webhook_received",
     eventType,
     requestId,
     eventId: event && typeof event.id === "string" ? event.id : null,
     eventMode,
-    workerMode,
+    workerMode
   });
-
   let dedupPatch = {};
   if (requestId && dedupKeys.length > 0) {
     const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
     const existing = {
       ...existingKv,
-      ...existingMemory,
+      ...existingMemory
     };
     const processedKeys = normalizeProcessedStripeEventKeys(existing.processedStripeEventKeys);
     const isDuplicate = dedupKeys.some((key) => processedKeys.includes(key));
@@ -1707,166 +1453,124 @@ async function handleWebhook(request, env) {
         received: true,
         duplicate: true,
         event: eventType || null,
-        requestId,
+        requestId
       });
     }
     dedupPatch = {
       processedStripeEventKeys: normalizeProcessedStripeEventKeys([
         ...processedKeys,
-        ...dedupKeys,
-      ]),
+        ...dedupKeys
+      ])
     };
   }
-
   if (requestId && eventType === "identity.verification_session.verified") {
     await persistBookingFromWebhook(env, requestId, {
       status: "verified",
       identityStatus: "verified",
-      identityVerifiedAt: new Date().toISOString(),
-      stripeVerificationSessionId:
-        eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
-      ...dedupPatch,
+      identityVerifiedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      stripeVerificationSessionId: eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+      ...dedupPatch
     });
   }
-
-  if (
-    requestId &&
-    (eventType === "identity.verification_session.requires_input" ||
-      eventType === "identity.verification_session.canceled")
-  ) {
+  if (requestId && (eventType === "identity.verification_session.requires_input" || eventType === "identity.verification_session.canceled")) {
     const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
     const existing = {
       ...existingKv,
-      ...existingMemory,
+      ...existingMemory
     };
     const existingStatus = String(existing.status || "").trim().toLowerCase();
     const existingPaymentStatus = String(existing.paymentStatus || "").trim().toLowerCase();
-    const shouldPreserveApprovedState =
-      existingStatus === "approved" || existingPaymentStatus === "paid";
-
+    const shouldPreserveApprovedState = existingStatus === "approved" || existingPaymentStatus === "paid";
     if (!shouldPreserveApprovedState) {
-      const mappedStatus =
-        eventType === "identity.verification_session.requires_input" ? "requires_input" : "rejected";
+      const mappedStatus = eventType === "identity.verification_session.requires_input" ? "requires_input" : "rejected";
       await persistBookingFromWebhook(env, requestId, {
         status: mappedStatus,
         identityStatus: mappedStatus,
-        identityUpdatedAt: new Date().toISOString(),
-        stripeVerificationSessionId:
-          eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
-        ...dedupPatch,
+        identityUpdatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        stripeVerificationSessionId: eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+        ...dedupPatch
       });
     }
   }
-
-  if (
-    requestId &&
-    (eventType === "checkout.session.completed" ||
-      eventType === "checkout.session.async_payment_succeeded")
-  ) {
-    const checkoutPaymentStatus =
-      eventDataObject && typeof eventDataObject.payment_status === "string"
-        ? eventDataObject.payment_status.trim().toLowerCase()
-        : "";
-    const paidState =
-      checkoutPaymentStatus === "paid" || checkoutPaymentStatus === "no_payment_required";
+  if (requestId && (eventType === "checkout.session.completed" || eventType === "checkout.session.async_payment_succeeded")) {
+    const checkoutPaymentStatus = eventDataObject && typeof eventDataObject.payment_status === "string" ? eventDataObject.payment_status.trim().toLowerCase() : "";
+    const paidState = checkoutPaymentStatus === "paid" || checkoutPaymentStatus === "no_payment_required";
     await persistBookingFromWebhook(env, requestId, {
       status: paidState ? "approved" : "verified",
       bookingRequestStatus: paidState ? "approved" : "requested",
       paymentStatus: paidState ? "paid" : checkoutPaymentStatus || "unpaid",
-      paymentCompletedAt: paidState ? new Date().toISOString() : null,
-      stripeCheckoutSessionId:
-        eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
-      stripePaymentIntentId:
-        eventDataObject && typeof eventDataObject.payment_intent === "string"
-          ? eventDataObject.payment_intent
-          : null,
-      ...dedupPatch,
+      paymentCompletedAt: paidState ? (/* @__PURE__ */ new Date()).toISOString() : null,
+      stripeCheckoutSessionId: eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+      stripePaymentIntentId: eventDataObject && typeof eventDataObject.payment_intent === "string" ? eventDataObject.payment_intent : null,
+      ...dedupPatch
     });
   }
-
-  if (
-    requestId &&
-    (eventType === "checkout.session.expired" ||
-      eventType === "checkout.session.async_payment_failed")
-  ) {
+  if (requestId && (eventType === "checkout.session.expired" || eventType === "checkout.session.async_payment_failed")) {
     const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
     const existing = {
       ...existingKv,
-      ...existingMemory,
+      ...existingMemory
     };
     const existingPaymentStatus = String(existing.paymentStatus || "").trim().toLowerCase();
     const alreadyPaid = existingPaymentStatus === "paid";
     if (!alreadyPaid) {
-      const expiredOrFailedStatus =
-        eventType === "checkout.session.async_payment_failed" ? "failed" : "expired";
-      const bookingRequestStatus =
-        eventType === "checkout.session.async_payment_failed"
-          ? "payment_failed"
-          : "payment_expired";
+      const expiredOrFailedStatus = eventType === "checkout.session.async_payment_failed" ? "failed" : "expired";
+      const bookingRequestStatus = eventType === "checkout.session.async_payment_failed" ? "payment_failed" : "payment_expired";
       await persistBookingFromWebhook(env, requestId, {
         bookingRequestStatus,
         paymentStatus: expiredOrFailedStatus,
-        paymentExpiredAt: new Date().toISOString(),
-        stripeCheckoutSessionId:
-          eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
-        ...dedupPatch,
+        paymentExpiredAt: (/* @__PURE__ */ new Date()).toISOString(),
+        stripeCheckoutSessionId: eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+        ...dedupPatch
       });
     }
   }
-
   return jsonResponse({
     received: true,
     event: eventType || null,
-    requestId: requestId || null,
+    requestId: requestId || null
   });
 }
-
-export default {
+__name(handleWebhook, "handleWebhook");
+var worker_default = {
   async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = url.pathname.toLowerCase();
     const method = request.method.toUpperCase();
-
     if (method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
-
     if ((pathname === "/webhook" || pathname === "/webhook/") && method === "POST") {
       return handleWebhook(request, env);
     }
-
     if (pathname.includes("availability") && method === "POST") {
       return handleAvailability(request, env);
     }
-
     if (pathname.includes("create-booking") && method === "POST") {
       return handleCreateBooking(request, env);
     }
-
     if (pathname === "/create-verification-session" && method === "POST") {
       return handleCreateVerificationSession(request, env);
     }
-
     if (pathname === "/create-payment-session" && method === "POST") {
       return handleCreatePaymentSession(request, env);
     }
-
     if (pathname.includes("verify") && method === "POST") {
       return handleCreateVerificationSession(request, env);
     }
-
     if (pathname.includes("get-booking") && method === "GET") {
       return handleGetBooking(request, env);
     }
-
     if (pathname === "/booking-requests.ics" && method === "GET") {
       return handleBookingRequestsCalendar(env);
     }
-
     if (method === "GET" && isBookingStatusPath(pathname)) {
       return handleBookingStatus(request, env);
     }
-
     return textResponse("Not found", 404);
-  },
+  }
 };
+export {
+  worker_default as default
+};
+//# sourceMappingURL=worker.js.map
