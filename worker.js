@@ -1303,6 +1303,7 @@ async function handleCreateVerificationSession(request, env) {
   let stripeRes = null;
   let stripeData = {};
   const stripeIdentityEndpointUrl = "https://api.stripe.com/v1/identity/verification_sessions";
+  const payloadKeys = Array.from(params.keys());
   console.log({
     event: "stripe_identity_request_payload",
     requestId,
@@ -1316,6 +1317,7 @@ async function handleCreateVerificationSession(request, env) {
     hasProvidedEmail: Boolean(params.get("provided_details[email]")),
     hasProvidedPhone: Boolean(params.get("provided_details[phone]")),
     metadataKeys: ["requestId", "checkin", "checkout", destinationRaw ? "destination" : ""].filter(Boolean),
+    payloadKeys,
     requestedType: params.get("type") || null,
   });
   try {
