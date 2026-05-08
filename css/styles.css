@@ -2402,7 +2402,6 @@ body.modal-open {
 }
 
 .lux-booking-modal.is-availability-confirmed .lux-booking-form,
-.lux-booking-modal.is-availability-confirmed #bookingStatus,
 .lux-booking-modal.is-availability-confirmed #availabilityResult,
 .lux-booking-modal.is-availability-confirmed .lux-booking-header > p:last-child {
   display: none;

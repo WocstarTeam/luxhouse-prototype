@@ -276,6 +276,9 @@ async function postJson(path, payload) {
     const message = data.error || `Request failed (${response.status})`;
     const error = new Error(message);
     error.status = response.status;
+    if (data && typeof data.code === "string") {
+      error.code = data.code;
+    }
     throw error;
   }
 
@@ -1181,9 +1184,14 @@ function initBookingModal() {
         `booking-status.html?requestId=${encodeURIComponent(requestId)}`
       );
     } catch (error) {
+      let userMessage = error.message || "Could not start verification. Please try again.";
+      if (error && error.code === "identity_session_create_failed") {
+        userMessage =
+          "We could not launch identity verification right now. Please contact support to confirm Stripe Identity is active on the LuxHouse account.";
+      }
       setStatusMessage(
         statusEl,
-        error.message || "Could not start verification. Please try again.",
+        userMessage,
         "error"
       );
       persistLatestBooking({
