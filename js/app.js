@@ -1178,14 +1178,30 @@ function initBookingModal() {
         returnUrl: new URL("booking-status.html", window.location.href).toString()
       });
 
+      const bookingStatusUrl = new URL("booking-status.html", window.location.href);
+      bookingStatusUrl.searchParams.set("requestId", requestId);
+
       if (verificationData.url) {
+        const verificationWindow = window.open(
+          verificationData.url,
+          "_blank",
+          "noopener,noreferrer"
+        );
+        if (verificationWindow && !verificationWindow.closed) {
+          setStatusMessage(
+            statusEl,
+            "Verification opened in a new tab. Complete it there while we track your status here.",
+            "success"
+          );
+          window.location.assign(bookingStatusUrl.toString());
+          return;
+        }
+
         window.location.assign(verificationData.url);
         return;
       }
 
-      window.location.assign(
-        `booking-status.html?requestId=${encodeURIComponent(requestId)}`
-      );
+      window.location.assign(bookingStatusUrl.toString());
     } catch (error) {
       let userMessage = error.message || "Could not start verification. Please try again.";
       if (error && error.code === "identity_session_create_failed") {

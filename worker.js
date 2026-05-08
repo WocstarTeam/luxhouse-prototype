@@ -8,7 +8,7 @@ const CORS_HEADERS = {
 
 const STATUS_MESSAGES = {
   pending_verification:
-    "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.",
+    "Thank you for submitting your documents. Stripe is processing your verification now. This usually completes within a few minutes.",
   verified:
     "Your identity verification was successful. You may now continue with your booking.",
   requires_input:
