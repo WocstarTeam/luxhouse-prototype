@@ -316,6 +316,105 @@ async function parseJsonBody(request) {
   }
 }
 
+async function parseStripeResponseBody(response) {
+  const raw = await response.text();
+  if (!raw) {
+    return {};
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw };
+  }
+}
+
+function extractStripeErrorMessage(stripeData, fallbackMessage) {
+  if (stripeData && stripeData.error && typeof stripeData.error.message === "string") {
+    const message = stripeData.error.message.trim();
+    if (message) {
+      return message;
+    }
+  }
+  if (stripeData && typeof stripeData.raw === "string") {
+    const message = stripeData.raw.trim();
+    if (message) {
+      return message;
+    }
+  }
+  return fallbackMessage;
+}
+
+function detectStripeKeyKind(apiKey) {
+  const key = String(apiKey || "").trim();
+  if (!key) {
+    return "missing";
+  }
+  if (key.startsWith("sk_live_")) {
+    return "secret_live";
+  }
+  if (key.startsWith("sk_test_")) {
+    return "secret_test";
+  }
+  if (key.startsWith("pk_live_")) {
+    return "publishable_live";
+  }
+  if (key.startsWith("pk_test_")) {
+    return "publishable_test";
+  }
+  if (key.startsWith("rk_live_")) {
+    return "restricted_live";
+  }
+  if (key.startsWith("rk_test_")) {
+    return "restricted_test";
+  }
+  return "unknown";
+}
+
+function detectStripeModeFromKeyKind(kind) {
+  if (String(kind).endsWith("_live")) {
+    return "live";
+  }
+  if (String(kind).endsWith("_test")) {
+    return "test";
+  }
+  return "unknown";
+}
+
+function maskStripeKey(key) {
+  const raw = String(key || "").trim();
+  if (!raw) {
+    return "";
+  }
+  if (raw.length <= 12) {
+    return `${raw.slice(0, 4)}...`;
+  }
+  return `${raw.slice(0, 7)}...${raw.slice(-4)}`;
+}
+
+function buildIdentityKeyDiagnostics(env) {
+  const stripeSecretKey =
+    typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+  const selectedKey = stripeSecretKey;
+  const selectedKeySource = stripeSecretKey
+    ? "STRIPE_SECRET_KEY"
+    : "none";
+
+  const fallbackKeyKind = detectStripeKeyKind(stripeSecretKey);
+  const selectedKeyKind = detectStripeKeyKind(selectedKey);
+  const fallbackMode = detectStripeModeFromKeyKind(fallbackKeyKind);
+  const selectedMode = detectStripeModeFromKeyKind(selectedKeyKind);
+
+  return {
+    hasStripeSecretKey: Boolean(stripeSecretKey),
+    fallbackKeyKind,
+    fallbackMode,
+    selectedKeySource,
+    selectedKeyKind,
+    selectedMode,
+    selectedKeyPreview: maskStripeKey(selectedKey),
+  };
+}
+
 function normalizeStatusForMessage(status) {
   const normalized = String(status || "").trim().toLowerCase();
 
@@ -762,6 +861,7 @@ function isBookingStatusPath(pathname) {
 async function handleCreateVerificationSession(request, env) {
   const url = new URL(request.url);
   const body = await parseJsonBody(request);
+  const stripeEndpoint = "/v1/identity/verification_sessions";
   const destinationRaw = String(
     body.destination || body.property || body.destinationLabel || ""
   ).trim();
@@ -791,6 +891,23 @@ async function handleCreateVerificationSession(request, env) {
   if (!requestId) {
     requestId = "LUX-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
   }
+
+  const keyDiagnostics = buildIdentityKeyDiagnostics(env);
+  console.log({
+    event: "stripe_identity_request_start",
+    endpointReached: true,
+    workerPath: url.pathname,
+    workerMethod: request.method,
+    stripeMethod: "POST",
+    stripeEndpoint,
+    requestId,
+    hasStripeSecretKey: keyDiagnostics.hasStripeSecretKey,
+    selectedKeySource: keyDiagnostics.selectedKeySource,
+    selectedKeyKind: keyDiagnostics.selectedKeyKind,
+    selectedMode: keyDiagnostics.selectedMode,
+    fallbackKeyKind: keyDiagnostics.fallbackKeyKind,
+    selectedKeyPreview: keyDiagnostics.selectedKeyPreview,
+  });
 
   const existingRaw = await env.BOOKINGS.get(requestId);
   if (!existingRaw) {
@@ -833,21 +950,146 @@ async function handleCreateVerificationSession(request, env) {
   }
   params.set("return_url", returnUrl.toString());
 
-  const stripeRes = await fetch("https://api.stripe.com/v1/identity/verification_sessions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params.toString(),
-  });
-
-  const stripeData = await stripeRes.json();
-  if (!stripeRes.ok) {
-    return jsonResponse({ error: stripeData.error?.message || "Stripe error" }, 500);
+  const stripeIdentityKey =
+    typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+  if (!stripeIdentityKey) {
+    console.error({
+      event: "stripe_identity_request_failure",
+      reason: "missing_api_key",
+      requestId,
+      keyDiagnostics,
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Unable to start identity verification at this time.",
+        code: "identity_missing_api_key",
+        requestId,
+        debug: {
+          endpointReached: true,
+          keyDiagnostics,
+        },
+      },
+      500
+    );
   }
 
+  if (keyDiagnostics.selectedKeyKind.startsWith("publishable_")) {
+    console.error({
+      event: "stripe_identity_request_failure",
+      reason: "publishable_key_used_server_side",
+      requestId,
+      keyDiagnostics,
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Unable to start identity verification at this time.",
+        code: "identity_invalid_key_type",
+        requestId,
+        debug: {
+          endpointReached: true,
+          keyDiagnostics,
+        },
+      },
+      500
+    );
+  }
+
+  let stripeRes = null;
+  let stripeData = {};
+  try {
+    stripeRes = await fetch("https://api.stripe.com/v1/identity/verification_sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${stripeIdentityKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+    stripeData = await parseStripeResponseBody(stripeRes);
+  } catch (error) {
+    console.error({
+      event: "stripe_identity_request_failure",
+      reason: "network_or_runtime_error",
+      requestId,
+      keyDiagnostics,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Unable to start identity verification at this time.",
+        code: "identity_network_error",
+        requestId,
+        debug: {
+          endpointReached: true,
+          keyDiagnostics,
+        },
+      },
+      502
+    );
+  }
+
+  const stripeRequestId =
+    stripeRes.headers.get("request-id") ||
+    stripeRes.headers.get("Request-Id") ||
+    null;
+  const stripeErrorObj =
+    stripeData && stripeData.error && typeof stripeData.error === "object"
+      ? stripeData.error
+      : null;
+
+  if (!stripeRes.ok) {
+    console.error({
+      event: "stripe_identity_request_failure",
+      reason: "stripe_api_error",
+      requestId,
+      stripeStatus: stripeRes.status,
+      stripeRequestId,
+      stripeErrorType: stripeErrorObj && stripeErrorObj.type ? stripeErrorObj.type : null,
+      stripeErrorCode: stripeErrorObj && stripeErrorObj.code ? stripeErrorObj.code : null,
+      stripeErrorMessage: stripeErrorObj && stripeErrorObj.message ? stripeErrorObj.message : null,
+      keyDiagnostics,
+      stripeErrorPayload: stripeData,
+    });
+
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Unable to start identity verification at this time.",
+        code: "identity_session_create_failed",
+        requestId,
+        debug: {
+          endpointReached: true,
+          stripeStatus: stripeRes.status,
+          stripeRequestId,
+          stripeError: {
+            type: stripeErrorObj && stripeErrorObj.type ? stripeErrorObj.type : null,
+            code: stripeErrorObj && stripeErrorObj.code ? stripeErrorObj.code : null,
+            message: stripeErrorObj && stripeErrorObj.message ? stripeErrorObj.message : null,
+            param: stripeErrorObj && stripeErrorObj.param ? stripeErrorObj.param : null,
+            doc_url: stripeErrorObj && stripeErrorObj.doc_url ? stripeErrorObj.doc_url : null,
+          },
+          keyDiagnostics,
+          stripeErrorPayload: stripeData,
+        },
+      },
+      stripeRes.status >= 400 && stripeRes.status < 600 ? stripeRes.status : 500
+    );
+  }
+
+  console.log({
+    event: "stripe_identity_request_success",
+    requestId,
+    stripeStatus: stripeRes.status,
+    stripeRequestId,
+    hasVerificationUrl: Boolean(stripeData && stripeData.url),
+    keyDiagnostics,
+  });
+
   return jsonResponse({
+    ok: true,
     url: stripeData.url,
     requestId: requestId,
   });
@@ -945,18 +1187,44 @@ async function handleCreatePaymentSession(request, env) {
     params.set("customer_email", guestEmail);
   }
 
+  const stripePaymentKey =
+    typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
+  if (!stripePaymentKey) {
+    return jsonResponse(
+      {
+        error: "Unable to start checkout at this time.",
+        code: "payment_missing_api_key",
+      },
+      500
+    );
+  }
+
+  const paymentKeyKind = detectStripeKeyKind(stripePaymentKey);
+  if (paymentKeyKind.startsWith("publishable_")) {
+    return jsonResponse(
+      {
+        error: "Unable to start checkout at this time.",
+        code: "payment_invalid_key_type",
+      },
+      500
+    );
+  }
+
   const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      Authorization: `Bearer ${stripePaymentKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params.toString(),
   });
 
-  const stripeData = await stripeRes.json();
+  const stripeData = await parseStripeResponseBody(stripeRes);
   if (!stripeRes.ok) {
-    return jsonResponse({ error: stripeData.error?.message || "Stripe error" }, 500);
+    return jsonResponse(
+      { error: extractStripeErrorMessage(stripeData, "Stripe Checkout error") },
+      500
+    );
   }
 
   return jsonResponse({
