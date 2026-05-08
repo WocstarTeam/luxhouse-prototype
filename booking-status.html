@@ -144,6 +144,7 @@
       const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
       const POLL_INTERVAL_MS = 2500;
       const REQUEST_TIMEOUT_MS = 10000;
+      const AUTO_REDIRECT_DELAY_MS = 800;
       const PENDING_REVIEW_MESSAGE =
         "Thank you for submitting your documents. Our team is reviewing your verification and will get back to you promptly.";
       const STATUS_MESSAGES = {
@@ -180,8 +181,9 @@
           ? latestBooking.requestId
           : "";
       const safeRequestId = (requestIdFromUrl || requestIdFromStorage || "").trim();
+      let hasAutoRedirectedToBookingRequest = false;
 
-      paymentButton.addEventListener("click", function () {
+      function buildBookingRequestUrl() {
         const nextUrl = new URL("booking.html", window.location.href);
         if (safeRequestId) {
           nextUrl.searchParams.set("requestId", safeRequestId);
@@ -198,7 +200,11 @@
         if (latestBooking && latestBooking.guests) {
           nextUrl.searchParams.set("guests", String(latestBooking.guests));
         }
-        window.location.assign(nextUrl.toString());
+        return nextUrl;
+      }
+
+      paymentButton.addEventListener("click", function () {
+        window.location.assign(buildBookingRequestUrl().toString());
       });
 
       function setStatus(text, type) {
@@ -320,6 +326,13 @@
               status === "verified" ? "Request Booking" : "Proceed to Payment";
             paymentButton.style.display = "inline-block";
             stopPolling();
+            if (status === "verified" && !hasAutoRedirectedToBookingRequest) {
+              hasAutoRedirectedToBookingRequest = true;
+              setStatus("Verification confirmed. Redirecting to your booking request...", "approved");
+              setTimeout(function () {
+                window.location.assign(buildBookingRequestUrl().toString());
+              }, AUTO_REDIRECT_DELAY_MS);
+            }
             return;
           }
 
