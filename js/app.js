@@ -11,11 +11,6 @@ const FEATURE_FLAGS = Object.freeze({
 });
 const PINE_COMING_SOON_MESSAGE =
   "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
-const IDENTITY_STATUS_POLL_INTERVAL_MS = 2500;
-const IDENTITY_STATUS_MAX_POLLS = 96;
-const IDENTITY_VERIFIED_REDIRECT_DELAY_MS = 2200;
-const IDENTITY_VERIFIED_REDIRECT_MESSAGE =
-  "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.";
 
 let bookingModalController = null;
 
@@ -302,30 +297,6 @@ async function createVerificationSession(payload) {
     }
     throw error;
   }
-}
-
-async function fetchBookingStatus(requestId) {
-  const response = await fetch(
-    `${API_BASE_URL}/booking-status?requestId=${encodeURIComponent(requestId)}`,
-    {
-      method: "GET",
-      headers: { Accept: "application/json" }
-    }
-  );
-
-  let data = {};
-  try {
-    data = await response.json();
-  } catch (_) {
-    data = {};
-  }
-
-  if (!response.ok) {
-    const message = data.error || `Status request failed (${response.status})`;
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 function persistLatestBooking(booking) {
@@ -1181,12 +1152,6 @@ function initBookingModal() {
     const requestId = `LUX-${Date.now()}`;
     const bookingStatusUrl = new URL("booking-status.html", window.location.href);
     bookingStatusUrl.searchParams.set("requestId", requestId);
-    const bookingRequestUrl = new URL("booking.html", window.location.href);
-    bookingRequestUrl.searchParams.set("requestId", requestId);
-    bookingRequestUrl.searchParams.set("destination", modalData.destination);
-    bookingRequestUrl.searchParams.set("checkin", modalData.checkin);
-    bookingRequestUrl.searchParams.set("checkout", modalData.checkout);
-    bookingRequestUrl.searchParams.set("guests", String(modalData.guests));
 
     let verificationWindow = null;
     try {
@@ -1208,81 +1173,6 @@ function initBookingModal() {
       } catch (_) {
         // Ignore cross-window document access issues.
       }
-    }
-
-    function closeVerificationWindow() {
-      if (!canUseVerificationWindow || !verificationWindow || verificationWindow.closed) {
-        return;
-      }
-      try {
-        verificationWindow.close();
-      } catch (_) {
-        // Ignore close-window errors.
-      }
-    }
-
-    let identityRedirectStarted = false;
-    function completeIdentityStepAndRedirect() {
-      if (identityRedirectStarted) {
-        return;
-      }
-      identityRedirectStarted = true;
-      closeVerificationWindow();
-      setStatusMessage(statusEl, IDENTITY_VERIFIED_REDIRECT_MESSAGE, "success");
-      window.setTimeout(() => {
-        window.location.assign(bookingRequestUrl.toString());
-      }, IDENTITY_VERIFIED_REDIRECT_DELAY_MS);
-    }
-
-    function waitForVerificationAndRedirect(pollCount = 0) {
-      window.setTimeout(async () => {
-        try {
-          const data = await fetchBookingStatus(requestId);
-          const status = String(data.status || "").trim().toLowerCase();
-
-          if (status === "verified" || status === "approved") {
-            completeIdentityStepAndRedirect();
-            return;
-          }
-
-          if (status === "requires_input" || status === "rejected") {
-            closeVerificationWindow();
-            setStatusMessage(
-              statusEl,
-              "We could not confirm your identity automatically. Please try verification again.",
-              "error"
-            );
-            continueBtn.disabled = false;
-            if (checkAvailabilityBtn) {
-              checkAvailabilityBtn.disabled = false;
-            }
-            return;
-          }
-
-          if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
-            setStatusMessage(
-              statusEl,
-              "Stripe has not confirmed this identity yet. We will keep the booking locked until verification is approved.",
-              ""
-            );
-            window.location.assign(bookingStatusUrl.toString());
-            return;
-          }
-
-          setStatusMessage(
-            statusEl,
-            "Stripe is reviewing your identity details. This page will continue automatically once confirmed.",
-            ""
-          );
-          waitForVerificationAndRedirect(pollCount + 1);
-        } catch (error) {
-          if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
-            window.location.assign(bookingStatusUrl.toString());
-            return;
-          }
-          waitForVerificationAndRedirect(pollCount + 1);
-        }
-      }, IDENTITY_STATUS_POLL_INTERVAL_MS);
     }
 
     try {
@@ -1315,12 +1205,7 @@ function initBookingModal() {
       if (verificationData.url) {
         if (canUseVerificationWindow) {
           verificationWindow.location.replace(verificationData.url);
-          setStatusMessage(
-            statusEl,
-            "Complete Stripe identity verification in the opened window. This page will continue automatically.",
-            "success"
-          );
-          waitForVerificationAndRedirect();
+          window.location.assign(bookingStatusUrl.toString());
           return;
         }
 
@@ -1353,7 +1238,13 @@ function initBookingModal() {
         userMessage,
         "error"
       );
-      closeVerificationWindow();
+      if (canUseVerificationWindow && verificationWindow && !verificationWindow.closed) {
+        try {
+          verificationWindow.close();
+        } catch (_) {
+          // Ignore close-window errors.
+        }
+      }
       persistLatestBooking({
         requestId,
         ...modalData,
@@ -1728,6 +1619,7 @@ function initBookingSummaryPage() {
     params.get("requestId") ||
     latest.requestId ||
     `LUX-${Date.now()}`;
+  let identityAccessConfirmed = false;
 
   const checkin = params.get("checkin") || latest.checkin || "-";
   const checkout = params.get("checkout") || latest.checkout || "-";
@@ -1769,8 +1661,66 @@ function initBookingSummaryPage() {
     return;
   }
 
+  function buildVerificationStatusUrl() {
+    const statusUrl = new URL("booking-status.html", window.location.href);
+    statusUrl.searchParams.set("requestId", requestId);
+    if (normalizedDestination) {
+      statusUrl.searchParams.set("destination", normalizedDestination);
+    }
+    if (checkin && checkin !== "-") {
+      statusUrl.searchParams.set("checkin", checkin);
+    }
+    if (checkout && checkout !== "-") {
+      statusUrl.searchParams.set("checkout", checkout);
+    }
+    if (guests && guests !== "-") {
+      statusUrl.searchParams.set("guests", String(guests));
+    }
+    return statusUrl;
+  }
+
+  async function confirmIdentityAccess() {
+    submitRequestBtn.disabled = true;
+    setRequestStatus("Confirming identity verification before booking...", "");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/booking-status?requestId=${encodeURIComponent(requestId)}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" }
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      const status = String(data.status || "").trim().toLowerCase();
+      if (response.ok && (status === "verified" || status === "approved")) {
+        identityAccessConfirmed = true;
+        submitRequestBtn.disabled = false;
+        setRequestStatus("", "");
+        return;
+      }
+    } catch (error) {
+      console.error("Booking page identity gate failed:", error);
+    }
+
+    setRequestStatus(
+      "Identity verification is not confirmed yet. Returning to booking status.",
+      "error"
+    );
+    window.setTimeout(() => {
+      window.location.replace(buildVerificationStatusUrl().toString());
+    }, 600);
+  }
+
+  confirmIdentityAccess();
+
   requestForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!identityAccessConfirmed) {
+      setRequestStatus("Identity verification must be confirmed before booking.", "error");
+      return;
+    }
 
     const guestName = nameInput.value.trim();
     const guestEmail = emailInput.value.trim();
