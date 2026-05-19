@@ -1597,6 +1597,7 @@ function initBookingSummaryPage() {
   const notesInput = document.getElementById("bookingGuestNotes");
   const submitRequestBtn = document.getElementById("submitBookingRequestBtn");
   const requestStatusEl = document.getElementById("bookingRequestStatus");
+  const identityStatusEl = document.getElementById("bookingIdentityStatus");
 
   if (!destinationEl || !checkinEl || !checkoutEl || !guestsEl) {
     return;
@@ -1657,6 +1658,20 @@ function initBookingSummaryPage() {
     }
   }
 
+  function setIdentityStatus(message, type) {
+    if (!identityStatusEl) {
+      return;
+    }
+    identityStatusEl.textContent = message || "";
+    identityStatusEl.classList.remove("is-confirmed", "is-error");
+    if (type === "success") {
+      identityStatusEl.classList.add("is-confirmed");
+    }
+    if (type === "error") {
+      identityStatusEl.classList.add("is-error");
+    }
+  }
+
   if (!requestForm || !nameInput || !emailInput || !phoneInput || !submitRequestBtn) {
     return;
   }
@@ -1681,7 +1696,8 @@ function initBookingSummaryPage() {
 
   async function confirmIdentityAccess() {
     submitRequestBtn.disabled = true;
-    setRequestStatus("Confirming identity verification before booking...", "");
+    setIdentityStatus("Confirming identity verification before booking...", "");
+    setRequestStatus("", "");
 
     try {
       const response = await fetch(
@@ -1696,6 +1712,7 @@ function initBookingSummaryPage() {
       if (response.ok && (status === "verified" || status === "approved")) {
         identityAccessConfirmed = true;
         submitRequestBtn.disabled = false;
+        setIdentityStatus("Identity verified. You can now request your booking.", "success");
         setRequestStatus("", "");
         return;
       }
@@ -1703,7 +1720,7 @@ function initBookingSummaryPage() {
       console.error("Booking page identity gate failed:", error);
     }
 
-    setRequestStatus(
+    setIdentityStatus(
       "Identity verification is not confirmed yet. Returning to booking status.",
       "error"
     );

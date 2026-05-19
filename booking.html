@@ -46,6 +46,29 @@
       font-size: 0.93rem;
       color: #4b5563;
     }
+
+    .lux-booking-identity-status {
+      margin: 12px 0 0;
+      border: 1px solid #d3d6dd;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      color: #4b5563;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .lux-booking-identity-status.is-confirmed {
+      border-color: #86c69a;
+      background: #f0fff4;
+      color: #12652c;
+    }
+
+    .lux-booking-identity-status.is-error {
+      border-color: #f3a0a0;
+      background: #fff3f3;
+      color: #b91c1c;
+    }
   </style>
 </head>
 <body class="lux-booking-page">
@@ -85,6 +108,7 @@
           <p class="lux-booking-step-label">Step 3 of 3</p>
           <h2>Request Booking</h2>
           <p>Complete your contact details and continue to Stripe to finalize payment.</p>
+          <p id="bookingIdentityStatus" class="lux-booking-identity-status" aria-live="polite">Confirming identity verification...</p>
 
           <form id="bookingRequestForm" class="lux-booking-request-form">
             <label>
@@ -103,7 +127,7 @@
               Notes (Optional)
               <textarea id="bookingGuestNotes" name="guestNotes" placeholder="Arrival notes, special requests, or anything we should know."></textarea>
             </label>
-            <button type="submit" id="submitBookingRequestBtn" class="lux-booking-primary">Submit Request &amp; Proceed to Payment</button>
+            <button type="submit" id="submitBookingRequestBtn" class="lux-booking-primary" disabled>Submit Request &amp; Proceed to Payment</button>
             <p id="bookingRequestStatus" class="lux-booking-request-status" aria-live="polite"></p>
           </form>
         </aside>
@@ -111,6 +135,6 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260519-6"></script>
+  <script src="js/app.js?v=20260519-7"></script>
 </body>
 </html>
