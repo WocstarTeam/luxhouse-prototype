@@ -783,13 +783,22 @@ function initBookingModal() {
     const nightlyRate = NIGHTLY_RATES[destination] || 0;
 
     let addonsTotal = 0;
+    const addons = [];
     const activeAddonGroup = stepTwoEl.querySelector(
       `.addons-group[data-property="${destination}"]`
     );
     if (activeAddonGroup) {
       const selected = activeAddonGroup.querySelectorAll(".addon-checkbox:checked");
       selected.forEach((checkbox) => {
-        addonsTotal += Number(checkbox.getAttribute("data-price") || 0);
+        const price = Number(checkbox.getAttribute("data-price") || 0);
+        const label = checkbox.closest("label");
+        const labelText = label ? label.textContent : "";
+        const name = labelText
+          .replace(/\(\s*\$?[\d,]+(?:\.\d{2})?\s*\)/g, "")
+          .replace(/\s+/g, " ")
+          .trim() || "Selected add-on";
+        addonsTotal += price;
+        addons.push({ name, price });
       });
     }
 
@@ -802,6 +811,7 @@ function initBookingModal() {
       guests,
       nights,
       nightlyRate,
+      addons,
       addonsTotal,
       total
     };
@@ -1185,6 +1195,7 @@ function initBookingModal() {
         guests: modalData.guests,
         nights: modalData.nights,
         nightlyRate: modalData.nightlyRate,
+        addons: modalData.addons,
         addonsTotal: modalData.addonsTotal,
         total: modalData.total,
         createdAt: new Date().toISOString()
@@ -1197,6 +1208,9 @@ function initBookingModal() {
         checkout: modalData.checkout,
         destination: modalData.destination,
         guests: modalData.guests,
+        nights: modalData.nights,
+        nightlyRate: modalData.nightlyRate,
+        addons: modalData.addons,
         addonsTotal: modalData.addonsTotal,
         total: modalData.total,
         returnUrl: new URL("booking-status.html", window.location.href).toString()
@@ -1754,7 +1768,7 @@ function initBookingSummaryPage() {
     }
 
     submitRequestBtn.disabled = true;
-    setRequestStatus("Submitting your booking request and preparing secure payment...", "");
+    setRequestStatus("Submitting your booking request...", "");
 
     const payload = {
       requestId,
@@ -1763,6 +1777,10 @@ function initBookingSummaryPage() {
       checkin,
       checkout,
       guests: coerceGuests(guests),
+      nights: Number(latest.nights) || 0,
+      nightlyRate: Number(latest.nightlyRate) || 0,
+      addons: Array.isArray(latest.addons) ? latest.addons : [],
+      addonsTotal: Number(latest.addonsTotal) || 0,
       total: Number(latest.total) || 0,
       guestName,
       guestEmail,
@@ -1780,20 +1798,29 @@ function initBookingSummaryPage() {
         updatedAt: new Date().toISOString(),
       });
 
-      const paymentData = await postJson("/create-payment-session", payload);
-      if (paymentData && paymentData.url) {
-        setRequestStatus("Redirecting to Stripe payment...", "success");
-        window.location.assign(paymentData.url);
+      const requestData = await postJson("/submit-booking-request", payload);
+      if (requestData && requestData.ok) {
+        persistLatestBooking({
+          ...latest,
+          ...payload,
+          requestId,
+          destination: normalizedDestination || latest.destination || "",
+          destinationLabel,
+          bookingRequestStatus: "requested",
+          updatedAt: new Date().toISOString(),
+        });
+        setRequestStatus("Booking request submitted. Our team will follow up shortly.", "success");
+        submitRequestBtn.textContent = "Request Submitted";
         return;
       }
 
-      throw new Error("Payment session was created, but no redirect URL was returned.");
+      throw new Error("Booking request could not be confirmed.");
     } catch (error) {
       console.error("Booking request submission failed:", error);
       setRequestStatus(
         error && error.message
           ? error.message
-          : "We could not start payment right now. Please try again.",
+          : "We could not submit your booking request right now. Please try again.",
         "error"
       );
       submitRequestBtn.disabled = false;

@@ -406,6 +406,554 @@ function getStripeSecretKey(env) {
   return typeof env.STRIPE_SECRET_KEY === "string" ? env.STRIPE_SECRET_KEY.trim() : "";
 }
 
+function getBookingRequestRecipient(env) {
+  const candidates = [
+    env.BOOKING_REQUEST_RECIPIENT,
+    env.BOOKING_EMAIL_TO,
+    env.EMAIL_TO,
+  ];
+  for (const candidate of candidates) {
+    const value = typeof candidate === "string" ? candidate.trim() : "";
+    if (value) {
+      return value;
+    }
+  }
+  return "info@wocstar.com";
+}
+
+function getBookingEmailSender(env) {
+  const candidates = [
+    env.BOOKING_EMAIL_FROM,
+    env.EMAIL_FROM,
+    env.RESEND_FROM_EMAIL,
+  ];
+  for (const candidate of candidates) {
+    const value = typeof candidate === "string" ? candidate.trim() : "";
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeEmailLine(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function formatMoney(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) {
+    return "$0";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+  }).format(amount);
+}
+
+function toFiniteNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeBookingAddons(rawAddons) {
+  if (typeof rawAddons === "string") {
+    const trimmed = rawAddons.trim();
+    if (!trimmed) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      return normalizeBookingAddons(parsed);
+    } catch {
+      return [{ name: trimmed, price: 0 }];
+    }
+  }
+
+  if (!Array.isArray(rawAddons)) {
+    return [];
+  }
+
+  const normalized = [];
+  for (const item of rawAddons) {
+    if (typeof item === "string") {
+      const name = normalizeEmailLine(item);
+      if (name) {
+        normalized.push({ name, price: 0 });
+      }
+      continue;
+    }
+
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const name = normalizeEmailLine(item.name || item.label || item.title || "Selected add-on");
+    if (!name) {
+      continue;
+    }
+
+    normalized.push({
+      name,
+      price: toFiniteNumber(item.price ?? item.amount ?? item.total, 0),
+    });
+  }
+
+  return normalized;
+}
+
+function normalizeStripeIdReference(value) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  if (value && typeof value === "object" && typeof value.id === "string") {
+    return value.id.trim();
+  }
+  return "";
+}
+
+function getVerificationReportIdFromStripeData(stripeData) {
+  if (!stripeData || typeof stripeData !== "object") {
+    return "";
+  }
+  return normalizeStripeIdReference(stripeData.last_verification_report);
+}
+
+async function stripeJsonRequest(env, path, options = {}) {
+  const stripeSecretKey = getStripeSecretKey(env);
+  const stripeKeyKind = detectStripeKeyKind(stripeSecretKey);
+  if (!stripeSecretKey || stripeKeyKind.startsWith("publishable_")) {
+    return {
+      ok: false,
+      status: 500,
+      data: { error: { message: "Stripe secret key is not configured for server-side identity access." } },
+    };
+  }
+
+  const response = await fetch(`https://api.stripe.com${path}`, {
+    method: options.method || "GET",
+    headers: {
+      Authorization: `Bearer ${stripeSecretKey}`,
+      ...(options.body ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+    },
+    body: options.body || undefined,
+  });
+  const data = await parseStripeResponseBody(response);
+  return {
+    ok: response.ok,
+    status: response.status,
+    data,
+    requestId: response.headers.get("request-id") || response.headers.get("Request-Id") || null,
+  };
+}
+
+async function retrieveStripeVerificationSession(env, sessionId) {
+  const id = String(sessionId || "").trim();
+  if (!id) {
+    return null;
+  }
+  const result = await stripeJsonRequest(
+    env,
+    `/v1/identity/verification_sessions/${encodeURIComponent(id)}`
+  );
+  if (!result.ok) {
+    console.error({
+      event: "stripe_identity_session_retrieve_failed",
+      stripeStatus: result.status,
+      stripeRequestId: result.requestId,
+      stripeVerificationSessionId: maskIdentifier(id),
+      stripeError: result.data && result.data.error ? result.data.error : null,
+    });
+    return null;
+  }
+  return result.data;
+}
+
+async function retrieveStripeVerificationReport(env, reportId) {
+  const id = String(reportId || "").trim();
+  if (!id) {
+    return null;
+  }
+  const result = await stripeJsonRequest(
+    env,
+    `/v1/identity/verification_reports/${encodeURIComponent(id)}`
+  );
+  if (!result.ok) {
+    console.error({
+      event: "stripe_identity_report_retrieve_failed",
+      stripeStatus: result.status,
+      stripeRequestId: result.requestId,
+      stripeVerificationReportId: maskIdentifier(id),
+      stripeError: result.data && result.data.error ? result.data.error : null,
+    });
+    return null;
+  }
+  return result.data;
+}
+
+function labelStripeIdentityFile(pathSegments) {
+  const path = pathSegments.join(".").toLowerCase();
+  if (path.includes("selfie")) {
+    return "Selfie photo";
+  }
+  if (path.includes("front")) {
+    return "ID front photo";
+  }
+  if (path.includes("back")) {
+    return "ID back photo";
+  }
+  if (path.includes("document")) {
+    return "ID document photo";
+  }
+  return "Stripe identity file";
+}
+
+function collectStripeFileReferences(value, pathSegments = [], refs = [], seen = new Set()) {
+  if (!value) {
+    return refs;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("file_") && !seen.has(trimmed)) {
+      seen.add(trimmed);
+      refs.push({
+        fileId: trimmed,
+        label: labelStripeIdentityFile(pathSegments),
+      });
+    }
+    return refs;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      collectStripeFileReferences(item, [...pathSegments, String(index)], refs, seen);
+    });
+    return refs;
+  }
+
+  if (typeof value === "object") {
+    for (const [key, nestedValue] of Object.entries(value)) {
+      collectStripeFileReferences(nestedValue, [...pathSegments, key], refs, seen);
+    }
+  }
+
+  return refs;
+}
+
+async function createStripeFileLink(env, fileId) {
+  const params = new URLSearchParams();
+  params.set("file", fileId);
+  params.set("expires_at", String(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60));
+
+  const result = await stripeJsonRequest(env, "/v1/file_links", {
+    method: "POST",
+    body: params.toString(),
+  });
+  if (!result.ok) {
+    console.error({
+      event: "stripe_file_link_create_failed",
+      stripeStatus: result.status,
+      stripeRequestId: result.requestId,
+      stripeFileId: maskIdentifier(fileId),
+      stripeError: result.data && result.data.error ? result.data.error : null,
+    });
+    return null;
+  }
+  return result.data;
+}
+
+async function collectIdentityArtifacts(env, booking) {
+  const artifacts = {
+    sessionId: getStoredStripeVerificationSessionId(booking),
+    reportId: normalizeStripeIdReference(booking && booking.stripeVerificationReportId),
+    status: normalizeEmailLine((booking && (booking.identityStatus || booking.status)) || "verified"),
+    links: [],
+  };
+
+  const session = artifacts.sessionId
+    ? await retrieveStripeVerificationSession(env, artifacts.sessionId)
+    : null;
+  if (session) {
+    artifacts.status = normalizeEmailLine(session.status || artifacts.status);
+    artifacts.reportId = artifacts.reportId || getVerificationReportIdFromStripeData(session);
+  }
+
+  const report = artifacts.reportId
+    ? await retrieveStripeVerificationReport(env, artifacts.reportId)
+    : null;
+  if (!report) {
+    return artifacts;
+  }
+
+  const fileRefs = collectStripeFileReferences(report).slice(0, 8);
+  for (const ref of fileRefs) {
+    const fileLink = await createStripeFileLink(env, ref.fileId);
+    if (!fileLink || typeof fileLink.url !== "string" || !fileLink.url) {
+      continue;
+    }
+    artifacts.links.push({
+      label: ref.label,
+      fileId: ref.fileId,
+      url: fileLink.url,
+      expiresAt: fileLink.expires_at || null,
+    });
+  }
+
+  return artifacts;
+}
+
+function buildBookingRequestEmail(booking, artifacts) {
+  const addons = normalizeBookingAddons(booking.addons);
+  const nights =
+    toFiniteNumber(booking.nights, 0) ||
+    toFiniteNumber(calculateStayNights(booking.checkin, booking.checkout), 0);
+  const nightlyRate = toFiniteNumber(booking.nightlyRate, 0);
+  const staySubtotal = nights > 0 && nightlyRate > 0 ? nights * nightlyRate : 0;
+  const addonsTotal = addons.reduce((sum, addon) => sum + toFiniteNumber(addon.price, 0), 0);
+  const recordedAddonsTotal = toFiniteNumber(booking.addonsTotal, addonsTotal);
+  const total =
+    toFiniteNumber(booking.total, 0) ||
+    staySubtotal + (recordedAddonsTotal || addonsTotal);
+  const guestName = normalizeEmailLine(booking.guestName) || "Guest";
+  const destinationLabel =
+    normalizeEmailLine(booking.destinationLabel || booking.destination) || "LuxHouse Booking";
+  const requestId = normalizeEmailLine(booking.requestId) || "N/A";
+  const identityStatus = normalizeEmailLine(
+    artifacts.status || booking.identityStatus || booking.status || "verified"
+  );
+  const subject = `New verified booking request: ${guestName} - ${destinationLabel}`;
+
+  const detailRows = [
+    ["Request ID", requestId],
+    ["Property", destinationLabel],
+    ["Check-in", booking.checkin || "N/A"],
+    ["Check-out", booking.checkout || "N/A"],
+    ["Nights", nights || "N/A"],
+    ["Guests", booking.guests || "N/A"],
+    ["Guest name", guestName],
+    ["Guest email", booking.guestEmail || "N/A"],
+    ["Guest phone", booking.guestPhone || "N/A"],
+    ["Stripe identity status", identityStatus || "verified"],
+    ["Stripe session ID", artifacts.sessionId || "N/A"],
+    ["Stripe report ID", artifacts.reportId || "N/A"],
+  ];
+
+  const invoiceRows = [
+    {
+      label: nights && nightlyRate
+        ? `${nights} night${nights === 1 ? "" : "s"} at ${formatMoney(nightlyRate)}`
+        : "Stay subtotal",
+      amount: staySubtotal,
+    },
+    ...addons.map((addon) => ({
+      label: addon.name,
+      amount: toFiniteNumber(addon.price, 0),
+    })),
+  ];
+
+  if (addons.length === 0) {
+    invoiceRows.push({
+      label: "Add-ons",
+      amount: 0,
+      note: "No add-ons selected",
+    });
+  } else if (recordedAddonsTotal && recordedAddonsTotal !== addonsTotal) {
+    invoiceRows.push({
+      label: "Add-ons total",
+      amount: recordedAddonsTotal,
+    });
+  }
+
+  const identityLinksHtml = artifacts.links.length
+    ? artifacts.links
+        .map(
+          (link) => `
+            <tr>
+              <td style="padding:10px 12px;border-bottom:1px solid #eadfd4;">${escapeHtml(link.label)}</td>
+              <td style="padding:10px 12px;border-bottom:1px solid #eadfd4;">
+                <a href="${escapeHtml(link.url)}" style="color:#6b3f1d;font-weight:700;">Open secure Stripe file</a>
+                <div style="font-size:12px;color:#786f68;">${escapeHtml(link.fileId)}</div>
+              </td>
+            </tr>`
+        )
+        .join("")
+    : `
+            <tr>
+              <td colspan="2" style="padding:10px 12px;border-bottom:1px solid #eadfd4;color:#786f68;">
+                Stripe did not return downloadable document/selfie file links for this request.
+              </td>
+            </tr>`;
+
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;background:#f7f2ec;color:#1f160f;font-family:Arial,Helvetica,sans-serif;">
+    <div style="max-width:760px;margin:0 auto;padding:28px 18px;">
+      <div style="background:#fff;border:1px solid #dec7af;border-radius:14px;overflow:hidden;">
+        <div style="padding:24px 28px;background:#21150e;color:#fff;">
+          <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#d7b994;">The LuxHouse Collection</div>
+          <h1 style="margin:8px 0 0;font-size:26px;line-height:1.2;">New Verified Booking Request</h1>
+          <p style="margin:8px 0 0;color:#eadfd4;">${escapeHtml(destinationLabel)} | ${escapeHtml(booking.checkin || "N/A")} to ${escapeHtml(booking.checkout || "N/A")}</p>
+        </div>
+        <div style="padding:24px 28px;">
+          <h2 style="font-size:18px;margin:0 0 12px;">Booking Details</h2>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #eadfd4;">
+            ${detailRows
+              .map(
+                ([label, value]) => `
+                  <tr>
+                    <th align="left" style="width:38%;padding:10px 12px;background:#fbf7f1;border-bottom:1px solid #eadfd4;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;color:#6b3f1d;">${escapeHtml(label)}</th>
+                    <td style="padding:10px 12px;border-bottom:1px solid #eadfd4;">${escapeHtml(value)}</td>
+                  </tr>`
+              )
+              .join("")}
+          </table>
+
+          <h2 style="font-size:18px;margin:24px 0 12px;">Invoice Summary</h2>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #eadfd4;">
+            <thead>
+              <tr>
+                <th align="left" style="padding:10px 12px;background:#fbf7f1;border-bottom:1px solid #eadfd4;color:#6b3f1d;">Item</th>
+                <th align="right" style="padding:10px 12px;background:#fbf7f1;border-bottom:1px solid #eadfd4;color:#6b3f1d;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoiceRows
+                .map(
+                  (row) => `
+                    <tr>
+                      <td style="padding:10px 12px;border-bottom:1px solid #eadfd4;">${escapeHtml(row.note || row.label)}</td>
+                      <td align="right" style="padding:10px 12px;border-bottom:1px solid #eadfd4;">${escapeHtml(formatMoney(row.amount))}</td>
+                    </tr>`
+                )
+                .join("")}
+              <tr>
+                <td style="padding:12px;font-weight:700;background:#fbf7f1;">Total</td>
+                <td align="right" style="padding:12px;font-weight:700;background:#fbf7f1;">${escapeHtml(formatMoney(total))}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2 style="font-size:18px;margin:24px 0 12px;">Stripe Identity Files</h2>
+          <p style="margin:0 0 10px;color:#5c5149;">These links are generated from Stripe Identity and expire in 7 days.</p>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #eadfd4;">
+            ${identityLinksHtml}
+          </table>
+
+          <h2 style="font-size:18px;margin:24px 0 12px;">Guest Notes</h2>
+          <div style="white-space:pre-wrap;border:1px solid #eadfd4;background:#fbf7f1;padding:12px;border-radius:10px;">${escapeHtml(booking.notes || "No notes provided.")}</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+  const addonLines = addons.length
+    ? addons.map((addon) => `- ${addon.name}: ${formatMoney(addon.price)}`).join("\n")
+    : "- No add-ons selected";
+  const identityFileLines = artifacts.links.length
+    ? artifacts.links.map((link) => `- ${link.label}: ${link.url}`).join("\n")
+    : "- No downloadable Stripe identity file links were returned.";
+  const text = [
+    "New Verified Booking Request",
+    "",
+    ...detailRows.map(([label, value]) => `${label}: ${value}`),
+    "",
+    "Invoice Summary",
+    `Stay subtotal: ${formatMoney(staySubtotal)}`,
+    "Add-ons:",
+    addonLines,
+    `Total: ${formatMoney(total)}`,
+    "",
+    "Stripe Identity Files",
+    identityFileLines,
+    "",
+    "Guest Notes",
+    booking.notes || "No notes provided.",
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+async function sendBookingRequestEmail(env, email, replyTo) {
+  const apiKey = typeof env.RESEND_API_KEY === "string" ? env.RESEND_API_KEY.trim() : "";
+  if (!apiKey) {
+    return {
+      ok: false,
+      status: 500,
+      message: "Booking request email is not configured. Add RESEND_API_KEY to the Cloudflare Worker.",
+      code: "email_missing_api_key",
+    };
+  }
+
+  const from = getBookingEmailSender(env);
+  if (!from) {
+    return {
+      ok: false,
+      status: 500,
+      message: "Booking request email sender is not configured. Add BOOKING_EMAIL_FROM or EMAIL_FROM to the Cloudflare Worker.",
+      code: "email_missing_sender",
+    };
+  }
+
+  const payload = {
+    from,
+    to: [getBookingRequestRecipient(env)],
+    subject: email.subject,
+    html: email.html,
+    text: email.text,
+  };
+  if (replyTo) {
+    payload.reply_to = replyTo;
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        message:
+          data && data.message
+            ? data.message
+            : "Booking request email could not be sent.",
+        code: "email_send_failed",
+        data,
+      };
+    }
+    return {
+      ok: true,
+      status: response.status,
+      data,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 502,
+      message: error instanceof Error ? error.message : "Booking request email could not be sent.",
+      code: "email_network_error",
+    };
+  }
+}
+
 function parseStripeSignatureHeader(signatureHeader) {
   const parsed = {
     timestamp: NaN,
@@ -734,11 +1282,14 @@ async function refreshBookingIdentityStatusFromStripe(env, requestId, booking) {
 
     const stripeStatus = typeof stripeData.status === "string" ? stripeData.status.trim() : "";
     const mappedStatus = mapStripeIdentityStatus(stripeStatus, stripeData);
+    const stripeVerificationReportId = getVerificationReportIdFromStripeData(stripeData);
     if (mappedStatus === "pending_verification") {
       return {
         ...booking,
         identityStatus: stripeStatus || booking.identityStatus || "pending_verification",
         stripeVerificationSessionId: verificationSessionId,
+        stripeVerificationReportId:
+          stripeVerificationReportId || booking.stripeVerificationReportId || null,
       };
     }
 
@@ -748,6 +1299,8 @@ async function refreshBookingIdentityStatusFromStripe(env, requestId, booking) {
       identityStatus: mappedStatus,
       identityUpdatedAt: now,
       stripeVerificationSessionId: verificationSessionId,
+      stripeVerificationReportId:
+        stripeVerificationReportId || booking.stripeVerificationReportId || null,
     };
     if (mappedStatus === "verified") {
       patch.identityVerifiedAt = booking.identityVerifiedAt || now;
@@ -1262,6 +1815,7 @@ async function handleCreateVerificationSession(request, env) {
   const bodyReturnUrl = typeof body.returnUrl === "string" ? body.returnUrl.trim() : "";
   const bodyGuestEmail = typeof body.guestEmail === "string" ? body.guestEmail.trim() : "";
   const bodyGuestPhone = typeof body.guestPhone === "string" ? body.guestPhone.trim() : "";
+  const bodyAddons = normalizeBookingAddons(body.addons);
 
   if (!bodyCheckin || !bodyCheckout) {
     return jsonResponse({ error: "checkin and checkout are required" }, 400);
@@ -1340,6 +1894,13 @@ async function handleCreateVerificationSession(request, env) {
     status: "pending_verification",
     checkin: bodyCheckin || existingMemory.checkin || null,
     checkout: bodyCheckout || existingMemory.checkout || null,
+    destination: normalizeAvailabilityDestination(destinationRaw) || destinationRaw || existingMemory.destination || null,
+    guests: Number.isFinite(Number(body.guests)) ? Number(body.guests) : existingMemory.guests || null,
+    nights: Number.isFinite(Number(body.nights)) ? Number(body.nights) : existingMemory.nights || null,
+    nightlyRate: Number.isFinite(Number(body.nightlyRate)) ? Number(body.nightlyRate) : existingMemory.nightlyRate || null,
+    addons: bodyAddons.length ? bodyAddons : normalizeBookingAddons(existingMemory.addons),
+    addonsTotal: Number.isFinite(Number(body.addonsTotal)) ? Number(body.addonsTotal) : existingMemory.addonsTotal || null,
+    total: Number.isFinite(Number(body.total)) ? Number(body.total) : existingMemory.total || null,
     updatedAt: Date.now(),
   };
 
@@ -1579,6 +2140,9 @@ async function handleCreateVerificationSession(request, env) {
     checkout: bodyCheckout || null,
     destination: normalizeAvailabilityDestination(destinationRaw) || destinationRaw || null,
     guests: Number.isFinite(Number(body.guests)) ? Number(body.guests) : null,
+    nights: Number.isFinite(Number(body.nights)) ? Number(body.nights) : null,
+    nightlyRate: Number.isFinite(Number(body.nightlyRate)) ? Number(body.nightlyRate) : null,
+    addons: bodyAddons,
     addonsTotal: Number.isFinite(Number(body.addonsTotal)) ? Number(body.addonsTotal) : null,
     total: Number.isFinite(Number(body.total)) ? Number(body.total) : null,
   });
@@ -1587,6 +2151,149 @@ async function handleCreateVerificationSession(request, env) {
     ok: true,
     url: stripeData.url,
     requestId: requestId,
+  });
+}
+
+async function handleSubmitBookingRequest(request, env) {
+  const body = await parseJsonBody(request);
+  const requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
+  if (!requestId) {
+    return jsonResponse({ error: "requestId is required" }, 400);
+  }
+
+  const destinationRaw = String(
+    body.destination || body.property || body.destinationLabel || ""
+  ).trim();
+  if (isTemporarilyUnavailableDestination(destinationRaw)) {
+    return jsonResponse({ error: PINE_COMING_SOON_MESSAGE }, 400);
+  }
+
+  const guestName = typeof body.guestName === "string" ? body.guestName.trim() : "";
+  const guestEmail = typeof body.guestEmail === "string" ? body.guestEmail.trim() : "";
+  const guestPhone = typeof body.guestPhone === "string" ? body.guestPhone.trim() : "";
+  const notes = typeof body.notes === "string" ? body.notes.trim() : "";
+  const checkin = typeof body.checkin === "string" ? body.checkin.trim() : "";
+  const checkout = typeof body.checkout === "string" ? body.checkout.trim() : "";
+
+  if (!guestName || !guestEmail || !guestPhone) {
+    return jsonResponse({ error: "Guest name, email, and phone are required." }, 400);
+  }
+  if (!checkin || !checkout) {
+    return jsonResponse({ error: "checkin and checkout are required" }, 400);
+  }
+  const requestStayError = getStayRangeError(checkin, checkout);
+  if (requestStayError) {
+    return jsonResponse({ error: requestStayError }, 400);
+  }
+
+  const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
+  let booking = {
+    ...existingKv,
+    ...existingMemory,
+  };
+  if (!Object.keys(booking).length) {
+    return jsonResponse(
+      {
+        error: "Booking request was not found. Please restart the verified booking flow.",
+        code: "booking_request_not_found",
+      },
+      404
+    );
+  }
+
+  booking = await refreshBookingIdentityStatusFromStripe(env, requestId, booking);
+  const identityStatus = String(booking.status || "").trim().toLowerCase();
+  if (identityStatus !== "verified" && identityStatus !== "approved") {
+    return jsonResponse(
+      {
+        error: "Identity verification must be confirmed before submitting this booking request.",
+        code: "booking_request_identity_required",
+        status: identityStatus || "pending_verification",
+      },
+      403
+    );
+  }
+
+  const addons = normalizeBookingAddons(
+    Array.isArray(body.addons) || typeof body.addons === "string" ? body.addons : booking.addons
+  );
+  const nights =
+    toFiniteNumber(body.nights, 0) ||
+    toFiniteNumber(booking.nights, 0) ||
+    toFiniteNumber(calculateStayNights(checkin, checkout), 0);
+  const nightlyRate = toFiniteNumber(body.nightlyRate, toFiniteNumber(booking.nightlyRate, 0));
+  const addonsTotal =
+    toFiniteNumber(body.addonsTotal, NaN) ||
+    addons.reduce((sum, addon) => sum + toFiniteNumber(addon.price, 0), 0);
+  const total =
+    toFiniteNumber(body.total, 0) ||
+    toFiniteNumber(booking.total, 0) ||
+    (nights > 0 && nightlyRate > 0 ? nights * nightlyRate : 0) + addonsTotal;
+  const destinationLabel =
+    typeof body.destinationLabel === "string" && body.destinationLabel.trim()
+      ? body.destinationLabel.trim()
+      : booking.destinationLabel || booking.destination || destinationRaw || "LuxHouse Booking";
+
+  const now = new Date().toISOString();
+  const updatedBooking = await persistBookingFromWebhook(env, requestId, {
+    status: identityStatus === "approved" ? "approved" : "verified",
+    identityStatus: booking.identityStatus || identityStatus,
+    bookingRequestStatus: "requested",
+    bookingRequestedAt: now,
+    guestName,
+    guestEmail,
+    guestPhone,
+    notes,
+    destination: normalizeAvailabilityDestination(destinationRaw) || booking.destination || destinationRaw || null,
+    destinationLabel,
+    checkin,
+    checkout,
+    guests: Number.isFinite(Number(body.guests)) ? Number(body.guests) : booking.guests || null,
+    nights,
+    nightlyRate,
+    addons,
+    addonsTotal,
+    total,
+  });
+
+  const artifacts = await collectIdentityArtifacts(env, updatedBooking || booking);
+  if (artifacts.reportId && !updatedBooking?.stripeVerificationReportId) {
+    await persistBookingFromWebhook(env, requestId, {
+      stripeVerificationReportId: artifacts.reportId,
+    });
+  }
+
+  const email = buildBookingRequestEmail(updatedBooking || booking, artifacts);
+  const emailResult = await sendBookingRequestEmail(env, email, guestEmail);
+  if (!emailResult.ok) {
+    console.error({
+      event: "booking_request_email_failed",
+      requestId,
+      emailStatus: emailResult.status,
+      emailCode: emailResult.code || null,
+      emailMessage: emailResult.message || null,
+    });
+    return jsonResponse(
+      {
+        error: emailResult.message || "Booking request email could not be sent.",
+        code: emailResult.code || "booking_email_failed",
+        requestId,
+        bookingStored: true,
+      },
+      emailResult.status >= 400 && emailResult.status < 600 ? emailResult.status : 500
+    );
+  }
+
+  await persistBookingFromWebhook(env, requestId, {
+    bookingRequestEmailSentAt: new Date().toISOString(),
+    bookingRequestEmailProviderId:
+      emailResult.data && typeof emailResult.data.id === "string" ? emailResult.data.id : null,
+  });
+
+  return jsonResponse({
+    ok: true,
+    requestId,
+    emailSent: true,
   });
 }
 
@@ -1864,6 +2571,7 @@ async function handleWebhook(request, env) {
       identityVerifiedAt: new Date().toISOString(),
       stripeVerificationSessionId:
         eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+      stripeVerificationReportId: getVerificationReportIdFromStripeData(eventDataObject),
       ...dedupPatch,
     });
   }
@@ -1900,6 +2608,7 @@ async function handleWebhook(request, env) {
         identityUpdatedAt: new Date().toISOString(),
         stripeVerificationSessionId:
           eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
+        stripeVerificationReportId: getVerificationReportIdFromStripeData(eventDataObject),
         ...dedupPatch,
       };
       if (hasVerificationError) {
@@ -1998,6 +2707,10 @@ export default {
 
     if (pathname === "/create-verification-session" && method === "POST") {
       return handleCreateVerificationSession(request, env);
+    }
+
+    if (pathname === "/submit-booking-request" && method === "POST") {
+      return handleSubmitBookingRequest(request, env);
     }
 
     if (pathname === "/create-payment-session" && method === "POST") {
