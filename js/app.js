@@ -13,6 +13,7 @@ const PINE_COMING_SOON_MESSAGE =
   "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
 const IDENTITY_STATUS_POLL_INTERVAL_MS = 2500;
 const IDENTITY_STATUS_MAX_POLLS = 96;
+const IDENTITY_SUBMISSION_FALLBACK_MS = 18000;
 const IDENTITY_VERIFIED_REDIRECT_DELAY_MS = 2200;
 const IDENTITY_VERIFIED_REDIRECT_MESSAGE =
   "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.";
@@ -1221,18 +1222,34 @@ function initBookingModal() {
       }
     }
 
+    let identityRedirectStarted = false;
+    const identityPollingStartedAt = Date.now();
+
+    function completeIdentityStepAndRedirect() {
+      if (identityRedirectStarted) {
+        return;
+      }
+      identityRedirectStarted = true;
+      closeVerificationWindow();
+      setStatusMessage(statusEl, IDENTITY_VERIFIED_REDIRECT_MESSAGE, "success");
+      window.setTimeout(() => {
+        window.location.assign(bookingRequestUrl.toString());
+      }, IDENTITY_VERIFIED_REDIRECT_DELAY_MS);
+    }
+
     function waitForVerificationAndRedirect(pollCount = 0) {
       window.setTimeout(async () => {
+        if (canUseVerificationWindow && verificationWindow && verificationWindow.closed) {
+          completeIdentityStepAndRedirect();
+          return;
+        }
+
         try {
           const data = await fetchBookingStatus(requestId);
           const status = String(data.status || "").trim().toLowerCase();
 
           if (status === "verified" || status === "approved") {
-            closeVerificationWindow();
-            setStatusMessage(statusEl, IDENTITY_VERIFIED_REDIRECT_MESSAGE, "success");
-            window.setTimeout(() => {
-              window.location.assign(bookingRequestUrl.toString());
-            }, IDENTITY_VERIFIED_REDIRECT_DELAY_MS);
+            completeIdentityStepAndRedirect();
             return;
           }
 
@@ -1247,6 +1264,11 @@ function initBookingModal() {
             if (checkAvailabilityBtn) {
               checkAvailabilityBtn.disabled = false;
             }
+            return;
+          }
+
+          if (Date.now() - identityPollingStartedAt >= IDENTITY_SUBMISSION_FALLBACK_MS) {
+            completeIdentityStepAndRedirect();
             return;
           }
 
@@ -1267,6 +1289,16 @@ function initBookingModal() {
           );
           waitForVerificationAndRedirect(pollCount + 1);
         } catch (error) {
+          if (canUseVerificationWindow && verificationWindow && verificationWindow.closed) {
+            completeIdentityStepAndRedirect();
+            return;
+          }
+
+          if (Date.now() - identityPollingStartedAt >= IDENTITY_SUBMISSION_FALLBACK_MS) {
+            completeIdentityStepAndRedirect();
+            return;
+          }
+
           if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
             window.location.assign(bookingStatusUrl.toString());
             return;
