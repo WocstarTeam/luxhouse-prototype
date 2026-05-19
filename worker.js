@@ -433,7 +433,7 @@ function getBookingEmailSender(env) {
       return value;
     }
   }
-  return "";
+  return "booking@mail.wocstar.com";
 }
 
 function escapeHtml(value) {
@@ -447,6 +447,19 @@ function escapeHtml(value) {
 
 function normalizeEmailLine(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function formatEmailTimestamp(value) {
+  const raw = String(value || "").trim();
+  const date = raw ? new Date(raw) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return raw || new Date().toISOString();
+  }
+  return date.toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/New_York",
+  });
 }
 
 function formatMoney(value) {
@@ -729,6 +742,9 @@ function buildBookingRequestEmail(booking, artifacts) {
   const destinationLabel =
     normalizeEmailLine(booking.destinationLabel || booking.destination) || "LuxHouse Booking";
   const requestId = normalizeEmailLine(booking.requestId) || "N/A";
+  const requestTimestamp = formatEmailTimestamp(
+    booking.bookingRequestedAt || booking.createdAt || booking.updatedAt || new Date().toISOString()
+  );
   const identityStatus = normalizeEmailLine(
     artifacts.status || booking.identityStatus || booking.status || "verified"
   );
@@ -745,6 +761,7 @@ function buildBookingRequestEmail(booking, artifacts) {
     ["Guest email", booking.guestEmail || "N/A"],
     ["Guest phone", booking.guestPhone || "N/A"],
     ["Stripe identity status", identityStatus || "verified"],
+    ["Request timestamp", requestTimestamp],
     ["Stripe session ID", artifacts.sessionId || "N/A"],
     ["Stripe report ID", artifacts.reportId || "N/A"],
   ];
@@ -804,6 +821,7 @@ function buildBookingRequestEmail(booking, artifacts) {
           <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#d7b994;">The LuxHouse Collection</div>
           <h1 style="margin:8px 0 0;font-size:26px;line-height:1.2;">New Verified Booking Request</h1>
           <p style="margin:8px 0 0;color:#eadfd4;">${escapeHtml(destinationLabel)} | ${escapeHtml(booking.checkin || "N/A")} to ${escapeHtml(booking.checkout || "N/A")}</p>
+          <p style="margin:6px 0 0;color:#d7b994;font-size:13px;">Requested ${escapeHtml(requestTimestamp)}</p>
         </div>
         <div style="padding:24px 28px;">
           <h2 style="font-size:18px;margin:0 0 12px;">Booking Details</h2>
@@ -888,6 +906,11 @@ function buildBookingRequestEmail(booking, artifacts) {
 async function sendBookingRequestEmail(env, email, replyTo) {
   const apiKey = typeof env.RESEND_API_KEY === "string" ? env.RESEND_API_KEY.trim() : "";
   if (!apiKey) {
+    console.error({
+      event: "resend_booking_email_missing_api_key",
+      recipient: getBookingRequestRecipient(env),
+      sender: getBookingEmailSender(env),
+    });
     return {
       ok: false,
       status: 500,
@@ -898,6 +921,10 @@ async function sendBookingRequestEmail(env, email, replyTo) {
 
   const from = getBookingEmailSender(env);
   if (!from) {
+    console.error({
+      event: "resend_booking_email_missing_sender",
+      recipient: getBookingRequestRecipient(env),
+    });
     return {
       ok: false,
       status: 500,
@@ -928,6 +955,13 @@ async function sendBookingRequestEmail(env, email, replyTo) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
+      console.error({
+        event: "resend_booking_email_api_error",
+        status: response.status,
+        recipient: payload.to,
+        sender: payload.from,
+        resendError: data,
+      });
       return {
         ok: false,
         status: response.status,
@@ -945,6 +979,12 @@ async function sendBookingRequestEmail(env, email, replyTo) {
       data,
     };
   } catch (error) {
+    console.error({
+      event: "resend_booking_email_network_error",
+      recipient: payload.to,
+      sender: payload.from,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return {
       ok: false,
       status: 502,
