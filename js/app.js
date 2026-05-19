@@ -11,6 +11,11 @@ const FEATURE_FLAGS = Object.freeze({
 });
 const PINE_COMING_SOON_MESSAGE =
   "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
+const IDENTITY_STATUS_POLL_INTERVAL_MS = 2500;
+const IDENTITY_STATUS_MAX_POLLS = 96;
+const IDENTITY_VERIFIED_REDIRECT_DELAY_MS = 2200;
+const IDENTITY_VERIFIED_REDIRECT_MESSAGE =
+  "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.";
 
 let bookingModalController = null;
 
@@ -297,6 +302,30 @@ async function createVerificationSession(payload) {
     }
     throw error;
   }
+}
+
+async function fetchBookingStatus(requestId) {
+  const response = await fetch(
+    `${API_BASE_URL}/booking-status?requestId=${encodeURIComponent(requestId)}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" }
+    }
+  );
+
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (_) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const message = data.error || `Status request failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  return data;
 }
 
 function persistLatestBooking(booking) {
@@ -1150,6 +1179,102 @@ function initBookingModal() {
     setStatusMessage(statusEl, "Creating your booking request...", "");
 
     const requestId = `LUX-${Date.now()}`;
+    const bookingStatusUrl = new URL("booking-status.html", window.location.href);
+    bookingStatusUrl.searchParams.set("requestId", requestId);
+    const bookingRequestUrl = new URL("booking.html", window.location.href);
+    bookingRequestUrl.searchParams.set("requestId", requestId);
+    bookingRequestUrl.searchParams.set("destination", modalData.destination);
+    bookingRequestUrl.searchParams.set("checkin", modalData.checkin);
+    bookingRequestUrl.searchParams.set("checkout", modalData.checkout);
+    bookingRequestUrl.searchParams.set("guests", String(modalData.guests));
+
+    let verificationWindow = null;
+    try {
+      verificationWindow = window.open("", "luxhouseIdentityVerification");
+    } catch (_) {
+      verificationWindow = null;
+    }
+
+    const canUseVerificationWindow =
+      Boolean(verificationWindow) && Boolean(!verificationWindow.closed);
+    if (canUseVerificationWindow) {
+      try {
+        verificationWindow.document.title = "Opening verification...";
+        verificationWindow.document.body.style.fontFamily = "system-ui, -apple-system, Segoe UI, sans-serif";
+        verificationWindow.document.body.style.margin = "0";
+        verificationWindow.document.body.style.padding = "18px";
+        verificationWindow.document.body.textContent = "Opening secure Stripe verification...";
+        verificationWindow.focus();
+      } catch (_) {
+        // Ignore cross-window document access issues.
+      }
+    }
+
+    function closeVerificationWindow() {
+      if (!canUseVerificationWindow || !verificationWindow || verificationWindow.closed) {
+        return;
+      }
+      try {
+        verificationWindow.close();
+      } catch (_) {
+        // Ignore close-window errors.
+      }
+    }
+
+    function waitForVerificationAndRedirect(pollCount = 0) {
+      window.setTimeout(async () => {
+        try {
+          const data = await fetchBookingStatus(requestId);
+          const status = String(data.status || "").trim().toLowerCase();
+
+          if (status === "verified" || status === "approved") {
+            closeVerificationWindow();
+            setStatusMessage(statusEl, IDENTITY_VERIFIED_REDIRECT_MESSAGE, "success");
+            window.setTimeout(() => {
+              window.location.assign(bookingRequestUrl.toString());
+            }, IDENTITY_VERIFIED_REDIRECT_DELAY_MS);
+            return;
+          }
+
+          if (status === "requires_input" || status === "rejected") {
+            closeVerificationWindow();
+            setStatusMessage(
+              statusEl,
+              "We could not confirm your identity automatically. Please try verification again.",
+              "error"
+            );
+            continueBtn.disabled = false;
+            if (checkAvailabilityBtn) {
+              checkAvailabilityBtn.disabled = false;
+            }
+            return;
+          }
+
+          if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
+            setStatusMessage(
+              statusEl,
+              "Verification is still being reviewed. Please keep this page open or use the booking status page.",
+              ""
+            );
+            window.location.assign(bookingStatusUrl.toString());
+            return;
+          }
+
+          setStatusMessage(
+            statusEl,
+            "Stripe is reviewing your identity details. This page will continue automatically once confirmed.",
+            ""
+          );
+          waitForVerificationAndRedirect(pollCount + 1);
+        } catch (error) {
+          if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
+            window.location.assign(bookingStatusUrl.toString());
+            return;
+          }
+          waitForVerificationAndRedirect(pollCount + 1);
+        }
+      }, IDENTITY_STATUS_POLL_INTERVAL_MS);
+    }
 
     try {
       persistLatestBooking({
@@ -1178,10 +1303,18 @@ function initBookingModal() {
         returnUrl: new URL("booking-status.html", window.location.href).toString()
       });
 
-      const bookingStatusUrl = new URL("booking-status.html", window.location.href);
-      bookingStatusUrl.searchParams.set("requestId", requestId);
-
       if (verificationData.url) {
+        if (canUseVerificationWindow) {
+          verificationWindow.location.replace(verificationData.url);
+          setStatusMessage(
+            statusEl,
+            "Complete Stripe identity verification in the opened window. This page will continue automatically.",
+            "success"
+          );
+          waitForVerificationAndRedirect();
+          return;
+        }
+
         window.location.assign(verificationData.url);
         return;
       }
@@ -1211,6 +1344,7 @@ function initBookingModal() {
         userMessage,
         "error"
       );
+      closeVerificationWindow();
       persistLatestBooking({
         requestId,
         ...modalData,
