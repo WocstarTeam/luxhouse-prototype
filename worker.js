@@ -651,6 +651,125 @@ async function persistBookingFromWebhook(env, requestId, patch) {
   return merged;
 }
 
+function getStoredStripeVerificationSessionId(booking) {
+  if (!booking || typeof booking !== "object") {
+    return "";
+  }
+
+  const candidates = [
+    booking.stripeVerificationSessionId,
+    booking.identityVerificationSessionId,
+    booking.verificationSessionId,
+  ];
+  for (const candidate of candidates) {
+    const value = typeof candidate === "string" ? candidate.trim() : "";
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function mapStripeIdentityStatus(status, stripeData) {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "verified") {
+    return "verified";
+  }
+  if (normalized === "requires_input") {
+    return stripeData && stripeData.last_error ? "requires_input" : "pending_verification";
+  }
+  if (normalized === "canceled" || normalized === "cancelled" || normalized === "rejected") {
+    return "rejected";
+  }
+  return "pending_verification";
+}
+
+async function refreshBookingIdentityStatusFromStripe(env, requestId, booking) {
+  if (!booking || typeof booking !== "object") {
+    return booking;
+  }
+
+  const existingStatus = String(booking.status || "").trim().toLowerCase();
+  if (
+    existingStatus === "verified" ||
+    existingStatus === "approved" ||
+    existingStatus === "requires_input" ||
+    existingStatus === "rejected"
+  ) {
+    return booking;
+  }
+
+  const verificationSessionId = getStoredStripeVerificationSessionId(booking);
+  if (!verificationSessionId) {
+    return booking;
+  }
+
+  const stripeSecretKey = getStripeSecretKey(env);
+  const stripeKeyKind = detectStripeKeyKind(stripeSecretKey);
+  if (!stripeSecretKey || stripeKeyKind.startsWith("publishable_")) {
+    return booking;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.stripe.com/v1/identity/verification_sessions/${encodeURIComponent(verificationSessionId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${stripeSecretKey}`,
+        },
+      }
+    );
+    const stripeData = await parseStripeResponseBody(response);
+    if (!response.ok) {
+      console.error({
+        event: "stripe_identity_status_refresh_failed",
+        requestId,
+        stripeVerificationSessionId: maskIdentifier(verificationSessionId),
+        stripeStatus: response.status,
+        stripeError: stripeData && stripeData.error ? stripeData.error : null,
+      });
+      return booking;
+    }
+
+    const stripeStatus = typeof stripeData.status === "string" ? stripeData.status.trim() : "";
+    const mappedStatus = mapStripeIdentityStatus(stripeStatus, stripeData);
+    if (mappedStatus === "pending_verification") {
+      return {
+        ...booking,
+        identityStatus: stripeStatus || booking.identityStatus || "pending_verification",
+        stripeVerificationSessionId: verificationSessionId,
+      };
+    }
+
+    const now = new Date().toISOString();
+    const patch = {
+      status: mappedStatus,
+      identityStatus: mappedStatus,
+      identityUpdatedAt: now,
+      stripeVerificationSessionId: verificationSessionId,
+    };
+    if (mappedStatus === "verified") {
+      patch.identityVerifiedAt = booking.identityVerifiedAt || now;
+    }
+
+    const refreshed = await persistBookingFromWebhook(env, requestId, patch);
+    return refreshed || {
+      ...booking,
+      ...patch,
+    };
+  } catch (error) {
+    console.error({
+      event: "stripe_identity_status_refresh_error",
+      requestId,
+      stripeVerificationSessionId: maskIdentifier(verificationSessionId),
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return booking;
+  }
+}
+
 function buildIdentityKeyDiagnostics(env) {
   const stripeSecretKey = getStripeSecretKey(env);
   const selectedKey = stripeSecretKey;
@@ -1045,31 +1164,20 @@ async function handleBookingStatus(request, env) {
       });
     }
 
-    let booking = null;
-    if (globalThis.BOOKINGS && typeof globalThis.BOOKINGS[requestId] === "object") {
-      booking = globalThis.BOOKINGS[requestId];
-    }
-
-    if (!booking) {
-      const kvStore = env && env.BOOKINGS && typeof env.BOOKINGS.get === "function" ? env.BOOKINGS : null;
-      if (kvStore) {
-        try {
-          const bookingRaw = await kvStore.get(requestId);
-          if (typeof bookingRaw === "string" && bookingRaw) {
-            const parsed = JSON.parse(bookingRaw);
-            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-              booking = parsed;
-            }
+    const { existingMemory, existingKv } = await loadExistingBooking(env, requestId);
+    let booking =
+      Object.keys(existingMemory).length > 0 || Object.keys(existingKv).length > 0
+        ? {
+            ...existingMemory,
+            ...existingKv,
           }
-        } catch (error) {
-          console.error("Booking status KV read failed:", error);
-        }
-      }
-    }
+        : null;
 
     if (!booking) {
       return jsonResponse(pendingResponse);
     }
+
+    booking = await refreshBookingIdentityStatusFromStripe(env, requestId, booking);
 
     const normalizedStatus = String(booking.status || "").trim().toLowerCase();
     if (normalizedStatus === "approved") {
@@ -1444,6 +1552,25 @@ async function handleCreateVerificationSession(request, env) {
     stripeRequestId,
     hasVerificationUrl: Boolean(stripeData && stripeData.url),
     keyDiagnostics,
+  });
+
+  const stripeVerificationSessionId =
+    stripeData && typeof stripeData.id === "string" ? stripeData.id.trim() : "";
+  const stripeIdentityStatus =
+    stripeData && typeof stripeData.status === "string"
+      ? stripeData.status.trim()
+      : "pending_verification";
+  await persistBookingFromWebhook(env, requestId, {
+    status: "pending_verification",
+    identityStatus: stripeIdentityStatus || "pending_verification",
+    stripeVerificationSessionId: stripeVerificationSessionId || null,
+    stripeVerificationSessionCreatedAt: new Date().toISOString(),
+    checkin: bodyCheckin || null,
+    checkout: bodyCheckout || null,
+    destination: normalizeAvailabilityDestination(destinationRaw) || destinationRaw || null,
+    guests: Number.isFinite(Number(body.guests)) ? Number(body.guests) : null,
+    addonsTotal: Number.isFinite(Number(body.addonsTotal)) ? Number(body.addonsTotal) : null,
+    total: Number.isFinite(Number(body.total)) ? Number(body.total) : null,
   });
 
   return jsonResponse({
