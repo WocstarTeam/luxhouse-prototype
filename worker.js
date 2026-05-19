@@ -694,7 +694,6 @@ async function refreshBookingIdentityStatusFromStripe(env, requestId, booking) {
   if (
     existingStatus === "verified" ||
     existingStatus === "approved" ||
-    existingStatus === "requires_input" ||
     existingStatus === "rejected"
   ) {
     return booking;
@@ -1196,6 +1195,17 @@ async function handleBookingStatus(request, env) {
         ok: true,
         status: "verified",
         message: STATUS_MESSAGES.verified,
+        requestId,
+        checkin: booking.checkin || null,
+        checkout: booking.checkout || null,
+      });
+    }
+
+    if (normalizedStatus === "requires_input" && !booking.identityLastError) {
+      return jsonResponse({
+        ok: true,
+        status: "pending_verification",
+        message: STATUS_MESSAGES.pending_verification,
         requestId,
         checkin: booking.checkin || null,
         checkout: booking.checkout || null,
@@ -1874,15 +1884,29 @@ async function handleWebhook(request, env) {
       existingStatus === "approved" || existingPaymentStatus === "paid";
 
     if (!shouldPreserveApprovedState) {
+      const hasVerificationError =
+        eventDataObject &&
+        typeof eventDataObject === "object" &&
+        Boolean(eventDataObject.last_error);
       const mappedStatus =
-        eventType === "identity.verification_session.requires_input" ? "requires_input" : "rejected";
-      await persistBookingFromWebhook(env, requestId, {
+        eventType === "identity.verification_session.canceled"
+          ? "rejected"
+          : hasVerificationError
+            ? "requires_input"
+            : "pending_verification";
+      const patch = {
         status: mappedStatus,
         identityStatus: mappedStatus,
         identityUpdatedAt: new Date().toISOString(),
         stripeVerificationSessionId:
           eventDataObject && typeof eventDataObject.id === "string" ? eventDataObject.id : null,
         ...dedupPatch,
+      };
+      if (hasVerificationError) {
+        patch.identityLastError = eventDataObject.last_error;
+      }
+      await persistBookingFromWebhook(env, requestId, {
+        ...patch,
       });
     }
   }
