@@ -152,8 +152,7 @@
       const STATUS_MESSAGES = {
         pending_verification: PENDING_REVIEW_MESSAGE,
         verified: VERIFIED_REDIRECT_MESSAGE,
-        requires_input:
-          "We could not complete verification automatically. Please contact support.",
+        requires_input: PENDING_REVIEW_MESSAGE,
         rejected:
           "Verification could not be completed. Please contact support.",
         approved:
@@ -233,7 +232,7 @@
         }
 
         if (status === "requires_input") {
-          return STATUS_MESSAGES.requires_input;
+          return STATUS_MESSAGES.pending_verification;
         }
 
         if (status === "rejected") {
@@ -252,7 +251,7 @@
           return "approved";
         }
 
-        if (status === "rejected" || status === "requires_input") {
+        if (status === "rejected") {
           return "rejected";
         }
 
@@ -339,7 +338,6 @@
           }
 
           if (
-            status === "requires_input" ||
             status === "rejected" ||
             status === "missing_request_id"
           ) {

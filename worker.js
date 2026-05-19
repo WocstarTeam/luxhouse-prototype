@@ -12,7 +12,7 @@ const STATUS_MESSAGES = {
   verified:
     "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.",
   requires_input:
-    "We could not complete verification. Please try again.",
+    "Thank you for submitting your documents. Stripe is processing your verification now. This usually completes within a few minutes.",
   rejected:
     "Verification could not be completed. Please contact support.",
   approved:
@@ -1225,7 +1225,7 @@ function mapStripeIdentityStatus(status, stripeData) {
     return "verified";
   }
   if (normalized === "requires_input") {
-    return stripeData && stripeData.last_error ? "requires_input" : "pending_verification";
+    return "pending_verification";
   }
   if (normalized === "canceled" || normalized === "cancelled" || normalized === "rejected") {
     return "rejected";
@@ -1754,7 +1754,7 @@ async function handleBookingStatus(request, env) {
       });
     }
 
-    if (normalizedStatus === "requires_input" && !booking.identityLastError) {
+    if (normalizedStatus === "requires_input") {
       return jsonResponse({
         ok: true,
         status: "pending_verification",
@@ -1765,7 +1765,7 @@ async function handleBookingStatus(request, env) {
       });
     }
 
-    if (normalizedStatus === "requires_input" || normalizedStatus === "rejected") {
+    if (normalizedStatus === "rejected") {
       return jsonResponse({
         ok: true,
         status: normalizedStatus,
@@ -2599,9 +2599,7 @@ async function handleWebhook(request, env) {
       const mappedStatus =
         eventType === "identity.verification_session.canceled"
           ? "rejected"
-          : hasVerificationError
-            ? "requires_input"
-            : "pending_verification";
+          : "pending_verification";
       const patch = {
         status: mappedStatus,
         identityStatus: mappedStatus,
