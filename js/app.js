@@ -1151,21 +1151,6 @@ function initBookingModal() {
 
     const requestId = `LUX-${Date.now()}`;
 
-    const verificationWindow = window.open("", "_blank", "noopener,noreferrer");
-    const canUseVerificationWindow =
-      Boolean(verificationWindow) && Boolean(!verificationWindow.closed);
-    if (canUseVerificationWindow) {
-      try {
-        verificationWindow.document.title = "Opening verification...";
-        verificationWindow.document.body.style.fontFamily = "system-ui, -apple-system, Segoe UI, sans-serif";
-        verificationWindow.document.body.style.margin = "0";
-        verificationWindow.document.body.style.padding = "16px";
-        verificationWindow.document.body.textContent = "Opening secure Stripe verification...";
-      } catch (_) {
-        // Ignore cross-window document access issues.
-      }
-    }
-
     try {
       persistLatestBooking({
         requestId,
@@ -1197,30 +1182,12 @@ function initBookingModal() {
       bookingStatusUrl.searchParams.set("requestId", requestId);
 
       if (verificationData.url) {
-        if (canUseVerificationWindow) {
-          verificationWindow.location.replace(verificationData.url);
-          setStatusMessage(
-            statusEl,
-            "Verification opened in a new tab. Complete it there while we track your status here.",
-            "success"
-          );
-          window.location.assign(bookingStatusUrl.toString());
-          return;
-        }
-
         window.location.assign(verificationData.url);
         return;
       }
 
       window.location.assign(bookingStatusUrl.toString());
     } catch (error) {
-      if (canUseVerificationWindow) {
-        try {
-          verificationWindow.close();
-        } catch (_) {
-          // Ignore close-window errors.
-        }
-      }
       let userMessage = error.message || "Could not start verification. Please try again.";
       if (error && error.code === "identity_session_create_failed") {
         const stripeReqId =

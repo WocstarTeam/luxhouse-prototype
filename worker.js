@@ -10,7 +10,7 @@ const STATUS_MESSAGES = {
   pending_verification:
     "Thank you for submitting your documents. Stripe is processing your verification now. This usually completes within a few minutes.",
   verified:
-    "Your identity verification was successful. You may now continue with your booking.",
+    "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.",
   requires_input:
     "We could not complete verification. Please try again.",
   rejected:

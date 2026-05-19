@@ -144,13 +144,14 @@
       const LATEST_BOOKING_STORAGE_KEY = "luxhouse.latestBooking";
       const POLL_INTERVAL_MS = 2500;
       const REQUEST_TIMEOUT_MS = 10000;
-      const AUTO_REDIRECT_DELAY_MS = 800;
+      const AUTO_REDIRECT_DELAY_MS = 2200;
+      const VERIFIED_REDIRECT_MESSAGE =
+        "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.";
       const PENDING_REVIEW_MESSAGE =
         "Thank you for submitting your documents. Stripe is processing your verification now. This usually completes within a few minutes.";
       const STATUS_MESSAGES = {
         pending_verification: PENDING_REVIEW_MESSAGE,
-        verified:
-          "Your identity verification was successful. You may now continue with your booking.",
+        verified: VERIFIED_REDIRECT_MESSAGE,
         requires_input:
           "We could not complete verification automatically. Please contact support.",
         rejected:
@@ -328,7 +329,8 @@
             stopPolling();
             if (status === "verified" && !hasAutoRedirectedToBookingRequest) {
               hasAutoRedirectedToBookingRequest = true;
-              setStatus("Verification confirmed. Redirecting to your booking request...", "approved");
+              paymentButton.style.display = "none";
+              setStatus(VERIFIED_REDIRECT_MESSAGE, "approved");
               setTimeout(function () {
                 window.location.assign(buildBookingRequestUrl().toString());
               }, AUTO_REDIRECT_DELAY_MS);
