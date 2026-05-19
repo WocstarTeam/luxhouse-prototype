@@ -13,7 +13,6 @@ const PINE_COMING_SOON_MESSAGE =
   "Pine & Peace House is opening soon. Please book Cactus & Chill House for now.";
 const IDENTITY_STATUS_POLL_INTERVAL_MS = 2500;
 const IDENTITY_STATUS_MAX_POLLS = 96;
-const IDENTITY_SUBMISSION_FALLBACK_MS = 18000;
 const IDENTITY_VERIFIED_REDIRECT_DELAY_MS = 2200;
 const IDENTITY_VERIFIED_REDIRECT_MESSAGE =
   "Congratulations, we have successfully confirmed your Identity, you are now being redirected to the booking page.";
@@ -1223,8 +1222,6 @@ function initBookingModal() {
     }
 
     let identityRedirectStarted = false;
-    const identityPollingStartedAt = Date.now();
-
     function completeIdentityStepAndRedirect() {
       if (identityRedirectStarted) {
         return;
@@ -1239,11 +1236,6 @@ function initBookingModal() {
 
     function waitForVerificationAndRedirect(pollCount = 0) {
       window.setTimeout(async () => {
-        if (canUseVerificationWindow && verificationWindow && verificationWindow.closed) {
-          completeIdentityStepAndRedirect();
-          return;
-        }
-
         try {
           const data = await fetchBookingStatus(requestId);
           const status = String(data.status || "").trim().toLowerCase();
@@ -1267,15 +1259,10 @@ function initBookingModal() {
             return;
           }
 
-          if (Date.now() - identityPollingStartedAt >= IDENTITY_SUBMISSION_FALLBACK_MS) {
-            completeIdentityStepAndRedirect();
-            return;
-          }
-
           if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
             setStatusMessage(
               statusEl,
-              "Verification is still being reviewed. Please keep this page open or use the booking status page.",
+              "Stripe has not confirmed this identity yet. We will keep the booking locked until verification is approved.",
               ""
             );
             window.location.assign(bookingStatusUrl.toString());
@@ -1289,16 +1276,6 @@ function initBookingModal() {
           );
           waitForVerificationAndRedirect(pollCount + 1);
         } catch (error) {
-          if (canUseVerificationWindow && verificationWindow && verificationWindow.closed) {
-            completeIdentityStepAndRedirect();
-            return;
-          }
-
-          if (Date.now() - identityPollingStartedAt >= IDENTITY_SUBMISSION_FALLBACK_MS) {
-            completeIdentityStepAndRedirect();
-            return;
-          }
-
           if (pollCount >= IDENTITY_STATUS_MAX_POLLS) {
             window.location.assign(bookingStatusUrl.toString());
             return;
